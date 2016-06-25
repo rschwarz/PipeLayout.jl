@@ -4,7 +4,7 @@ using SIUnits.ShortUnits
 export Bar, Barg, weymouth
 
 # adding Bar and Barg (gauge) as units
-const Bar = (1//10^5)Pa
+const Bar = (10^5)Pa
 const Barg = atm
 
 # Source for notation and formulas:
