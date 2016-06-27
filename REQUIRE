@@ -1,8 +1,10 @@
 julia 0.4
 Colors
+DataStructures
 FactCheck
 GR
 JuMP
 JSON
+LightGraphs
 Plots
 SIUnits
