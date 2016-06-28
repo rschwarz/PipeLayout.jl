@@ -1,5 +1,5 @@
-import Plots
-import Colors
+using Plots: plot, scatter!, text, with
+using Colors: colormap
 
 immutable Net
     n::Int64
@@ -43,15 +43,13 @@ function draw(posx, posy, edges;
     n = size(posx, 1)
     m = size(edges, 2)
 
-    Plots.with(leg=false, grid=false, aspect_ratio=1, xlim=bbox(posx),
-               ylim=bbox(posx)) do
+    with(leg=false, grid=false, aspect_ratio=1, xlim=bbox(posx), ylim=bbox(posx)) do
         # draw edges
-        Plots.plot(posx[edges], posy[edges],
-                   color=edgecolor, linewidth=edgewidth)
+        plot(posx[edges], posy[edges], color=edgecolor, linewidth=edgewidth)
 
         # draw nodes
-        Plots.scatter!(posx, posy, marker=(nodesize, nodecolor),
-                       seriesann=map(x -> Plots.text(x, nodesize-3), 1:n))
+        scatter!(posx, posy, marker=(nodesize, nodecolor),
+                 seriesann=map(x -> text(x, nodesize-3), 1:n))
     end
 end
 
@@ -67,7 +65,7 @@ end
 function map2color(data::Array{Float64}; ncolors::Int=20, cmap="Blues")
     data = normalize(data, lb=0.0, ub=1.0 - 1E-9)
 
-    colors = Colors.colormap(cmap, ncolors)
+    colors = colormap(cmap, ncolors)
     indices = round(Int, ncolors*data + 1, RoundDown)
     colors[indices]
 end

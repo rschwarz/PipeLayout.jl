@@ -1,5 +1,5 @@
 # TODO: move this graph code somewhere else!
-using LightGraphs
+using LightGraphs: DiGraph
 
 immutable PipeDimInstance
     instance::Instance

@@ -1,4 +1,4 @@
-using SIUnits
+import SIUnits
 using SIUnits.ShortUnits
 
 export Bar, Barg, weymouth
