@@ -1,4 +1,4 @@
-using SIUnits
+import SIUnits
 using SIUnits.ShortUnits
 
 facts("unit consistency in pressure loss") do

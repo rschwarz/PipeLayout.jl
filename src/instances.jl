@@ -1,5 +1,7 @@
 # custom types
 
+export Node, Bounds, Diameter, Instance
+
 immutable Node
     x::Float64 # [km]
     y::Float64 # [km]
