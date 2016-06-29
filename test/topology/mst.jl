@@ -1,4 +1,4 @@
-import PipeLayout: sorted_edges, min_spanning_tree
+import PipeLayout: sorted_edges, min_spanning_tree, topology_from_mst, digraph_from_topology
 using PipeLayout
 using LightGraphs
 
@@ -6,7 +6,7 @@ facts("compute MST from nodes") do
     coords = [0 1 0;
               0 0 2]
     nodes = [Node(coords[:,j]...) for j in 1:size(coords, 2)]
-    n = length(nodes)
+    const n = length(nodes)
     @fact n --> 3
 
     context("test sorted edges") do
@@ -21,10 +21,14 @@ facts("compute MST from nodes") do
     end
 
     context("look at resulting MST") do
-        tree = min_spanning_tree(nodes)
+        const n = length(nodes)
+        const m = n - 1 # tree
+
+        tree = nodes |> topology_from_mst |> digraph_from_topology
+        @fact tree --> is_instance(DiGraph)
         @fact tree --> is_directed
-        @fact nv(tree) --> 3
-        @fact ne(tree) --> 2
+        @fact nv(tree) --> n
+        @fact ne(tree) --> m
         @fact tree --> is_connected
         @fact has_edge(tree, 1, 2) --> true
         @fact has_edge(tree, 1, 3) --> true
