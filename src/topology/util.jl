@@ -8,3 +8,9 @@ function digraph_from_topology(topology::Topology)
     end
     dg
 end
+
+function is_tree(topology::Topology)
+    n = length(topology.nodes)
+    m = length(topology.arcs)
+    m == n-1 && is_connected(digraph_from_topology(topology))
+end
