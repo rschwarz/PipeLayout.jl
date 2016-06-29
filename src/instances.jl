@@ -1,6 +1,6 @@
 # custom types
 
-export Node, Bounds, Diameter, Instance
+export Node, Bounds, Diameter, Instance, Arc, Topology
 
 "Node type with location on plane."
 immutable Node
