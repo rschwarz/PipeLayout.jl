@@ -14,3 +14,20 @@ function is_tree(topology::Topology)
     m = length(topology.arcs)
     m == n-1 && is_connected(digraph_from_topology(topology))
 end
+
+"Euclidean distance of two nodes"
+function dist(u::Node, v::Node)
+    ((u.x - v.x)^2 + (u.y - v.y)^2)^0.5
+end
+
+"Compute lengths of all pipes"
+function pipelengths(topo::Topology)
+    lengths = Float64[]
+    sizehint!(lengths, length(topo.arcs))
+    for arc in topo.arcs
+        tail = topo.nodes[arc.tail]
+        head = topo.nodes[arc.head]
+        push!(lengths, dist(tail, head))
+    end
+    lengths
+end
