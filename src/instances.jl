@@ -17,7 +17,7 @@ end
 "Diameter has value and cost factor (per length)."
 immutable Diameter
     value::Float64 # [m]
-    cost::Float64  # [EUR/m]
+    cost::Float64  # [EUR/km]
 end
 
 """
