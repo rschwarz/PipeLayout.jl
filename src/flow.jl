@@ -12,4 +12,4 @@ function uniq_flow(topo::Topology, demand::Vector{Float64})
     incidence_matrix(dg) \ demand
 end
 
-uniq_flow(inst::Instance, topo::Topology) = flow(topo, inst.demand)
+uniq_flow(inst::Instance, topo::Topology) = uniq_flow(topo, inst.demand)
