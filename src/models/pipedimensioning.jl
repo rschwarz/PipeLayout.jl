@@ -26,11 +26,7 @@ function pipedim_model(inst::Instance, topo::Topology)
     # pressure loss constraint, with variable factor from diameter choice
     L = pipelengths(topo)
     D5 = [diam.value^5 for diam in inst.diameters]
-    # add types for length, diameters and flow.
-    # then divide by the expected type to get just a unit-less float
-    coeff = weymouth * (km*m^(-5)*(kg/s)^2) / (Bar^2)
-    C = coeff * L .* q .* abs(q)
-    @assert isa(C[1], Real)
+    C = ploss_coeff * L .* q .* abs(q)
     @constraint(model, ploss[a=1:narcs], π[arcs[a].tail] - π[arcs[a].head]
                 == sum{C[a] / D5[i] * l[a,i], i=1:ndiams})
 

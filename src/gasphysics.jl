@@ -59,3 +59,9 @@ const z_m = aga8(p_m, T_m)
 # Pressure Loss equation ("Weymouth"), when we care about length and diameter
 #   p_o^2 - p_i^2 = L/D^5 C q|q|
 const weymouth = (π/4)^(-2) * λ * R_s * z_m * T_m
+@assert !isa(weymouth, Real)
+
+# Unit-less Weymouth coefficient: Add types for length, diameters and flow, then
+# divide by the expected type to get just a float
+const ploss_coeff = weymouth * (km*m^(-5)*(kg/s)^2) / (Bar^2)
+@assert isa(ploss_coeff, Real)
