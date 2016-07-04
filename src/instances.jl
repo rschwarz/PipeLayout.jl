@@ -18,7 +18,7 @@ end
 "Diameter has value and cost factor (per length)."
 immutable Diameter <: FixedVectorNoTuple{2, Float64}
     value::Float64 # [m]
-    cost::Float64  # [EUR/km]
+    cost::Float64  # [Mio EUR/km]
 end
 
 """
