@@ -9,7 +9,6 @@ function pipedim_model(inst::Instance, topo::Topology)
 
     q = uniq_flow(inst, topo)
 
-    # TODO: think about scaling of variables and units
     model = Model()
 
     # squared pressure variables at nodes
