@@ -1,10 +1,11 @@
 using JuMP
 
 function pipedim_model(inst::Instance, topo::Topology)
-    n = length(inst.nodes)
-    length(topo.nodes) == n || throw(ArgumentError("Steiner nodes not allowed"))
-    A, m = topo.arcs, length(topo.arcs)
-    d = length(inst.diameters)
+    nnodes = length(inst.nodes)
+    length(topo.nodes) == nnodes ||
+        throw(ArgumentError("Steiner nodes not allowed"))
+    arcs, narcs = topo.arcs, length(topo.arcs)
+    ndiams = length(inst.diameters)
 
     q = uniq_flow(inst, topo)
 
@@ -14,25 +15,28 @@ function pipedim_model(inst::Instance, topo::Topology)
     # squared pressure variables at nodes
     lb = [b.lb^2 for b in inst.pressure]
     ub = [b.ub^2 for b in inst.pressure]
-    @variable(model, lb[v] <= π[v=1:n] <= ub[v])
+    @variable(model, lb[v] <= π[v=1:nnodes] <= ub[v])
 
     # relative length of pipe segments with specific diameter
-    @variable(model, 0.0 <= l[1:m, 1:d] <= 1.0)
+    @variable(model, 0.0 <= l[1:narcs, 1:ndiams] <= 1.0)
 
     # convex combination of pipe segments
-    @constraint(model, convexcomb[a=1:m], sum{l[a,i], i=1:d} == 1.0)
+    @constraint(model, convexcomb[a=1:narcs], sum{l[a,i], i=1:ndiams} == 1.0)
 
     # pressure loss constraint, with variable factor from diameter choice
     L = pipelengths(topo)
-    D = [diam.value^(-5) for diam in inst.diameters]
-    # TODO: use weymouth constant and properly rm unit
-    C = 1e-15 * L .* q .* abs(q)
-    @constraint(model, ploss[a=1:m],
-                π[A[a].tail] - π[A[a].head] == sum{C[a] * D[i] * l[a,i], i=1:d})
+    D5 = [diam.value^5 for diam in inst.diameters]
+    # add types for length, diameters and flow.
+    # then divide by the expected type to get just a unit-less float
+    coeff = weymouth * (km*m^(-5)*(kg/s)^2) / (Bar^2)
+    C = coeff * L .* q .* abs(q)
+    @assert isa(C[1], Real)
+    @constraint(model, ploss[a=1:narcs], π[arcs[a].tail] - π[arcs[a].head]
+                == sum{C[a] / D5[i] * l[a,i], i=1:ndiams})
 
     # minimize total construction cost
     cost = [diam.cost for diam in inst.diameters]
-    @objective(model, :Min, sum{cost[i] * L[a] * l[a,i], a=1:m, i=1:d})
+    @objective(model, :Min, sum{cost[i] * L[a] * l[a,i], a=1:narcs, i=1:ndiams})
 
     model, π, l
 end
