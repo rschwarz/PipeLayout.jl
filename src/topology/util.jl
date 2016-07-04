@@ -17,7 +17,7 @@ end
 
 "Euclidean distance of two nodes"
 function dist(u::Node, v::Node)
-    ((u.x - v.x)^2 + (u.y - v.y)^2)^0.5
+    norm(u - v)
 end
 
 "Compute lengths of all pipes"
