@@ -3,9 +3,8 @@ using PipeLayout
 using LightGraphs
 
 facts("compute MST from nodes") do
-    coords = [0 1 0;
-              0 0 2]
-    nodes = [Node(coords[:,j]...) for j in 1:size(coords, 2)]
+    coords = [0 1 0; 0 0 2]
+    nodes = Node[Node(coords[:,j]...) for j in 1:size(coords, 2)]
     const n = length(nodes)
     @fact n --> 3
 

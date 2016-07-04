@@ -1,21 +1,22 @@
 # custom types
+using FixedSizeArrays
 
 export Node, Bounds, Diameter, Instance, Arc, Topology
 
 "Node type with location on plane."
-immutable Node
+immutable Node <: FixedVectorNoTuple{2, Float64}
     x::Float64 # [km]
     y::Float64 # [km]
 end
 
 "Variable bounds as interval, used for node pressure."
-immutable Bounds
+immutable Bounds <: FixedVectorNoTuple{2, Float64}
     lb::Float64 # [bar]
     ub::Float64 # [bar]
 end
 
 "Diameter has value and cost factor (per length)."
-immutable Diameter
+immutable Diameter <: FixedVectorNoTuple{2, Float64}
     value::Float64 # [m]
     cost::Float64  # [EUR/km]
 end
@@ -34,7 +35,7 @@ immutable Instance
 end
 
 "An arc is specified by integer indices to the node array"
-immutable Arc
+immutable Arc <: FixedVectorNoTuple{2, Int}
     tail::Int
     head::Int
 end
