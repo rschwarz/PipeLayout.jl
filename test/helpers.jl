@@ -18,6 +18,22 @@ roughly_greater(x::Number) = anyof(roughly(x), greater_than(x))
 "check that value is within bounds"
 roughly_within(lb, ub) = allof(roughly_greater(lb), roughly_less(ub))
 
+"check the special ordered set (type 1) property"
+function is_SOS1(x)
+    ɛ = 1e-5
+    all(map(roughly_greater(0.0), x)) || return false
+    count(greater_than(ɛ), x) <= 1
+end
+
+"check the special ordered set (type 2) property"
+function is_SOS2(x)
+    ɛ = 1e-5
+    all(map(roughly_greater(0.0), x)) || return false
+    nonzeros = map(greater_than(ɛ), x)
+    sum(nonzeros) <= 1 ||
+        sum(nonzeros) == 2 && (sum(nonzeros[1:end-1] & nonzeros[2:end]) == 1)
+end
+
 facts("meta tests for helpers") do
     @fact 1.0 --> is_instance(Real)
     @fact 1.0im --> not(is_instance(Real))
@@ -39,6 +55,19 @@ facts("meta tests for helpers") do
     @fact 1.5 --> roughly_within(1.0, 2.0)
     @fact 2.0 + 1e-9 --> roughly_within(1.0, 2.0)
     @fact 2.5 --> not(roughly_within(1.0, 2.0))
+
+    @fact [-1., 0.0] --> not(is_SOS1)
+    @fact [0.0, 0.0] --> is_SOS1
+    @fact [0.5, 0.0] --> is_SOS1
+    @fact [0.0, 0.5] --> is_SOS1
+    @fact [0.3, 0.5] --> not(is_SOS1)
+
+    @fact [-1., 0.0, 0.0] --> not(is_SOS2)
+    @fact [0.0, 0.0, 0.0] --> is_SOS2
+    @fact [0.5, 0.0, 0.0] --> is_SOS2
+    @fact [0.0, 0.5, 0.3] --> is_SOS2
+    @fact [0.3, 0.0, 0.5] --> not(is_SOS2)
+    @fact [1.0, 0.5, 0.3] --> not(is_SOS2)
 end
 
 #
