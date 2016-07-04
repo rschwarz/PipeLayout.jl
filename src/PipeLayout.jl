@@ -10,6 +10,7 @@ include("flow.jl")
 
 # graph methods and topologies
 include("topology/mst.jl")
+include("topology/geosteiner.jl")
 
 # optimization models
 include("models/pipedimensioning.jl")
