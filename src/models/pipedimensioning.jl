@@ -12,7 +12,8 @@ function pipedim_model(inst::Instance, topo::Topology)
     model = Model()
 
     # squared pressure variables at nodes
-    lb, ub = [b.lb for b in inst.pressure], [b.ub for b in inst.pressure]
+    lb = [b.lb^2 for b in inst.pressure]
+    ub = [b.ub^2 for b in inst.pressure]
     @variable(model, lb[v] <= π[v=1:n] <= ub[v])
 
     # relative length of pipe segments with specific diameter
