@@ -12,7 +12,7 @@ end
 """
 Compute a minimum spanning tree using Kruskal's algorithm.
 
-Returns a LightGraphs.DiGraphs with integer indices for nodes.
+Returns a vector of arcs with integer indices for nodes.
 """
 function min_spanning_tree(nodes::Vector{Node})
     # MAYBE, use a Delaunay triangulation instead?
