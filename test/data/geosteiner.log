@@ -1,0 +1,63 @@
+ % bb
+ % Args:
+ % Phase 1: 0.00 seconds
+
+%%BeginSetup
+
+0 10000 0 10000 SetAxes
+
+4 DefineTerminals
+	1857.000000000000	2738.000000000000	DT
+	2894.000000000000	8773.000000000000	DT
+	1463.000000000000	5183.000000000000	DT
+	6905.000000000000	8268.000000000000	DT
+
+%%EndSetup
+
+ % initialize_constraint_pool: 0.00 seconds.
+ % Constraint pool initialized with:
+ % 	1	Total degree rows	4	coeffs.
+ % 	4	Cutset rows		9	coeffs.
+ % 	0	Incompatibility rows	0	coeffs.
+ % 	2	2-terminal SEC rows	4	coeffs.
+ % 	7	Total rows in pool	5	in LP
+ % @PMEM 7 rows, 1 blocks, 44 nzfree, 0 nzwasted, 68 nztotal
+ % build_initial_formulation: 0.00 seconds.
+% Resuming node 0
+ % @PAP adding 5 rows, 13 nz to LP
+  % @PL 5 rows, 4 cols, 17 nonzeros, 1 slack, 4 tight.
+  % Node 0 LP 1 Solution, length = 10312.237486, 0.00 0
+ % 0 fractional variables
+ % @UO 0.00 10312.23748569582494383212 99.9000000000
+ % @UN 0.00 10312.23748569582494383212 99.9000000000
+ % *     0     0    10312.2375    10312.2375
+% @LO 0.00 10312.23748569582494383212 0.0000000000
+% @LN 0.00 10312.23748569582494383212 0.0000000000
+
+ % Certificate of solution:
+ % @C	3203.975045797754	8244.044090302639
+%%Page: 1 1
+BeginPlot
+	Plot_Terminals
+ % fs0: 3 2 1
+	3 T	3203.975045797754	8244.044090302639	S
+	3203.975045797754	8244.044090302639	2 T	S
+	3203.975045797754	8244.044090302639	1 T	S
+ % fs1: 0 2
+	0 T	2 T	S
+  (Euclidean SMT:  4 points,  length = 10312.23748569582,  0.00 seconds)
+EndPlot
+
+% @0 Euclidean SMT
+% N M Nodes LPs P1CPU P2CPU TotCPU
+% @1 4 4 1 1 0.00 0.00 0.00
+% Z RootZ %Gap RootLPs RootCPU RedMST
+% @2 10312.23748569582 10312.237486 0.00000 1 0.00 0.6902
+% InitPRows InitPNZ InitLPRows InitLPNZ
+% @3 7 17 5 17
+% RootPRows RootPNZ RootLPRows RootLPNZ
+% @4 7 17 5 17
+% FinalPRows FinalPNZ FinalLPRows FinalLPNZ
+% @5 7 17 5 17
+% SMTFSTs SMTAvgFSTSz SMTMaxFSTSz #2FSTs #3FSTs ... #10FSTS #>10FSTs
+% @6 2 2.500000 3 1 1 0 0 0 0 0 0 0 0

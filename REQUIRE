@@ -4,8 +4,9 @@ DataStructures
 FactCheck
 FixedSizeArrays
 GR
-JuMP
 JSON
+JuMP
+Lazy
 LightGraphs
 Plots
 SIUnits
