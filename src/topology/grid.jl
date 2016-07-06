@@ -1,5 +1,5 @@
 "Create a grid of square cells with m by n nodes and given edge width."
-function squaregrid(m::Int, n::Int, width::Float64)
+function squaregrid(m::Int, n::Int, width::Float64; antiparallel=false)
     nodes = Node[]
     sizehint!(nodes, m*n)
     for j in 1:n
@@ -11,17 +11,20 @@ function squaregrid(m::Int, n::Int, width::Float64)
     nodeidx = reshape(1:m*n, (m,n))
 
     arcs = Arc[]
-    sizehint!(arcs, (m-1)*n + m*(n-1))
+    narcs = (m-1)*n + m*(n-1)
+    sizehint!(arcs, antiparallel ? 2*narcs : narcs)
     # columns top-down
     for j in 1:n
         for i in 1:m-1
-            push!(arcs, [nodeidx[i,j], nodeidx[i+1,j]])
+            push!(arcs, Arc(nodeidx[i,j], nodeidx[i+1,j]))
+            antiparallel && push!(arcs, Arc(nodeidx[i+1,j], nodeidx[i,j]))
         end
     end
     # rows left-right
     for i in 1:m
         for j in 1:n-1
-            push!(arcs, [nodeidx[i,j], nodeidx[i,j+1]])
+            push!(arcs, Arc(nodeidx[i,j], nodeidx[i,j+1]))
+            antiparallel && push!(arcs, Arc(nodeidx[i,j+1], nodeidx[i,j]))
         end
     end
 
