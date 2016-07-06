@@ -12,4 +12,5 @@ include("topology/util.jl")
 
 include("flow.jl")
 
+include("models/gndstruct_discdiam.jl")
 include("models/pipedimensioning.jl")

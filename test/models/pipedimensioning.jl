@@ -5,7 +5,7 @@ facts("check dimensioning on single pipe") do
     inst, topo = single_pipe()
     model, π, l = pipedim_model(inst, topo)
     status = solve(model)
-    @show status
+    @fact status --> :Optimal
 
     psol = getvalue(π).^0.5
     @fact psol[1] --> roughly_within(60.0, 80.0)

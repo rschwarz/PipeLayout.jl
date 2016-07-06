@@ -16,6 +16,7 @@ include("topology/mst.jl")
 include("flow.jl") # needs topology
 
 # optimization models
+include("models/gndstruct_discdiam.jl")
 include("models/pipedimensioning.jl")
 
 end
