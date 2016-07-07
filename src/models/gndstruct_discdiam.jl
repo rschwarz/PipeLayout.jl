@@ -2,6 +2,13 @@ import PipeLayout: digraph_from_topology
 using GLPKMathProgInterface
 using JuMP
 
+"Data type for candidate solutions from master problem."
+immutable CandSol
+    zsol::Array{Bool,2}
+    qsol::Vector{Float64}
+end
+
+"Build model for master problem (ground structure with discrete diameters)."
 function gndstruct_discdiam_master(inst::Instance, topo::Topology;
                                    solver=GLPKSolverMIP())
     nodes, nnodes = topo.nodes, length(topo.nodes)
@@ -54,4 +61,54 @@ function gndstruct_discdiam_master(inst::Instance, topo::Topology;
     @objective(model, :Min, sum{c[i] * L[a] * z[a,i], a=1:narcs, i=1:ndiams})
 
     model, y, z, q
+end
+
+"""
+Build model for subproblem (ground structure with discrete diameters).
+
+Corresponds to the domain relaxation with pressure loss overestimation.
+"""
+function gndstruct_discdiam_sub(inst::Instance, topo::Topology, cand::CandSol;
+                                solver=GLPKSolverLP())
+    nodes, nnodes = topo.nodes, length(topo.nodes)
+    arcs, narcs = topo.arcs, length(topo.arcs)
+    terms, nterms = inst.nodes, length(inst.nodes)
+    termidx = [findfirst(nodes, t) for t in terms]
+    ndiams = length(inst.diameters)
+
+    candarcs = filter(a -> any(cand.zsol[a,:]), 1:narcs)
+    ncandarcs = length(candarcs)
+    tail = [arcs[a].tail for a in candarcs]
+    head = [arcs[a].head for a in candarcs]
+
+    model = Model(solver=solver)
+
+    # unconstrained variable for squared pressure, the bounds are added with
+    # inequalities having slack vars.
+    # for now, adding variables for all nodes, even if disconnected.
+    @variable(model, π[1:nnodes])
+
+    # overestimated pressure loss inequalities
+    Dm5 = [diam.value^(-5) for diam in inst.diameters]
+    C = ploss_coeff * pipelengths(topo)[candarcs]
+    α = C .* cand.qsol[candarcs].^2 .* (cand.zsol[candarcs,:] * Dm5)
+    @constraint(model, ploss[ca=1:ncandarcs], π[tail[ca]] - π[head[ca]] ≥ α[ca])
+
+    # slack variables to relax the lower and upper bounds for π.
+    termlb = [b.lb^2 for b in inst.pressure]
+    lb = fill(minimum(termlb), nnodes)
+    lb[termidx] = termlb
+    termub = [b.ub^2 for b in inst.pressure]
+    ub = fill(maximum(termub), nnodes)
+    ub[termidx] = termub
+
+    @variable(model, Δl[1:nnodes] ≥ 0)
+    @variable(model, Δu[1:nnodes] ≥ 0)
+
+    @constraint(model, pres_lb[v=1:nnodes], π[v] + Δl[v] ≥ lb[v])
+    @constraint(model, pres_lb[v=1:nnodes], π[v] - Δu[v] ≤ ub[v])
+
+    @objective(model, :Min, sum{Δl[v] + Δu[v], v=1:nnodes})
+
+    model, π, Δl, Δu
 end
