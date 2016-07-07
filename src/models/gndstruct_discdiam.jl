@@ -1,7 +1,9 @@
 import PipeLayout: digraph_from_topology
+using GLPKMathProgInterface
 using JuMP
 
-function gndstruct_discdiam_master(inst::Instance, topo::Topology)
+function gndstruct_discdiam_master(inst::Instance, topo::Topology;
+                                   solver=GLPKSolverMIP())
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -26,7 +28,7 @@ function gndstruct_discdiam_master(inst::Instance, topo::Topology)
     # "big-M" bound for flow on arcs
     const maxflow = 0.5 * sum(abs(inst.demand))
 
-    model = Model()
+    model = Model(solver=solver)
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)

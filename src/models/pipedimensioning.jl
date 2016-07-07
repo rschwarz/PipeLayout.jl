@@ -1,6 +1,7 @@
+using GLPKMathProgInterface
 using JuMP
 
-function pipedim_model(inst::Instance, topo::Topology)
+function pipedim_model(inst::Instance, topo::Topology; solver=GLPKSolverLP())
     nnodes = length(inst.nodes)
     length(topo.nodes) == nnodes ||
         throw(ArgumentError("Steiner nodes not allowed"))
@@ -9,7 +10,7 @@ function pipedim_model(inst::Instance, topo::Topology)
 
     q = uniq_flow(inst, topo)
 
-    model = Model()
+    model = Model(solver=solver)
 
     # squared pressure variables at nodes
     lb = [b.lb^2 for b in inst.pressure]
