@@ -30,7 +30,7 @@ end
 
 """Low level drawing method for given node positions and styling.
 
-Vertices are assumed to by identified by 1:n and edges is a 2x5 array
+Vertices are assumed to by identified by 1:n and edges is a 2×m array
 referencing the vertices. The style can be given as value (for all edges),
 or as array (per edge).
 """
