@@ -90,3 +90,11 @@ function draw(net::Net;
          edgecolor=edgecolor, edgewidth=edgewidth,
          nodecolor=nodecolor, nodesize=nodesize)
 end
+
+function draw(topo::Topology)
+    n, m = length(topo.nodes), length(topo.arcs)
+    nodepos = reshape(reinterpret(Float64, topo.nodes), (2,n))
+    posx, posy = nodepos[1,:]', nodepos[2,:]'
+    arcs = reshape(reinterpret(Int, topo.arcs), (2,m))
+    draw(posx, posy, arcs)
+end
