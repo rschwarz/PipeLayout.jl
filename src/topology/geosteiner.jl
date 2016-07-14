@@ -1,4 +1,4 @@
-using Lazy
+using Lazy: @lazy, @>>, dropwhile, takewhile
 
 "Check whether geosteiner executables are in PATH"
 function has_geosteiner()
