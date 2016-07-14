@@ -2,6 +2,8 @@ import PipeLayout: digraph_from_topology
 using GLPKMathProgInterface
 using JuMP
 
+export CandSol
+
 "Data type for candidate solutions from master problem."
 immutable CandSol
     zsol::Array{Bool,2}

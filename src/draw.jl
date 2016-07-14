@@ -1,6 +1,8 @@
 using Plots: plot, scatter!, text, with
 using Colors: colormap
 
+export draw
+
 immutable Net
     n::Int64
     m::Int64
@@ -27,6 +29,30 @@ function bbox(values; margin=0.05)
     lb - margin*range, ub + margin*range
 end
 
+"scale and shift numbers to interval [lb=0, ub=1]"
+function normalize{T<:Real}(data::Array{T}; lb=zero(T), ub=one(T))
+    @assert ub > lb
+    mi, ma = extrema(data)
+    range = ma == mi ? 1.0 : ma - mi
+    (data - mi) / range * (ub - lb) + lb
+end
+
+"map numbers to colors"
+function map2color(data::Array{Float64}; ncolors::Int=20, cmap="Blues")
+    data = normalize(data, lb=0.0, ub=1.0 - 1E-9)
+
+    colors = colormap(cmap, ncolors)
+    indices = round(Int, ncolors*data + 1, RoundDown)
+    colors[indices]
+end
+
+function topo2net(topo::Topology)
+    n, m = length(topo.nodes), length(topo.arcs)
+    nodepos = reshape(reinterpret(Float64, topo.nodes), (2,n))'
+    posx, posy = nodepos[:,1], nodepos[:,2]
+    arcs = reshape(reinterpret(Int, topo.arcs), (2,m))
+    Net(posx, posy, arcs)
+end
 
 """Low level drawing method for given node positions and styling.
 
@@ -53,34 +79,17 @@ function draw(posx, posy, edges;
     end
 end
 
-"scale and shift numbers to interval [lb=0, ub=1]"
-function normalize{T<:Real}(data::Array{T}; lb=zero(T), ub=one(T))
-    @assert ub > lb
-    mi, ma = extrema(data)
-    range = ma == mi ? 1.0 : ma - mi
-    (data - mi) / range * (ub - lb) + lb
-end
-
-"map numbers to colors"
-function map2color(data::Array{Float64}; ncolors::Int=20, cmap="Blues")
-    data = normalize(data, lb=0.0, ub=1.0 - 1E-9)
-
-    colors = colormap(cmap, ncolors)
-    indices = round(Int, ncolors*data + 1, RoundDown)
-    colors[indices]
-end
-
 "drawing of networks, with mapping of attributes to color and size"
 function draw(net::Net;
               edgecolor=:gray, edgecmap="Blues",
-              edgewidth=2, edgebds=[2, 4],
+              edgewidth=4, edgebds=[3, 6],
               nodecolor=:orange, nodecmap="Reds",
               nodesize=12)
     edgecolor = (typeof(edgecolor) == Array{Float64, 2}
                  ? map2color(edgecolor, cmap=edgecmap)
                  : edgecolor)
     edgewidth = (typeof(edgewidth) == Array{Float64, 2}
-                 ? normalize(edgewidth, lb=edgebds[1], ub=edgebds[2])
+                 ? round(Int,normalize(edgewidth, lb=edgebds[1], ub=edgebds[2]))
                  : edgewidth)
     nodecolor = (typeof(nodecolor) == Array{Float64, 2}
                  ? map2color(nodecolor, cmap=nodecmap)
@@ -91,10 +100,22 @@ function draw(net::Net;
          nodecolor=nodecolor, nodesize=nodesize)
 end
 
-function draw(topo::Topology)
-    n, m = length(topo.nodes), length(topo.arcs)
-    nodepos = reshape(reinterpret(Float64, topo.nodes), (2,n))
-    posx, posy = nodepos[1,:]', nodepos[2,:]'
-    arcs = reshape(reinterpret(Int, topo.arcs), (2,m))
-    draw(posx, posy, arcs)
+draw(topo::Topology) = draw(topo2net(topo))
+
+function draw(topo::Topology, cand::CandSol)
+    ndiam = size(cand.zsol, 2)
+    pipediam = cand.zsol * collect(linspace(1,ndiam,ndiam))
+
+    actarcs = Arc[]
+    actdiam = Float64[]
+    for a = 1:length(topo.arcs)
+        if pipediam[a] > 0
+            push!(actarcs, topo.arcs[a])
+            push!(actdiam, pipediam[a])
+        end
+    end
+
+    net = topo2net(Topology(topo.nodes, actarcs))
+
+    draw(net; edgewidth=actdiam', edgecolor=actdiam')
 end

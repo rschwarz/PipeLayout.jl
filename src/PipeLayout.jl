@@ -4,7 +4,6 @@ include("instances.jl")
 # --> deserialization.jl
 # --> random.jl
 
-include("draw.jl")
 include("gasphysics.jl")
 
 # graph methods and topologies
@@ -18,5 +17,8 @@ include("flow.jl") # needs topology
 # optimization models
 include("models/gndstruct_discdiam.jl")
 include("models/pipedimensioning.jl")
+
+# visualization
+include("draw.jl")
 
 end
