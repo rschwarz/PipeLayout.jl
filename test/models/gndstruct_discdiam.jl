@@ -69,24 +69,35 @@ facts("solve subproblem (ground structure, discrete diameters)") do
 
     context("feasible subproblem") do
         cand = CandSol(zsol, qsol)
-        model, π, Δl, Δu = gndstruct_discdiam_sub(inst, topo, cand)
+        model, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
         status = solve(model)
         @fact status --> :Optimal
 
+        # primal solution
         πsol = getvalue(π)
         Δlsol = getvalue(Δl)
         Δusol = getvalue(Δu)
 
         @fact Δlsol --> roughly(zeros(nnodes))
         @fact Δusol --> roughly(zeros(nnodes))
+
+        # dual solution
+        μsol = getdual(ploss)
+        λlsol = getdual(plb)
+        λusol = getdual(pub)
+
+        @fact μsol --> roughly(zeros(length(ploss)))
+        @fact λlsol --> roughly(zeros(nnodes))
+        @fact λusol --> roughly(zeros(nnodes))
     end
 
     context("infeasible subproblem") do
         cand = CandSol(zsol, 10 * qsol) # scaled
-        model, π, Δl, Δu = gndstruct_discdiam_sub(inst, topo, cand)
+        model, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
         status = solve(model)
         @fact status --> :Optimal
 
+        # primal solution
         πsol = getvalue(π)
         Δlsol = getvalue(Δl)
         Δusol = getvalue(Δu)
@@ -98,11 +109,26 @@ facts("solve subproblem (ground structure, discrete diameters)") do
         terms = [2, 3, 6]
         isterm(v) = v in terms
         innodes = filter(not(isterm) , 1:nnodes)
-        @fact Δlsol[innodes] --> roughly(zeros(3))
-        @fact Δusol[innodes] --> roughly(zeros(3))
+        @fact Δlsol[innodes] --> roughly(zeros(length(innodes)))
+        @fact Δusol[innodes] --> roughly(zeros(length(innodes)))
 
         # at least two vertices have slack
         slack = Δlsol + Δusol
         @fact sum(slack[terms] .> 0) --> greater_than_or_equal(2)
+
+        # dual solution, TODO: fix sign of dual multipliers
+        μsol = abs(getdual(ploss))
+        λlsol = abs(getdual(plb))
+        λusol = abs(getdual(pub))
+
+        # at least two bounds active
+        @fact sum(λlsol[terms] .> 0) --> greater_than_or_equal(1)
+        @fact sum(λusol[terms] .> 0) --> greater_than_or_equal(1)
+
+        # at least one path active
+        @fact sum(μsol .> 0) --> greater_than_or_equal(2)
+
+        @fact λlsol[innodes] --> roughly(zeros(length(innodes)))
+        @fact λusol[innodes] --> roughly(zeros(length(innodes)))
     end
 end

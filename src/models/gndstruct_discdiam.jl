@@ -108,9 +108,9 @@ function gndstruct_discdiam_sub(inst::Instance, topo::Topology, cand::CandSol;
     @variable(model, Δu[1:nnodes] ≥ 0)
 
     @constraint(model, pres_lb[v=1:nnodes], π[v] + Δl[v] ≥ lb[v])
-    @constraint(model, pres_lb[v=1:nnodes], π[v] - Δu[v] ≤ ub[v])
+    @constraint(model, pres_ub[v=1:nnodes], π[v] - Δu[v] ≤ ub[v])
 
     @objective(model, :Min, sum{Δl[v] + Δu[v], v=1:nnodes})
 
-    model, π, Δl, Δu
+    model, π, Δl, Δu, ploss, pres_lb, pres_ub
 end
