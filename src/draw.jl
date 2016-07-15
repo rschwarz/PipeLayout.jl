@@ -1,5 +1,5 @@
-using Plots: plot, scatter!, text, with
-using Colors: colormap
+using Plots: plot, plot!, scatter, scatter!, text, with
+using Colors: colormap, RGB
 
 export draw
 
@@ -39,7 +39,7 @@ end
 
 "map numbers to colors"
 function map2color(data::Array{Float64}; ncolors::Int=20, cmap="Blues")
-    data = normalize(data, lb=0.0, ub=1.0 - 1E-9)
+    data = normalize(data, lb=0.1, ub=0.9 - 1E-9)
 
     colors = colormap(cmap, ncolors)
     indices = round(Int, ncolors*data + 1, RoundDown)
@@ -69,7 +69,7 @@ function draw(posx, posy, edges;
     n = size(posx, 1)
     m = size(edges, 2)
 
-    with(leg=false, grid=false, aspect_ratio=1, xlim=bbox(posx), ylim=bbox(posx)) do
+    with(leg=false, grid=false, aspect_ratio=1, xlim=bbox(posx), ylim=bbox(posy)) do
         # draw edges
         plot(posx[edges], posy[edges], color=edgecolor, linewidth=edgewidth)
 
@@ -116,4 +116,22 @@ function draw(topo::Topology, cand::CandSol)
     net = topo2net(Topology(topo.nodes, actarcs))
 
     draw(net; edgewidth=actdiam', edgecolor=actdiam')
+end
+
+function draw(inst::Instance)
+    net = topo2net(Topology(inst.nodes, []))
+
+    px, py = net.posx, net.posy
+
+    # area of nodes is relative to demand
+    markersize = [3*sqrt(abs(d)) for d in inst.demand]
+    markercolor = [d > 0 ? RGB(1,.5,.5) : RGB(.5,.5,1) for d in inst.demand]
+    markerlabel = map(x -> text(x, 9), 1:length(inst.nodes))
+
+    with(leg=false, grid=false, aspect_ratio=1, xlim=bbox(px), ylim=bbox(py)) do
+        scatter(px, py, m=(markersize, markercolor), seriesann=markerlabel)
+    end
+
+    # TODO: draw pressure bounds
+    # TODO: draw diameters
 end
