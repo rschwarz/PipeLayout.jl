@@ -81,19 +81,17 @@ end
 
 "drawing of networks, with mapping of attributes to color and size"
 function draw(net::Net;
-              edgecolor=:gray, edgecmap="Blues",
-              edgewidth=4, edgebds=[3, 6],
-              nodecolor=:orange, nodecmap="Reds",
-              nodesize=12)
-    edgecolor = (typeof(edgecolor) == Array{Float64, 2}
-                 ? map2color(edgecolor, cmap=edgecmap)
-                 : edgecolor)
-    edgewidth = (typeof(edgewidth) == Array{Float64, 2}
-                 ? round(Int,normalize(edgewidth, lb=edgebds[1], ub=edgebds[2]))
-                 : edgewidth)
-    nodecolor = (typeof(nodecolor) == Array{Float64, 2}
-                 ? map2color(nodecolor, cmap=nodecmap)
-                 : nodecolor)
+              edgecolor=:gray, edgecmap="Blues", edgewidth=4, edgebds=[3, 6],
+              nodecolor=:orange, nodecmap="Reds", nodesize=12)
+    if typeof(edgecolor) == Array{Float64, 2}
+        edgecolor = map2color(edgecolor, cmap=edgecmap)
+    end
+    if typeof(edgewidth) == Array{Float64, 2}
+        edgewidth = round(Int,normalize(edgewidth, lb=edgebds[1], ub=edgebds[2]))
+    end
+    if typeof(nodecolor) == Array{Float64, 2}
+        nodecolor = map2color(nodecolor, cmap=nodecmap)
+    end
 
     draw(net.posx, net.posy, net.edges,
          edgecolor=edgecolor, edgewidth=edgewidth,
