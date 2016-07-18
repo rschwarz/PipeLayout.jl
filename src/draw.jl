@@ -124,7 +124,8 @@ function draw(inst::Instance)
     px, py = net.posx, net.posy
 
     # area of nodes is relative to demand
-    markersize = [3*sqrt(abs(d)) for d in inst.demand]
+    normdemand = inst.demand / maximum(abs(inst.demand))
+    markersize = 20*[sqrt(abs(d)) for d in normdemand]
     markercolor = [d > 0 ? RGB(1,.5,.5) : RGB(.5,.5,1) for d in inst.demand]
     markerlabel = map(x -> text(x, 9), 1:length(inst.nodes))
 
