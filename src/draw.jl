@@ -138,3 +138,44 @@ function draw(inst::Instance)
     # TODO: draw pressure bounds
     # TODO: draw diameters
 end
+
+function draw_subsol(nodes::Vector{Node}, viol::Vector{Float64})
+    n = length(nodes)
+    nodepos = reshape(reinterpret(Float64, nodes), (2,n))'
+    px, py = nodepos[:,1], nodepos[:,2]
+
+    normviol = viol / maximum(abs(viol))
+    markersize = 20*[sqrt(abs(v)) for v in normviol]
+    markercolor = [v > 0 ? RGB(1,.5,.5) : RGB(.5,.5,1) for v in viol]
+    markerlabel = map(x -> text(x, 9), 1:length(nodes))
+
+    with(leg=false, grid=false, aspect_ratio=1,
+         xlim=boundbox(px), ylim=boundbox(py)) do
+        scatter(px, py, m=(markersize, markercolor), seriesann=markerlabel)
+    end
+
+    # TODO: maybe draw pressure loss on arcs?
+end
+
+function draw_dual(topo::Topology, cand::CandSol, λ::Vector{Float64},
+                   μ::Vector{Float64})
+    n,m = length(topo.nodes), length(topo.arcs)
+    nodepos = reshape(reinterpret(Float64, topo.nodes), (2,n))'
+    px, py = nodepos[:,1], nodepos[:,2]
+
+    normλ = λ / maximum(abs(λ))
+    markersize = 20*[sqrt(abs(v)) for v in normλ]
+    markercolor = [v > 0 ? RGB(1,.5,.5) : RGB(.5,.5,1) for v in λ]
+    markerlabel = map(x -> text(x, 9), 1:length(topo.nodes))
+
+    candarcs = filter(a -> any(cand.zsol[a,:]), 1:m)
+    μdense = fill(0, m)
+    μdense[candarcs] = round(Int, 5 * μ / maximum(μ))
+    arcs = reshape(reinterpret(Int, topo.arcs), (2,m))
+
+    with(leg=false, grid=false, aspect_ratio=1,
+         xlim=boundbox(px), ylim=boundbox(py)) do
+        plot(px[arcs], py[arcs], linewidth=μdense', color="gray")
+        scatter!(px, py, m=(markersize, markercolor), seriesann=markerlabel)
+    end
+end
