@@ -9,6 +9,14 @@ function digraph_from_topology(topology::Topology)
     dg
 end
 
+function arcindex(topology::Topology)
+    index = Dict{Arc,Int}()
+    for (i,arc) in enumerate(topology.arcs)
+        index[arc] = i
+    end
+    index
+end
+
 function is_tree(topology::Topology)
     n = length(topology.nodes)
     m = length(topology.arcs)

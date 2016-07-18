@@ -1,4 +1,4 @@
-import PipeLayout: uniq_flow
+import PipeLayout: uniq_flow, flow_path_decomp
 
 facts("compute unique flow on trees") do
     nodes = [Node(i,i) for i in 1:6]
@@ -30,4 +30,22 @@ facts("compute unique flow on trees") do
         d = [-2.0, -4.0, 0.0, 0.0, 3.0, 3.0, 1.0]
         @fact_throws ArgumentError uniq_flow(Topology(nodes, arcs), d)
     end
+end
+
+facts("decompose positive arc flow in paths") do
+    context("on a simple tree") do
+        topo = Topology([Node(0,0), Node(1,0), Node(2,0), Node(1,1)],
+                        [Arc(1,2), Arc(2,3), Arc(2,4)])
+        arcflow = [3.0, 2.0, 1.0]
+
+        paths, pathflows = flow_path_decomp(topo, arcflow)
+        @fact length(paths) --> 2
+        @fact length(pathflows) --> 2
+        @fact paths[1] --> [Arc(1,2), Arc(2,3)]
+        @fact pathflows[1] --> roughly(2.0)
+        @fact paths[2] --> [Arc(1,2), Arc(2,4)]
+        @fact pathflows[2] --> roughly(1.0)
+    end
+
+    # TODO: test on grid with flow on subtree
 end
