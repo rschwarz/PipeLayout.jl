@@ -4,6 +4,7 @@ include("instances.jl")
 # --> deserialization.jl
 # --> random.jl
 
+include("util.jl")
 include("gasphysics.jl")
 
 # graph methods and topologies

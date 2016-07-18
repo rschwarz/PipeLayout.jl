@@ -4,6 +4,7 @@ using FactCheck
 include("helpers.jl")
 
 include("gasphysics.jl")
+include("util.jl")
 
 include("topology/geosteiner.jl")
 include("topology/grid.jl")
