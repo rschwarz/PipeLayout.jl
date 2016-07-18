@@ -23,7 +23,7 @@ immutable Net
 end
 
 """Compute an interval with a relative margin around all values"""
-function bbox(values; margin=0.05)
+function boundbox(values; margin=0.05)
     lb, ub = extrema(values)
     range = lb == ub ? 1.0 : ub - lb
     lb - margin*range, ub + margin*range
@@ -69,7 +69,8 @@ function draw(posx, posy, edges;
     n = size(posx, 1)
     m = size(edges, 2)
 
-    with(leg=false, grid=false, aspect_ratio=1, xlim=bbox(posx), ylim=bbox(posy)) do
+    with(leg=false, grid=false, aspect_ratio=1,
+         xlim=boundbox(posx), ylim=boundbox(posy)) do
         # draw edges
         plot(posx[edges], posy[edges], color=edgecolor, linewidth=edgewidth)
 
@@ -129,7 +130,8 @@ function draw(inst::Instance)
     markercolor = [d > 0 ? RGB(1,.5,.5) : RGB(.5,.5,1) for d in inst.demand]
     markerlabel = map(x -> text(x, 9), 1:length(inst.nodes))
 
-    with(leg=false, grid=false, aspect_ratio=1, xlim=bbox(px), ylim=bbox(py)) do
+    with(leg=false, grid=false, aspect_ratio=1,
+         xlim=boundbox(px), ylim=boundbox(py)) do
         scatter(px, py, m=(markersize, markercolor), seriesann=markerlabel)
     end
 
