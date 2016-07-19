@@ -1,4 +1,4 @@
-import PipeLayout: uniq_flow, flow_path_decomp
+import PipeLayout: uniq_flow, flow_path_decomp, squaregrid
 
 facts("compute unique flow on trees") do
     nodes = [Node(i,i) for i in 1:6]
@@ -47,5 +47,20 @@ facts("decompose positive arc flow in paths") do
         @fact pathflows[2] --> roughly(1.0)
     end
 
-    # TODO: test on grid with flow on subtree
+    context("on a grid with flow on subtree") do
+        topo = squaregrid(2, 3, 50.0, antiparallel=true)
+        nnodes, narcs = length(topo.nodes), length(topo.arcs)
+        arcflow = fill(0.0, narcs)
+        arcflow[11] = 3.0
+        arcflow[13] = 2.0
+        arcflow[ 4] = 1.0
+
+        paths, pathflows = flow_path_decomp(topo, arcflow)
+        @fact length(paths) --> 2
+        @fact length(pathflows) --> 2
+        @fact paths[1] --> [topo.arcs[11], topo.arcs[13]]
+        @fact pathflows[1] --> roughly(2.0)
+        @fact paths[2] --> [topo.arcs[11], topo.arcs[4]]
+        @fact pathflows[2] --> roughly(1.0)
+    end
 end
