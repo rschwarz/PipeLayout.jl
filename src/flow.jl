@@ -33,8 +33,8 @@ function flow_path_decomp(topo::Topology, arcflow::Vector{Float64})
     end
     @assert sum(resdem) ≈ 0.0
 
-    paths = []
-    pathflows = []
+    paths = Vector{Arc}[]
+    pathflows = Float64[]
 
     # iteratively move flow on paths
     while any(nonzero, resdem)
