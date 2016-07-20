@@ -179,3 +179,35 @@ function draw_dual(topo::Topology, cand::CandSol, λ::Vector{Float64},
         scatter!(px, py, m=(markersize, markercolor), seriesann=markerlabel)
     end
 end
+
+function draw_paths(topo::Topology, paths, pathflows)
+    nnodes, narcs = length(topo.nodes), length(topo.arcs)
+    nodepos = reshape(reinterpret(Float64, topo.nodes), (2,nnodes))'
+    px, py = nodepos[:,1], nodepos[:,2]
+
+    # nodes
+    sources = [path[1].tail for path in paths]
+    sinks = [path[end].head for path in paths]
+    @assert sources ∩ sinks == []
+
+    markercolor = fill(RGB(1,1,1), nnodes)
+    markercolor[sources] = RGB(.5,.5,1)
+    markercolor[sinks] = RGB(1,.5,.5)
+
+    markersize = fill(0.0, nnodes)
+    markersize[sources] = 20
+    markersize[sinks] = 20
+
+    markerlabel = map(x -> text(x, 9), 1:nnodes)
+
+    path2array(path) = reshape(reinterpret(Int, path), (2,length(path)))
+
+    with(leg=false, grid=false, aspect_ratio=1, xlim=boundbox(px), ylim=boundbox(py)) do
+        plot() # dummy initial plot
+        for path in paths
+            arcidx = path2array(path)
+            plot!(px[arcidx], py[arcidx], color="gray", linewidth=4)
+        end
+        scatter!(px, py, m=(markersize, markercolor), seriesann=markerlabel)
+    end
+end
