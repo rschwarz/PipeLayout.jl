@@ -10,6 +10,13 @@ immutable CandSol
     qsol::Vector{Float64}
 end
 
+"Data type for dual solution of subproblem"
+immutable SubDualSol
+    μ::Array{Float64}
+    λl::Array{Float64}
+    λu::Array{Float64}
+end
+
 "Build model for master problem (ground structure with discrete diameters)."
 function gndstruct_discdiam_master(inst::Instance, topo::Topology;
                                    solver=GLPKSolverMIP())
@@ -113,4 +120,50 @@ function gndstruct_discdiam_sub(inst::Instance, topo::Topology, cand::CandSol;
     @objective(model, :Min, sum{Δl[v] + Δu[v], v=1:nnodes})
 
     model, π, Δl, Δu, ploss, pres_lb, pres_ub
+end
+
+"Construct all Benders cuts from the solution of a subproblem."
+function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Model,
+                                 cand::CandSol, sub::SubDualSol)
+    0
+end
+
+function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology)
+    # initialize
+    master, y, z, q = gndstruct_discdiam_model(inst, topo)
+    dual, status, iter = Inf, -Inf, :Unknown, 1
+
+    while true
+        println("Iter $(iter)")
+
+        # resolve (relaxed) master problem, build candidate solution
+        status = solve(master)
+        if status == :Infeasible
+            println("  relaxed master is infeasible :-(")
+            break
+        elseif status != :Optimal
+            error("Unexpected status: $(:status)")
+        end
+        cand = CandSol(getvalue(z), getvalue(q))
+        dual = getobjectivevalue(master)
+        println("  dual bound: $(dual)")
+
+        # solve subproblem (from scratch, no warmstart)
+        submodel, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
+        substatus = solve(submodel)
+        @assert substatus == :Optimal "Slack model is always feasible"
+        totalslack = getobjectivevalue(submodel)
+        if totalslack ≈ 0.0
+            println("  found feasible solution :-)")
+            break
+        end
+
+        dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
+
+        # generate cuts and add to master
+        ncuts = gndstruct_discdiam_cuts(inst, topo, master, cand, dualsol)
+        println("  added $(length(ncuts)) cuts.")
+
+        iter += 1
+    end
 end
