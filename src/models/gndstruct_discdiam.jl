@@ -2,7 +2,22 @@ import PipeLayout: digraph_from_topology
 using GLPKMathProgInterface
 using JuMP
 
-export CandSol
+export CandSol, SubDualSol, Master
+
+"""
+Data type for master problem.
+
+Variable meanings:
+  y: select arc
+  z: select diameter for arc
+  q: flow through arc
+"""
+immutable Master
+    model::Model
+    y::Vector{Variable}
+    z::Vector{Variable}
+    q::Vector{Variable}
+end
 
 "Data type for candidate solutions from master problem."
 immutable CandSol
@@ -122,30 +137,45 @@ function gndstruct_discdiam_sub(inst::Instance, topo::Topology, cand::CandSol;
     model, π, Δl, Δu, ploss, pres_lb, pres_ub
 end
 
-"Construct all Benders cuts from the solution of a subproblem."
-function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Model,
-                                 cand::CandSol, sub::SubDualSol)
-    0
+"Construct no-good cut on z variables."
+function nogood(master::Master, cand::CandSol)
+    z = master.z
+    zactive = (cand.zsol .> 0.5)
+    nactive = sum(zactive)
+    coef = 2.0*zactive - 1.0
+    @constraint(master.model, sum{coef[i]*z[i], i=1:nvars} <= nactive - 1)
+    1
 end
 
-function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology)
-    # initialize
-    master, y, z, q = gndstruct_discdiam_model(inst, topo)
-    dual, status, iter = Inf, -Inf, :Unknown, 1
+"Construct all Benders cuts from the solution of a subproblem."
+function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Master,
+                                 cand::CandSol, sub::SubDualSol)
+    ncuts = 0
+    ncuts += nogood(master, cand)
+    ncuts
+end
 
-    while true
+"Iteration based implementation of GBD."
+function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology)
+    const maxiter = 100
+
+    # initialize
+    master = Master(gndstruct_discdiam_master(inst, topo)...)
+    dual, status = 0.0, :Unknown
+
+    for iter=1:maxiter
         println("Iter $(iter)")
 
         # resolve (relaxed) master problem, build candidate solution
-        status = solve(master)
+        status = solve(master.model)
         if status == :Infeasible
             println("  relaxed master is infeasible :-(")
             break
         elseif status != :Optimal
             error("Unexpected status: $(:status)")
         end
-        cand = CandSol(getvalue(z), getvalue(q))
-        dual = getobjectivevalue(master)
+        cand = CandSol(getvalue(master.z), getvalue(master.q))
+        dual = getobjectivevalue(master.model)
         println("  dual bound: $(dual)")
 
         # solve subproblem (from scratch, no warmstart)
@@ -162,8 +192,6 @@ function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology)
 
         # generate cuts and add to master
         ncuts = gndstruct_discdiam_cuts(inst, topo, master, cand, dualsol)
-        println("  added $(length(ncuts)) cuts.")
-
-        iter += 1
+        println("  added $(ncuts) cuts.")
     end
 end
