@@ -15,7 +15,7 @@ Variable meanings:
 immutable Master
     model::Model
     y::Vector{Variable}
-    z::Vector{Variable}
+    z::Array{Variable,2}
     q::Vector{Variable}
 end
 
@@ -139,11 +139,12 @@ end
 
 "Construct no-good cut on z variables."
 function nogood(master::Master, cand::CandSol)
-    z = master.z
-    zactive = (cand.zsol .> 0.5)
-    nactive = sum(zactive)
-    coef = 2.0*zactive - 1.0
-    @constraint(master.model, sum{coef[i]*z[i], i=1:nvars} <= nactive - 1)
+    @assert size(master.z) == size(cand.zsol)
+    nvars = length(master.z)
+    zact = (cand.zsol .> 0.5)
+    nact = sum(zact)
+    coef = 2.0*zact - 1.0
+    @constraint(master.model, sum{coef[i]*master.z[i], i=1:nvars} <= nact - 1)
     1
 end
 
