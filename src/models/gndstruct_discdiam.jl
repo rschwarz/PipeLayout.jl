@@ -40,6 +40,19 @@ immutable Result
     niter::Int
 end
 
+function topology_from_candsol(topo::Topology, ysol::Vector{Float64})
+    actarcs = topo.arcs[ysol .> 0.5]
+    tails = [arc.tail for arc in actarcs]
+    heads = [arc.head for arc in actarcs]
+    nodeidx = tails ∪ heads
+    nodemap = fill(0, length(topo.nodes))
+    for (target, idx) in enumerate(nodeidx)
+        nodemap[idx] = target
+    end
+    Topology(topo.nodes[nodeidx],
+             [Arc(nodemap[arc.tail], nodemap[arc.head]) for arc in actarcs])
+end
+
 "Build model for master problem (ground structure with discrete diameters)."
 function gndstruct_discdiam_master(inst::Instance, topo::Topology;
                                    solver=GLPKSolverMIP())
@@ -145,22 +158,22 @@ function gndstruct_discdiam_sub(inst::Instance, topo::Topology, cand::CandSol;
     model, π, Δl, Δu, ploss, pres_lb, pres_ub
 end
 
-"Construct no-good cut on z variables."
-function nogood(master::Master, cand::CandSol)
-    @assert size(master.z) == size(cand.zsol)
-    nvars = length(master.z)
-    zact = (cand.zsol .> 0.5)
-    nact = sum(zact)
-    coef = 2.0*zact - 1.0
-    @constraint(master.model, sum{coef[i]*master.z[i], i=1:nvars} <= nact - 1)
-    1
+"Generic no-good cut"
+function nogood(model::Model, vars::Vector{Variable}, sol::Vector{Float64})
+    @assert size(vars) == size(sol)
+    nvars = length(nvars)
+    active = (sol .> 0.5)
+    nactive = sum(active)
+    coef = 2.0*active - 1.0
+    @constraint(model, sum{coef[i]*vars[i], i=1:nvars} <= nactive - 1)
+    return 1
 end
 
 "Construct all Benders cuts from the solution of a subproblem."
 function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Master,
                                  cand::CandSol, sub::SubDualSol)
     ncuts = 0
-    ncuts += nogood(master, cand)
+    ncuts += nogood(master.model, master.z, cand.zsol)
     ncuts
 end
 
@@ -189,6 +202,14 @@ function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology;
             println("  dual bound: $(dual)")
             j,i,_ = findnz(cand.zsol')
             println("  cand. sol:$(collect(zip(i,j)))")
+        end
+
+        # check whether candidate has tree topology
+        candtopo = topology_from_candsol(topo, getvalue(master.y))
+        if !is_tree(candtopo)
+            debug && println("  skip non-tree topology")
+            nogood(master.model, model.y, cand.ysol)
+            continue
         end
 
         # solve subproblem (from scratch, no warmstart)
