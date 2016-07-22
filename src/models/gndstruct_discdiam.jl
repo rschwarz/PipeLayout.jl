@@ -32,6 +32,14 @@ immutable SubDualSol
     λu::Array{Float64}
 end
 
+"Result data from GBD algorithm"
+immutable Result
+    status::Symbol
+    solution
+    dualbound::Float64
+    niter::Int
+end
+
 "Build model for master problem (ground structure with discrete diameters)."
 function gndstruct_discdiam_master(inst::Instance, topo::Topology;
                                    solver=GLPKSolverMIP())
@@ -157,27 +165,31 @@ function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Master,
 end
 
 "Iteration based implementation of GBD."
-function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology)
-    const maxiter = 100
+function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology;
+                                      maxiter::Int=100, debug=false)
 
     # initialize
     master = Master(gndstruct_discdiam_master(inst, topo)...)
-    dual, status = 0.0, :Unknown
+    dual, status = 0.0, :NotSolved
 
     for iter=1:maxiter
-        println("Iter $(iter)")
+        debug && println("Iter $(iter)")
 
         # resolve (relaxed) master problem, build candidate solution
         status = solve(master.model)
         if status == :Infeasible
-            println("  relaxed master is infeasible :-(")
-            break
+            debug && println("  relaxed master is infeasible :-(")
+            return Result(:Infeasible, nothing, Inf, iter)
         elseif status != :Optimal
             error("Unexpected status: $(:status)")
         end
         cand = CandSol(getvalue(master.z), getvalue(master.q))
         dual = getobjectivevalue(master.model)
-        println("  dual bound: $(dual)")
+        if debug
+            println("  dual bound: $(dual)")
+            j,i,_ = findnz(cand.zsol')
+            println("  cand. sol:$(collect(zip(i,j)))")
+        end
 
         # solve subproblem (from scratch, no warmstart)
         submodel, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
@@ -185,14 +197,16 @@ function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
-            println("  found feasible solution :-)")
-            break
+            debug && println("  found feasible solution :-)")
+            return Result(:Optimal, cand, dual, iter)
         end
 
         dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
 
         # generate cuts and add to master
         ncuts = gndstruct_discdiam_cuts(inst, topo, master, cand, dualsol)
-        println("  added $(ncuts) cuts.")
+        debug && println("  added $(ncuts) cuts.")
     end
+
+    Result(:UserLimit, nothing, dual, maxiter)
 end
