@@ -159,9 +159,9 @@ function gndstruct_discdiam_sub(inst::Instance, topo::Topology, cand::CandSol;
 end
 
 "Generic no-good cut"
-function nogood(model::Model, vars::Vector{Variable}, sol::Vector{Float64})
+function nogood{T<:Real}(model::Model, vars::Array{Variable}, sol::Array{T})
     @assert size(vars) == size(sol)
-    nvars = length(nvars)
+    nvars = length(vars)
     active = (sol .> 0.5)
     nactive = sum(active)
     coef = 2.0*active - 1.0
@@ -208,7 +208,7 @@ function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology;
         candtopo = topology_from_candsol(topo, getvalue(master.y))
         if !is_tree(candtopo)
             debug && println("  skip non-tree topology")
-            nogood(master.model, model.y, cand.ysol)
+            nogood(master.model, master.y, getvalue(master.y))
             continue
         end
 

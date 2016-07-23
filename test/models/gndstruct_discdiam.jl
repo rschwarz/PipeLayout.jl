@@ -193,4 +193,19 @@ facts("run GBD iterations based on no-good cuts") do
         @fact result.niter --> 4
     end
 
+    context("high flow on triangle: infeasible") do
+        inst3 = Instance([Node(0,0), Node(50,0)],
+                         20*[-50, 50],
+                         [Bounds(60,80), Bounds(60,80)],
+                         [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]])
+        topo3 = Topology([Node(0,0), Node(50,0), Node(30, 40)],
+                         [Arc(1,3), Arc(1,2), Arc(2,3)])
+
+        result = gndstruct_discdiam_algorithm(inst3, topo3; debug=true)
+        @fact result.status --> :Infeasible
+        @fact result.solution --> nothing
+        @fact result.dualbound --> Inf
+        @fact result.niter --> 12
+    end
+
 end
