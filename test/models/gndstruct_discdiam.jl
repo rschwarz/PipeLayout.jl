@@ -201,7 +201,7 @@ facts("run GBD iterations based on no-good cuts") do
         topo3 = Topology([Node(0,0), Node(50,0), Node(30, 40)],
                          [Arc(1,3), Arc(1,2), Arc(2,3)])
 
-        result = gndstruct_discdiam_algorithm(inst3, topo3; debug=true)
+        result = gndstruct_discdiam_algorithm(inst3, topo3)
         @fact result.status --> :Infeasible
         @fact result.solution --> nothing
         @fact result.dualbound --> Inf
