@@ -216,6 +216,53 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int)
 
     getvalue(a), getvalue(b), getvalue(c)
 end
+
+"Linearized & reformulated cut based on single path."
+function gndstruct_discdiam_pathcut(inst::Instance, topo::Topology,
+                                    master::Master, cand::CandSol,
+                                    path::Vector{Arc})
+    aidx = arcindex(topo)
+    pathidx = [aidx[arc] for arc in path]
+    npath = length(path)
+    ndiam = length(inst.diameters)
+    zsol = cand.zsol[pathidx,:] # sparse solution
+    D = [diam.value for diam in inst.diameters]
+    πlb = [b.lb^2 for b in inst.bounds]
+    πub = [b.ub^2 for b in inst.bounds]
+
+    # coefficients of z in supremum expression
+    β =  (zsol * D.^(-5)) * (D.^5)'
+    @assert all(β .> 0)
+
+    # linearize the supremum, build up dense coefficient matrix
+    coeffs = fill(0.0, (npath, ndiam))
+    @assert size(coeffs) == size(β)
+
+    # - tail of path
+    tail = path[1].tail
+    coeffs[1,:] += πub[tail] * β[1,:]
+
+    # - intermediate nodes
+    # TODO: call linear_overest
+
+    # - head of path
+    head = path[end].head
+    coeffs[end,:] += πlb[head] * β[end,:]
+
+    # TODO: create cons  coeffs * z ≥ sum α ϕ
+end
+
+"Linearized & reformulated cuts based on critical paths."
+function gndstruct_discdiam_critpathcuts(inst::Instance, topo::Topology,
+                                         master::Master, cand::CandSol,
+                                         sub::SubDualSol)
+    # TODO: do path decomposition
+
+    # TODO: add one cut for every path
+
+    # TODO: add new linearizations for squared flows if separating
+end
+
 "Construct all Benders cuts from the solution of a subproblem."
 function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Master,
                                  cand::CandSol, sub::SubDualSol)
