@@ -1,4 +1,4 @@
-import PipeLayout: squaregrid, CandSol, gndstruct_discdiam_master, gndstruct_discdiam_sub, gndstruct_discdiam_algorithm
+import PipeLayout: squaregrid, CandSol, gndstruct_discdiam_master, gndstruct_discdiam_sub, gndstruct_discdiam_algorithm, linear_overest
 using JuMP
 
 facts("solve master problem (ground structure, discrete diameters)") do
@@ -68,7 +68,7 @@ facts("solve subproblem (ground structure, discrete diameters)") do
     qsol[4] = 30.0
 
     context("feasible subproblem") do
-        cand = CandSol(zsol, qsol)
+        cand = CandSol(zsol, qsol, fill(0.0, narcs))
         model, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
         status = solve(model)
         @fact status --> :Optimal
@@ -92,7 +92,7 @@ facts("solve subproblem (ground structure, discrete diameters)") do
     end
 
     context("infeasible subproblem") do
-        cand = CandSol(zsol, 10 * qsol) # scaled
+        cand = CandSol(zsol, 10 * qsol, fill(0.0, narcs)) # scaled
         model, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
         status = solve(model)
         @fact status --> :Optimal
@@ -207,5 +207,17 @@ facts("run GBD iterations based on no-good cuts") do
         @fact result.dualbound --> Inf
         @fact result.niter --> 12
     end
+end
 
+facts("Linear overestimation of supremum terms") do
+    values = Float64[i*j - 1 for i=1:4, j=1:4]
+    values = 2*tril(values) - triu(values)
+
+    cand_i, cand_j = 3, 2
+    a, b, c = linear_overest(values, cand_i, cand_j)
+    @fact size(a) --> (4,)
+    @fact size(b) --> (4,)
+    @fact size(c) --> ()
+
+    @fact a[cand_i] + b[cand_j] + c --> values[cand_i, cand_j]
 end

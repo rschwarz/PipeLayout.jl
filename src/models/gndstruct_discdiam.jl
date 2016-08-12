@@ -11,18 +11,21 @@ Variable meanings:
   y: select arc
   z: select diameter for arc
   q: flow through arc
+  ϕ: squared flow through arc (ϕ = q²)
 """
 immutable Master
     model::Model
     y::Vector{Variable}
     z::Array{Variable,2}
     q::Vector{Variable}
+    ϕ::Vector{Variable}
 end
 
 "Data type for candidate solutions from master problem."
 immutable CandSol
     zsol::Array{Bool,2}
     qsol::Vector{Float64}
+    ϕsol::Vector{Float64}
 end
 
 "Data type for dual solution of subproblem"
@@ -90,6 +93,10 @@ function gndstruct_discdiam_master(inst::Instance, topo::Topology;
 
     # flow through arcs
     @variable(model, 0 <= q[1:narcs] <= maxflow)
+    @variable(model, 0 <= ϕ[1:narcs] <= maxflow^2)
+
+    # secant cut for ϕ = q²
+    @constraint(model, secant[a=1:narcs], ϕ[a] ≤ maxflow*q[a])
 
     # mass flow balance at nodes
     @constraint(model, flowbalance[v=1:nnodes],
@@ -105,7 +112,7 @@ function gndstruct_discdiam_master(inst::Instance, topo::Topology;
     c = [diam.cost for diam in inst.diameters]
     @objective(model, :Min, sum{c[i] * L[a] * z[a,i], a=1:narcs, i=1:ndiams})
 
-    model, y, z, q
+    model, y, z, q, ϕ
 end
 
 """
@@ -169,6 +176,46 @@ function nogood{T<:Real}(model::Model, vars::Array{Variable}, sol::Array{T})
     return 1
 end
 
+"""
+Find tightest linear overestimator for given values v.
+
+It's of the form: sum_i a_i x_i + sum_j b_j y_j + c
+where x_i and y_j take values 0 or 1, with exactly one term active per sum.
+
+The coefficients a, b, c are returned.
+"""
+function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int)
+    m, n = size(values)
+
+    @assert 1 <= cand_i <= m
+    @assert 1 <= cand_j <= n
+
+    solver = GLPKSolverLP()
+    model = Model(solver=solver)
+
+    # coefficients to be found
+    @variable(model, a[1:m])
+    @variable(model, b[1:n])
+    @variable(model, c)
+
+    # slack to minimize
+    @variable(model, t[1:m,1:n] ≥ 0)
+
+    # overestimate at all points
+    @constraint(model, overest[i=1:m, j=1:n], a[i] + b[j] + c == values[i,j] + t[i,j])
+
+    # be exact at candidate solution
+    @constraint(model, t[cand_i, cand_j] ≤ 0)
+
+    # be as tight as possible everywhere else
+    @objective(model, :Min, sum{t[i,j], i=1:m, j=1:n})
+
+    # solve it
+    status = solve(model)
+    @assert status == :Optimal
+
+    getvalue(a), getvalue(b), getvalue(c)
+end
 "Construct all Benders cuts from the solution of a subproblem."
 function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Master,
                                  cand::CandSol, sub::SubDualSol)
@@ -196,7 +243,7 @@ function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology;
         elseif status != :Optimal
             error("Unexpected status: $(:status)")
         end
-        cand = CandSol(getvalue(master.z), getvalue(master.q))
+        cand = CandSol(getvalue(master.z), getvalue(master.q), getvalue(master.ϕ))
         dual = getobjectivevalue(master.model)
         if debug
             println("  dual bound: $(dual)")
