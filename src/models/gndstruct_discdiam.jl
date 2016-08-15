@@ -164,6 +164,52 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol;
     model, π, Δl, Δu, ploss, pres_lb, pres_ub
 end
 
+"""
+Build model for a problem where the topology y and flow q are fixed, but the
+diameters z are still free. This is between the master- and subproblem and can
+be used
+ - as a primal heuristic
+ - to generate stronger no-good cuts on the y variables
+
+Returns model, list of candidate arcs and (sparse) variables z
+"""
+function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
+                      solver=GLPKSolverMIP())
+    nnodes = length(topo.nodes)
+    arcs = topo.arcs
+    termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
+    ndiams = length(inst.diameters)
+    candarcs = filter(a -> any(cand.zsol[a,:]), 1:length(arcs))
+    ncandarcs = length(candarcs)
+    tail = [arcs[a].tail for a in candarcs]
+    head = [arcs[a].head for a in candarcs]
+
+    πlb_min = minimum([b.lb for b in inst.pressure])^2
+    πub_max = maximum([b.ub for b in inst.pressure])^2
+    πlb = fill(πlb_min, nnodes)
+    πub = fill(πub_max, nnodes)
+    πlb[termidx] = [b.lb^2 for b in inst.pressure]
+    πub[termidx] = [b.ub^2 for b in inst.pressure]
+
+    L = pipelengths(topo)
+    c = [diam.cost for diam in inst.diameters]
+    Dm5 = [diam.value^(-5) for diam in inst.diameters]
+    C = ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
+
+    model = Model(solver=solver)
+
+    @variable(model, z[1:ncandarcs, 1:ndiams], Bin)
+    @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])
+
+    @constraint(model, ploss[a=1:ncandarcs],
+                π[tail[a]] - π[head[a]] ≥ C[a] * sum{Dm5[i]*z[a,i], i=1:ndiams})
+    @constraint(model, choice[a=1:ncandarcs], sum{z[a,i], i=1:ndiams} == 1)
+
+    @objective(model, :Min, sum{c[i] * L[a] * z[a,i], a=1:ncandarcs, i=1:ndiams})
+
+    model, candarcs, z
+end
+
 "Generic no-good cut"
 function nogood{T<:Real}(model::Model, vars::Array{Variable}, sol::Array{T})
     @assert size(vars) == size(sol)
@@ -320,6 +366,7 @@ function critpathcuts(inst::Instance, topo::Topology, master::Master,
 
     paths, pathflow = flow_path_decomp(topo, dualflow)
 
+    # TODO: test that cuts are valid and separating
     for path in paths
         ncuts += pathcut(inst, topo, master, cand, path)
     end
@@ -335,6 +382,7 @@ end
 "Construct all Benders cuts from the solution of a subproblem."
 function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
               sub::SubDualSol)
+    # TODO: parametrize for computational experiments
     ncuts = 0
     ncuts += nogood(master.model, master.z, cand.zsol)
     ncuts += critpathcuts(inst, topo, master, cand, sub)

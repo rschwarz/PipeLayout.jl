@@ -1,5 +1,5 @@
 import PipeLayout: squaregrid
-import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest
+import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest, make_semisub
 using JuMP
 
 facts("solve master problem (ground structure, discrete diameters)") do
@@ -221,4 +221,92 @@ facts("Linear overestimation of supremum terms") do
     @fact size(c) --> ()
 
     @fact a[cand_i] + b[cand_j] + c --> values[cand_i, cand_j]
+end
+
+facts("Solve semisubproblem with free z vars") do
+    #       7    9      even arc numbers for
+    #   () - d2 - ()    reversed arcs
+    #   /1   /3   /5
+    #  s1 - () - d1
+    #    11   13
+
+    # slightly irregular grid
+    nodes = [Node(0,0), Node(45,0), Node(25, 22)]
+    demand = [-50, 20, 30]
+    bounds = fill(Bounds(60,80), 3)
+    diams = [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]]
+
+    topo = Topology([Node(t...) for t in [(0,22), (0,0), (25,22), (25,0), (45,22), (45,0)]],
+                    [Arc(t...) for t in [(1,2), (2,1), (3,4), (4,3), (5,6), (6,5),
+                                         (1,3), (3,1), (3,5), (5,3),
+                                         (2,4), (4,2), (4,6), (6,4)]])
+
+    zsol = fill(false, length(topo.arcs), length(diams))
+    zsol[4,1]  = true
+    zsol[11,1] = true
+    zsol[13,1] = true
+    qsol = fill(0.0, length(topo.arcs))
+    qsol[[4, 11, 13]] = [30.0, 50.0, 20.0]
+
+    context("low flow: very easy instance") do
+        factor = 1.0
+        inst = Instance(nodes, factor*demand, bounds, diams)
+
+        sol = CandSol(zsol, factor*qsol, qsol.^2)
+        model, candarcs, z = make_semisub(inst, topo, sol)
+        @fact length(candarcs) --> 3
+        @fact size(z) --> (3, 2)
+
+        status = solve(model)
+        @fact status --> :Optimal
+
+        znew = fill(false, length(topo.arcs), length(diams))
+        znew[candarcs,:] = (getvalue(z) .> 0.5)
+        @fact znew[4,1] --> true
+        @fact znew[11,1] --> true
+        @fact znew[13,1] --> true
+        @fact sum(znew) --> 3
+    end
+
+    context("medium flow: difficult instance") do
+        factor = 5.0
+        inst = Instance(nodes, factor*demand, bounds, diams)
+
+        sol = CandSol(zsol, factor*qsol, qsol.^2)
+        model, candarcs, z = make_semisub(inst, topo, sol)
+        @fact length(candarcs) --> 3
+        @fact size(z) --> (3, 2)
+
+        status = solve(model)
+        @fact status --> :Optimal
+
+        znew = fill(false, length(topo.arcs), length(diams))
+        znew[candarcs,:] = (getvalue(z) .> 0.5)
+        @fact znew[4,1] --> true
+        @fact znew[11,2] --> true
+        @fact znew[13,1] --> true
+        @fact sum(znew) --> 3
+
+    end
+
+    context("high flow on triangle: infeasible") do
+        inst = Instance([Node(0,0), Node(50,0)],
+                        [-1000, 1000],
+                        [Bounds(60,80), Bounds(60,80)],
+                        [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]])
+        topo = Topology([Node(0,0), Node(50,0), Node(30, 40)],
+                        [Arc(1,3), Arc(1,2), Arc(2,3)])
+
+        zsol = fill(false, 3, 2)
+        zsol[1,1] = true
+        qsol = 1000*[1.0, 0.0, 0.0]
+        sol = CandSol(zsol, qsol, qsol.^2)
+        model, candarcs, z = make_semisub(inst, topo, sol)
+        @fact length(candarcs) --> 1
+        @fact size(z) --> (1, 2)
+
+        status = solve(model)
+        @fact status --> :Infeasible
+    end
+
 end
