@@ -9,6 +9,9 @@ const Barg = atm
 
 # Source for notation and formulas:
 # "Evaluating Gas Network Capacities", T. Koch et al., SIAM MO21, 2015
+#
+# Some constants are taken from that book, or the related source code of
+# Lamatto++, see: http://www.mso.math.fau.de/edom/projects/lamatto.html
 
 # pipe roughness, from REKO data (4390 * 0.012mm, 926 * 0.006mm, 166 * 0.002mm)
 const k = 0.012mm
