@@ -205,7 +205,7 @@ facts("run GBD iterations based on no-good cuts") do
         @fact result.status --> :Infeasible
         @fact result.solution --> nothing
         @fact result.dualbound --> Inf
-        @fact result.niter --> 12
+        @fact result.niter --> 2
     end
 end
 

@@ -176,6 +176,20 @@ function nogood{T<:Real}(model::Model, vars::Array{Variable}, sol::Array{T})
     return 1
 end
 
+"Add tangent cut to quadratic inequality (ϕ ≥ q^2) if violated."
+function quadratic_tangent(model, q, ϕ, qsol, ϕsol)
+    ɛ = 1e-6 # TODO: move to appropriate place
+    violated = ϕsol < qsol^2 - ɛ
+    if !violated
+        return 0
+    end
+
+    # add 1st order Taylor approx:
+    # q^2 ≈ 2*qsol*(q - qsol) + qsol^2 = 2*qsol*q - qsol^2
+    @constraint(model, ϕ ≥ 2*qsol*q - qsol^2)
+    return 1
+end
+
 """
 Find tightest linear overestimator for given values v.
 
@@ -303,7 +317,8 @@ function gndstruct_discdiam_critpathcuts(inst::Instance, topo::Topology,
     ncuts = 0
 
     # compute dense dual flow
-    dualflow = fill(0.0, length(topo.arcs))
+    narcs = length(topo.arcs)
+    dualflow = fill(0.0, narcs)
     actarcs = collect(sum(cand.zsol, 2) .> 0)
     dualflow[actarcs] = sub.μ
 
@@ -313,7 +328,10 @@ function gndstruct_discdiam_critpathcuts(inst::Instance, topo::Topology,
         ncuts += gndstruct_discdiam_pathcut(inst, topo, master, cand, path)
     end
 
-    # TODO: add new linearizations for squared flows if separating
+    for aidx in 1:narcs
+        ncuts += quadratic_tangent(master.model, master.q[aidx], master.ϕ[aidx],
+                                   cand.qsol[aidx], cand.ϕsol[aidx])
+    end
 
     return ncuts
 end
