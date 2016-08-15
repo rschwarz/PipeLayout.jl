@@ -178,7 +178,6 @@ end
 
 "Add tangent cut to quadratic inequality (ϕ ≥ q^2) if violated."
 function quadratic_tangent(model, q, ϕ, qsol, ϕsol)
-    ɛ = 1e-6 # TODO: move to appropriate place
     violated = ϕsol < qsol^2 - ɛ
     if !violated
         return 0
