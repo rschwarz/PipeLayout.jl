@@ -1,4 +1,5 @@
-import PipeLayout: squaregrid, CandSol, gndstruct_discdiam_master, gndstruct_discdiam_sub, gndstruct_discdiam_algorithm, linear_overest
+import PipeLayout: squaregrid
+import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest
 using JuMP
 
 facts("solve master problem (ground structure, discrete diameters)") do
@@ -12,7 +13,7 @@ facts("solve master problem (ground structure, discrete diameters)") do
                     fill(Bounds(60,80), 3),
                     [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]])
     topo = squaregrid(2, 3, 20.0, antiparallel=true)
-    model, y, z, q = gndstruct_discdiam_master(inst, topo)
+    model, y, z, q = make_master(inst, topo)
 
     status = solve(model)
     @fact status --> :Optimal
@@ -69,7 +70,7 @@ facts("solve subproblem (ground structure, discrete diameters)") do
 
     context("feasible subproblem") do
         cand = CandSol(zsol, qsol, fill(0.0, narcs))
-        model, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
+        model, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand)
         status = solve(model)
         @fact status --> :Optimal
 
@@ -93,7 +94,7 @@ facts("solve subproblem (ground structure, discrete diameters)") do
 
     context("infeasible subproblem") do
         cand = CandSol(zsol, 10 * qsol, fill(0.0, narcs)) # scaled
-        model, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
+        model, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand)
         status = solve(model)
         @fact status --> :Optimal
 
@@ -154,7 +155,7 @@ facts("run GBD iterations based on no-good cuts") do
     context("low flow: very easy instance") do
         inst = Instance(nodes, 1*demand, bounds, diams)
 
-        result = gndstruct_discdiam_algorithm(inst, topo)
+        result = run(inst, topo)
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
@@ -170,7 +171,7 @@ facts("run GBD iterations based on no-good cuts") do
     context("medium flow: difficult instance") do
         inst = Instance(nodes, 5*demand, bounds, diams)
 
-        result = gndstruct_discdiam_algorithm(inst, topo)
+        result = run(inst, topo)
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
@@ -186,7 +187,7 @@ facts("run GBD iterations based on no-good cuts") do
     context("high flow: iteration limit instance") do
         inst = Instance(nodes, 10*demand, bounds, diams)
 
-        result = gndstruct_discdiam_algorithm(inst, topo; maxiter=4)
+        result = run(inst, topo; maxiter=4)
         @fact result.status --> :UserLimit
         @fact result.solution --> nothing
         @fact result.dualbound --> roughly(72.0)
@@ -201,7 +202,7 @@ facts("run GBD iterations based on no-good cuts") do
         topo3 = Topology([Node(0,0), Node(50,0), Node(30, 40)],
                          [Arc(1,3), Arc(1,2), Arc(2,3)])
 
-        result = gndstruct_discdiam_algorithm(inst3, topo3)
+        result = run(inst3, topo3)
         @fact result.status --> :Infeasible
         @fact result.solution --> nothing
         @fact result.dualbound --> Inf

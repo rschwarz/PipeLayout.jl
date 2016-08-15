@@ -101,9 +101,9 @@ end
 
 draw(topo::Topology) = draw(topo2net(topo))
 
-function draw(topo::Topology, cand::CandSol)
-    ndiam = size(cand.zsol, 2)
-    pipediam = cand.zsol * collect(linspace(1,ndiam,ndiam))
+function draw(topo::Topology, zsol::Vector{Float64})
+    ndiam = size(zsol, 2)
+    pipediam = zsol * collect(linspace(1,ndiam,ndiam))
 
     actarcs = Arc[]
     actdiam = Float64[]
@@ -157,7 +157,7 @@ function draw_subsol(nodes::Vector{Node}, viol::Vector{Float64})
     # TODO: maybe draw pressure loss on arcs?
 end
 
-function draw_dual(topo::Topology, cand::CandSol, λ::Vector{Float64},
+function draw_dual(topo::Topology, zsol::Vector{Float64}, λ::Vector{Float64},
                    μ::Vector{Float64})
     n,m = length(topo.nodes), length(topo.arcs)
     nodepos = reshape(reinterpret(Float64, topo.nodes), (2,n))'
@@ -168,7 +168,7 @@ function draw_dual(topo::Topology, cand::CandSol, λ::Vector{Float64},
     markercolor = [v > 0 ? RGB(1,.5,.5) : RGB(.5,.5,1) for v in λ]
     markerlabel = map(x -> text(x, 9), 1:length(topo.nodes))
 
-    candarcs = filter(a -> any(cand.zsol[a,:]), 1:m)
+    candarcs = filter(a -> any(zsol[a,:]), 1:m)
     μdense = fill(0, m)
     μdense[candarcs] = round(Int, 5 * μ / maximum(μ))
     arcs = reshape(reinterpret(Int, topo.arcs), (2,m))

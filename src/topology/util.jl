@@ -1,6 +1,6 @@
 using LightGraphs: DiGraph, add_edge!
 
-export pipelengths
+export arcindex, is_tree, pipelengths
 
 function digraph_from_topology(topology::Topology)
     n = length(topology.nodes)

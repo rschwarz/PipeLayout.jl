@@ -17,11 +17,14 @@ include("flow.jl") # needs topology
 
 # optimization models and approaches
 module PipeDimensioning
-importall ..PipeLayout
+using ..PipeLayout
 include("models/pipedimensioning.jl")
 end
 
+module GndStructDiscDiam
+using ..PipeLayout
 include("models/gndstruct_discdiam.jl")
+end
 
 # visualization
 include("draw.jl")

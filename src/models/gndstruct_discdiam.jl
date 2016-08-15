@@ -57,8 +57,7 @@ function topology_from_candsol(topo::Topology, ysol::Vector{Float64})
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
-function gndstruct_discdiam_master(inst::Instance, topo::Topology;
-                                   solver=GLPKSolverMIP())
+function make_master(inst::Instance, topo::Topology; solver=GLPKSolverMIP())
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -120,8 +119,8 @@ Build model for subproblem (ground structure with discrete diameters).
 
 Corresponds to the domain relaxation with pressure loss overestimation.
 """
-function gndstruct_discdiam_sub(inst::Instance, topo::Topology, cand::CandSol;
-                                solver=GLPKSolverLP())
+function make_sub(inst::Instance, topo::Topology, cand::CandSol;
+                  solver=GLPKSolverLP())
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -231,9 +230,8 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int)
 end
 
 "Linearized & reformulated cut based on single path."
-function gndstruct_discdiam_pathcut(inst::Instance, topo::Topology,
-                                    master::Master, cand::CandSol,
-                                    path::Vector{Arc})
+function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
+                 path::Vector{Arc})
     aidx = arcindex(topo)
     pathidx = [aidx[arc] for arc in path]
     npath = length(path)
@@ -310,9 +308,8 @@ function gndstruct_discdiam_pathcut(inst::Instance, topo::Topology,
 end
 
 "Linearized & reformulated cuts based on critical paths."
-function gndstruct_discdiam_critpathcuts(inst::Instance, topo::Topology,
-                                         master::Master, cand::CandSol,
-                                         sub::SubDualSol)
+function critpathcuts(inst::Instance, topo::Topology, master::Master,
+                      cand::CandSol, sub::SubDualSol)
     ncuts = 0
 
     # compute dense dual flow
@@ -324,7 +321,7 @@ function gndstruct_discdiam_critpathcuts(inst::Instance, topo::Topology,
     paths, pathflow = flow_path_decomp(topo, dualflow)
 
     for path in paths
-        ncuts += gndstruct_discdiam_pathcut(inst, topo, master, cand, path)
+        ncuts += pathcut(inst, topo, master, cand, path)
     end
 
     for aidx in 1:narcs
@@ -336,20 +333,19 @@ function gndstruct_discdiam_critpathcuts(inst::Instance, topo::Topology,
 end
 
 "Construct all Benders cuts from the solution of a subproblem."
-function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Master,
-                                 cand::CandSol, sub::SubDualSol)
+function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
+              sub::SubDualSol)
     ncuts = 0
     ncuts += nogood(master.model, master.z, cand.zsol)
-    ncuts += gndstruct_discdiam_critpathcuts(inst, topo, master, cand, sub)
+    ncuts += critpathcuts(inst, topo, master, cand, sub)
     ncuts
 end
 
 "Iteration based implementation of GBD."
-function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology;
-                                      maxiter::Int=100, debug=false)
+function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
 
     # initialize
-    master = Master(gndstruct_discdiam_master(inst, topo)...)
+    master = Master(make_master(inst, topo)...)
     dual, status = 0.0, :NotSolved
 
     for iter=1:maxiter
@@ -380,7 +376,7 @@ function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology;
         end
 
         # solve subproblem (from scratch, no warmstart)
-        submodel, π, Δl, Δu, ploss, plb, pub = gndstruct_discdiam_sub(inst, topo, cand)
+        submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand)
         substatus = solve(submodel)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
@@ -392,7 +388,7 @@ function gndstruct_discdiam_algorithm(inst::Instance, topo::Topology;
         dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
 
         # generate cuts and add to master
-        ncuts = gndstruct_discdiam_cuts(inst, topo, master, cand, dualsol)
+        ncuts = cuts(inst, topo, master, cand, dualsol)
         debug && println("  added $(ncuts) cuts.")
     end
 
