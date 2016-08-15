@@ -205,7 +205,7 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int)
     @constraint(model, overest[i=1:m, j=1:n], a[i] + b[j] + c == values[i,j] + t[i,j])
 
     # be exact at candidate solution
-    @constraint(model, t[cand_i, cand_j] ≤ 0)
+    @constraint(model, t[cand_i, cand_j] == 0)
 
     # be as tight as possible everywhere else
     @objective(model, :Min, sum{t[i,j], i=1:m, j=1:n})
@@ -227,40 +227,95 @@ function gndstruct_discdiam_pathcut(inst::Instance, topo::Topology,
     ndiam = length(inst.diameters)
     zsol = cand.zsol[pathidx,:] # sparse solution
     D = [diam.value for diam in inst.diameters]
-    πlb = [b.lb^2 for b in inst.bounds]
-    πub = [b.ub^2 for b in inst.bounds]
+
+    # set loose pressure bounds for non-terminal nodes
+    terminals = indexin(inst.nodes, topo.nodes)
+    nnodes = length(topo.nodes)
+    πlb_min = minimum([b.lb for b in inst.pressure])^2
+    πub_max = maximum([b.ub for b in inst.pressure])^2
+    πlb = fill(πlb_min, nnodes)
+    πub = fill(πub_max, nnodes)
+    πlb[terminals] = [b.lb^2 for b in inst.pressure]
+    πub[terminals] = [b.ub^2 for b in inst.pressure]
 
     # coefficients of z in supremum expression
-    β =  (zsol * D.^(-5)) * (D.^5)'
+    β = (zsol * D.^(-5)) * (D.^5)'
     @assert all(β .> 0)
 
     # linearize the supremum, build up dense coefficient matrix
     coeffs = fill(0.0, (npath, ndiam))
+    offset = 0.0
     @assert size(coeffs) == size(β)
 
     # - tail of path
     tail = path[1].tail
     coeffs[1,:] += πub[tail] * β[1,:]
 
-    # - intermediate nodes
-    # TODO: call linear_overest
+    # - intermediate nodes, with in- and outgoing arcs
+    for v in 2:npath
+        uv, vw = path[v-1], path[v]
+        @assert uv.head == vw.tail
+        node = uv.head
+
+        # prepare all possible values that need to be overestimated
+        supvalues = zeros(ndiam + 1, ndiam + 1)
+        # the case where no diameter is selected on the first arc
+        supvalues[1, 2:end] = β[v, :] * πub[node]
+        # similarly for no diameter on the second arc
+        supvalues[2:end, 1] = - β[v-1, :] * πlb[node]
+        # finally, when both arcs are active
+        βdiff = repmat(β[v, :]', 1, ndiam) - repmat(β[v-1, :], ndiam, 1)
+        supvalues[2:end, 2:end] = max(βdiff * πub[node], βdiff * πlb[node])
+
+        # the current values should be met exactly
+        cand_i = findfirst(zsol[v-1,:], true)
+        cand_j = findfirst(zsol[v,:], true)
+        @assert cand_i ≠ 0 && cand_j ≠ 0
+
+        # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
+        cuv, cvw, c = linear_overest(supvalues, cand_i, cand_j)
+
+        # need to transform the coefficients to remove aux vars
+        coeffs[v-1,:] += cuv[2:end]' - cuv[1]
+        coeffs[v,:]   += cvw[2:end]' - cvw[1]
+        offset += c + cuv[1] + cvw[1]
+    end
 
     # - head of path
     head = path[end].head
     coeffs[end,:] += πlb[head] * β[end,:]
 
-    # TODO: create cons  coeffs * z ≥ sum α ϕ
+    # add cut:  coeffs * z + offset ≥ α * ϕ
+    z = master.z[pathidx,:]
+    ϕ = master.ϕ[pathidx]
+    C = ploss_coeff * pipelengths(topo)[pathidx]
+    α = (zsol * D.^(-5)) .* C
+    @constraint(master.model,
+                sum{coeffs[a,i]*z[a,i], a=1:npath, i=1:ndiam} + offset ≥
+                sum{α[a]*ϕ[a], a=1:npath})
+    return 1
 end
 
 "Linearized & reformulated cuts based on critical paths."
 function gndstruct_discdiam_critpathcuts(inst::Instance, topo::Topology,
                                          master::Master, cand::CandSol,
                                          sub::SubDualSol)
-    # TODO: do path decomposition
+    ncuts = 0
 
-    # TODO: add one cut for every path
+    # compute dense dual flow
+    dualflow = fill(0.0, length(topo.arcs))
+    actarcs = collect(sum(cand.zsol, 2) .> 0)
+    dualflow[actarcs] = sub.μ
+
+    paths, pathflow = flow_path_decomp(topo, dualflow)
+
+    for path in paths
+        ncuts += gndstruct_discdiam_pathcut(inst, topo, master, cand, path)
+    end
 
     # TODO: add new linearizations for squared flows if separating
+
+    return ncuts
 end
 
 "Construct all Benders cuts from the solution of a subproblem."
@@ -268,6 +323,7 @@ function gndstruct_discdiam_cuts(inst::Instance, topo::Topology, master::Master,
                                  cand::CandSol, sub::SubDualSol)
     ncuts = 0
     ncuts += nogood(master.model, master.z, cand.zsol)
+    ncuts += gndstruct_discdiam_critpathcuts(inst, topo, master, cand, sub)
     ncuts
 end
 
