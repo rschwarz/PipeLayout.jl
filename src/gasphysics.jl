@@ -1,7 +1,7 @@
 import SIUnits
 using SIUnits.ShortUnits
 
-export Bar, Barg, weymouth
+export Bar, Barg, weymouth, ploss_coeff
 
 # adding Bar and Barg (gauge) as units
 const Bar = (10^5)Pa

@@ -1,5 +1,7 @@
 using LightGraphs: DiGraph, add_edge!
 
+export pipelengths
+
 function digraph_from_topology(topology::Topology)
     n = length(topology.nodes)
     dg = DiGraph(n)

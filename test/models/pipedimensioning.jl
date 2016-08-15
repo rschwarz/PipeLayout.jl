@@ -1,9 +1,9 @@
-import PipeLayout: pipedim_model
+import PipeLayout.PipeDimensioning: make_model
 using JuMP
 
 facts("check dimensioning on single pipe") do
     inst, topo = single_pipe()
-    model, π, l = pipedim_model(inst, topo)
+    model, π, l = make_model(inst, topo)
     status = solve(model)
     @fact status --> :Optimal
 

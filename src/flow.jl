@@ -1,6 +1,8 @@
 # utilities for network flow
 using LightGraphs: is_connected, incidence_matrix, fadj, badj
 
+export uniq_flow, flow_path_decomp
+
 "Compute unique flow on arcs for given topology and demand vector."
 function uniq_flow(topo::Topology, demand::Vector{Float64})
     length(topo.nodes) == length(demand) ||
