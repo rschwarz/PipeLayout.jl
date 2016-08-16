@@ -107,6 +107,14 @@ function make_master(inst::Instance, topo::Topology; solver=GLPKSolverMIP())
     # choose diameter for active arcs
     @constraint(model, choice[a=1:narcs], sum{z[a,d], d=1:ndiams} == y[a])
 
+    # exclude antiparallel arcs.
+    antiidx = antiparallelindex(topo)
+    for a in 1:narcs
+        if a < antiidx[a] # only at most once per pair
+            @constraint(model, y[a] + y[antiidx[a]] ≤ 1)
+        end
+    end
+
     L = pipelengths(topo)
     c = [diam.cost for diam in inst.diameters]
     @objective(model, :Min, sum{c[i] * L[a] * z[a,i], a=1:narcs, i=1:ndiams})
@@ -208,6 +216,14 @@ function make_semimaster(inst::Instance, topo::Topology; solver=GLPKSolverMIP())
 
     # allow flow only for active arcs
     @constraint(model, active[a=1:narcs], q[a] <= maxflow*y[a])
+
+    # exclude antiparallel arcs.
+    antiidx = antiparallelindex(topo)
+    for a in 1:narcs
+        if a < antiidx[a] # only at most once per pair
+            @constraint(model, y[a] + y[antiidx[a]] ≤ 1)
+        end
+    end
 
     # use cost of smallest diameter as topology-based relaxation
     L = pipelengths(topo)
