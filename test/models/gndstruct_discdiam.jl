@@ -337,7 +337,7 @@ facts("Solve semisubproblem with free z vars") do
         @fact length(candarcs) --> 1
         @fact size(z) --> (1, 2)
 
-        status = solve(model)
+        status = solve(model, suppress_warnings=true)
         @fact status --> :Infeasible
     end
 

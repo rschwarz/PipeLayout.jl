@@ -340,7 +340,7 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int)
     @objective(model, :Min, sum{t[i,j], i=1:m, j=1:n})
 
     # solve it
-    status = solve(model)
+    status = solve(model, suppress_warnings=true)
     @assert status == :Optimal
 
     getvalue(a), getvalue(b), getvalue(c)
@@ -471,7 +471,7 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) master problem, build candidate solution
-        status = solve(master.model)
+        status = solve(master.model, suppress_warnings=true)
         if status == :Infeasible
             debug && println("  relaxed master is infeasible :-(")
             return Result(:Infeasible, nothing, Inf, iter)
@@ -496,7 +496,7 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
 
         # solve subproblem (from scratch, no warmstart)
         submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand)
-        substatus = solve(submodel)
+        substatus = solve(submodel, suppress_warnings=true)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
@@ -527,7 +527,7 @@ function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) semimaster problem, build candidate solution
-        status = solve(mastermodel)
+        status = solve(mastermodel, suppress_warnings=true)
         if status == :Infeasible
             debug && println("  master problem is infeasible.")
             if primal == Inf
@@ -569,7 +569,7 @@ function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         cand = CandSol(zcand, qsol, qsol.^2)
 
         submodel, candarcs, z = make_semisub(inst, topo, cand)
-        substatus = solve(submodel)
+        substatus = solve(submodel, suppress_warnings=true)
         if substatus == :Optimal
             # have found improving solution?
             newobj = getobjectivevalue(submodel)
