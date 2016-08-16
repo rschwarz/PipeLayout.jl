@@ -2,6 +2,7 @@ using LightGraphs: DiGraph, add_edge!
 
 export arcindex, is_tree, pipelengths
 
+"Build a LightGraphs.DiGraph from a Topology"
 function digraph_from_topology(topology::Topology)
     n = length(topology.nodes)
     dg = DiGraph(n)
@@ -11,6 +12,7 @@ function digraph_from_topology(topology::Topology)
     dg
 end
 
+"Map to indices of arcs in topology."
 function arcindex(topology::Topology)
     index = Dict{Arc,Int}()
     for (i,arc) in enumerate(topology.arcs)
@@ -19,6 +21,7 @@ function arcindex(topology::Topology)
     index
 end
 
+"Checks whether given topology is a tree as undirected graph."
 function is_tree(topology::Topology)
     n = length(topology.nodes)
     m = length(topology.arcs)
