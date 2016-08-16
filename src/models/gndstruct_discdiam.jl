@@ -57,7 +57,8 @@ function topology_from_candsol(topo::Topology, ysol::Vector{Float64})
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
-function make_master(inst::Instance, topo::Topology; solver=GLPKSolverMIP())
+function make_master(inst::Instance, topo::Topology;
+                     solver=GLPKSolverMIP(msg_lev=0))
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -128,7 +129,7 @@ Build model for subproblem (ground structure with discrete diameters).
 Corresponds to the domain relaxation with pressure loss overestimation.
 """
 function make_sub(inst::Instance, topo::Topology, cand::CandSol;
-                  solver=GLPKSolverLP())
+                  solver=GLPKSolverLP(msg_lev=0))
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -178,7 +179,8 @@ Build master model using only arc selection y and flows q.
 This is used to enumerate (embedded) topologies, each of which is evaluated with
 a "semi-subproblem". Returns model and variables y, q.
 """
-function make_semimaster(inst::Instance, topo::Topology; solver=GLPKSolverMIP())
+function make_semimaster(inst::Instance, topo::Topology;
+                         solver=GLPKSolverMIP(msg_lev=0))
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -243,7 +245,7 @@ be used
 Returns model, list of candidate arcs and (sparse) variables z
 """
 function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
-                      solver=GLPKSolverMIP())
+                      solver=GLPKSolverMIP(msg_lev=0))
     nnodes = length(topo.nodes)
     arcs = topo.arcs
     termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
@@ -317,7 +319,7 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int)
     @assert 1 <= cand_i <= m
     @assert 1 <= cand_j <= n
 
-    solver = GLPKSolverLP()
+    solver = GLPKSolverLP(msg_lev=0)
     model = Model(solver=solver)
 
     # coefficients to be found
