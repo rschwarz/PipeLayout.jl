@@ -165,6 +165,58 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol;
 end
 
 """
+Build master model using only arc selection y and flows q.
+
+This is used to enumerate (embedded) topologies, each of which is evaluated with
+a "semi-subproblem". Returns model and variables y, q.
+"""
+function make_semimaster(inst::Instance, topo::Topology; solver=GLPKSolverMIP())
+    nodes, nnodes = topo.nodes, length(topo.nodes)
+    arcs, narcs = topo.arcs, length(topo.arcs)
+    terms, nterms = inst.nodes, length(inst.nodes)
+    termidx = [findfirst(nodes, t) for t in terms]
+    all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
+
+    # demand for all nodes, including junctions
+    dem = fill(0.0, nnodes)
+    for t in 1:nterms
+        dem[termidx[t]] = inst.demand[t]
+    end
+
+    # adjacency lists
+    inarcs, outarcs = [Int[] for v in 1:nnodes], [Int[] for v in 1:nnodes]
+    for a in 1:narcs
+        tail, head = arcs[a]
+        push!(inarcs[head], a)
+        push!(outarcs[tail], a)
+    end
+
+    # "big-M" bound for flow on arcs
+    const maxflow = 0.5 * sum(abs(inst.demand))
+
+    model = Model(solver=solver)
+
+    # select arcs from topology with y
+    @variable(model, y[1:narcs], Bin)
+
+    # flow through arcs
+    @variable(model, 0 <= q[1:narcs] <= maxflow)
+
+    # mass flow balance at nodes
+    @constraint(model, flowbalance[v=1:nnodes],
+                sum{q[a], a=inarcs[v]} - sum{q[a], a=outarcs[v]} == dem[v])
+
+    # allow flow only for active arcs
+    @constraint(model, active[a=1:narcs], q[a] <= maxflow*y[a])
+
+    L = pipelengths(topo)
+    cmin = inst.diameters[1].cost
+    @objective(model, :Min, sum{cmin * L[a] * y[a], a=1:narcs})
+
+    model, y, q
+end
+
+"""
 Build model for a problem where the topology y and flow q are fixed, but the
 diameters z are still free. This is between the master- and subproblem and can
 be used

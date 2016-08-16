@@ -1,5 +1,5 @@
 import PipeLayout: squaregrid
-import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest, make_semisub
+import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest, make_semimaster, make_semisub
 using JuMP
 
 facts("solve master problem (ground structure, discrete diameters)") do
@@ -221,6 +221,38 @@ facts("Linear overestimation of supremum terms") do
     @fact size(c) --> ()
 
     @fact a[cand_i] + b[cand_j] + c --> values[cand_i, cand_j]
+end
+
+facts("Solve semimaster without z vars") do
+    #       7    9      even arc numbers for
+    #   () - d2 - ()    reversed arcs
+    #   /1   /3   /5
+    #  s1 - () - d1
+    #    11   13
+    inst = Instance([Node(0,0), Node(40,0), Node(20, 20)],
+                    [-50, 20, 30],
+                    fill(Bounds(60,80), 3),
+                    [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]])
+    topo = squaregrid(2, 3, 20.0, antiparallel=true)
+    model, y, q = make_semimaster(inst, topo)
+
+    status = solve(model)
+    @fact status --> :Optimal
+
+    ysol = getvalue(y)
+    qsol = getvalue(q)
+
+    # shortest tree is obvious:
+    @fact ysol[11] --> roughly(1.0)
+    @fact ysol[13] --> roughly(1.0)
+    @fact ysol[4] --> roughly(1.0)
+    @fact sum(ysol) --> roughly(3.0) # all others 0
+
+    # uniq flow solution
+    @fact qsol[11] --> roughly(50.0)
+    @fact qsol[13] --> roughly(20.0)
+    @fact qsol[4] --> roughly(30.0)
+    @fact sum(qsol) --> roughly(100.0) # all others 0
 end
 
 facts("Solve semisubproblem with free z vars") do
