@@ -17,6 +17,14 @@ facts("check tree topology") do
     end
 end
 
+facts("check cycle finding") do
+    nodes = [Node(i,i^2) for i in 1:4]
+    arcs = [Arc(1,2), Arc(2,3), Arc(3,4), Arc(2,4)]
+
+    @fact Topology(nodes, arcs[1:3]) --> not(find_cycle)
+    @fact Topology(nodes, arcs) --> find_cycle
+end
+
 facts("check node distance and pipe lengths") do
     u, v, w = Node(0,0), Node(0,3), Node(4,0)
 

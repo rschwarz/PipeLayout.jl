@@ -1,6 +1,6 @@
-using LightGraphs: DiGraph, add_edge!
+using LightGraphs: Graph, DiGraph, add_edge!, neighbors
 
-export arcindex, antiparallelindex, is_tree, pipelengths
+export arcindex, antiparallelindex, is_tree, find_cycle, pipelengths
 
 "Build a LightGraphs.DiGraph from a Topology"
 function digraph_from_topology(topology::Topology)
@@ -43,6 +43,43 @@ function is_tree(topology::Topology)
     n = length(topology.nodes)
     m = length(topology.arcs)
     m == n-1 && is_connected(digraph_from_topology(topology))
+end
+
+"Finds (undirected) cycle."
+function find_cycle(topology::Topology)
+    nnodes = length(topology.nodes)
+    digraph = digraph_from_topology(topology)
+    graph = Graph(digraph)
+
+    # multistart DFS
+    visited = fill(false, nnodes) # across starts
+    for root in 1:nnodes
+        if visited[root] ≠ 0
+            continue
+        end
+
+        current = fill(false, nnodes) # from this root
+        stack = [(0,root)]
+
+        while length(stack) > 0 # not empty
+            u, v = pop!(stack)
+
+            for w in neighbors(graph, v)
+                if w == u
+                    continue # no antiparallel move
+                elseif !visited[w]
+                    push!(stack, (v, w))
+                elseif current[w]
+                    # TODO: extract arcs from cycle!
+                    return true
+                end
+            end
+
+            current[v] = true
+            visited[v] = true
+        end
+    end
+    return false
 end
 
 "Euclidean distance of two nodes"
