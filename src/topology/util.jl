@@ -21,10 +21,21 @@ function arcindex(topology::Topology)
     index
 end
 
-"Find indices of anti-parallel arcs."
+"""
+Find indices of anti-parallel arcs.
+
+Is 0 for arcs without anti-parallel arc.
+"""
 function antiparallelindex(topology::Topology)
     arcidx = arcindex(topology)
-    [arcidx[Arc(h,t)] for (a,(t,h)) in enumerate(topology.arcs)]
+    result = fill(0, length(arcidx))
+    for (a, (tail, head)) in enumerate(topology.arcs)
+        anti = Arc(head, tail)
+        if haskey(arcidx, anti)
+            result[a] = arcidx[anti]
+        end
+    end
+    result
 end
 
 "Checks whether given topology is a tree as undirected graph."
