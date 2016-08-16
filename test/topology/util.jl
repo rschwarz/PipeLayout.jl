@@ -1,4 +1,4 @@
-import PipeLayout: is_tree, dist, pipelengths
+import PipeLayout: dist
 
 facts("check tree topology") do
     nodes = [Node(i,i) for i in 1:3]
@@ -29,4 +29,23 @@ facts("check node distance and pipe lengths") do
     topo = Topology([u, v, w], arcs)
 
     @fact pipelengths(topo) --> roughly([3, 4, 5])
+end
+
+facts("check arcindex and antiparallelindex") do
+    nodes = [Node(0,0), Node(0,1), Node(1,0)]
+    arcs = [Arc(1,2), Arc(1,3), Arc(2,1), Arc(3,1)]
+    topo = Topology(nodes, arcs)
+
+    n, m = 3, 4
+
+    arcidx = arcindex(topo)
+    @fact length(arcidx) --> m
+    @fact arcidx[Arc(1,2)] --> 1
+    @fact arcidx[Arc(2,1)] --> 3
+    @fact haskey(arcidx, Arc(2,3)) --> false
+
+    antiidx = antiparallelindex(topo)
+    @fact length(antiidx) --> m
+    @fact antiidx[1] --> 3
+    @fact antiidx[3] --> 1
 end

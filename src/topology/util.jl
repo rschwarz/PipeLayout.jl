@@ -1,6 +1,6 @@
 using LightGraphs: DiGraph, add_edge!
 
-export arcindex, is_tree, pipelengths
+export arcindex, antiparallelindex, is_tree, pipelengths
 
 "Build a LightGraphs.DiGraph from a Topology"
 function digraph_from_topology(topology::Topology)
@@ -19,6 +19,12 @@ function arcindex(topology::Topology)
         index[arc] = i
     end
     index
+end
+
+"Find indices of anti-parallel arcs."
+function antiparallelindex(topology::Topology)
+    arcidx = arcindex(topology)
+    [arcidx[Arc(h,t)] for (a,(t,h)) in enumerate(topology.arcs)]
 end
 
 "Checks whether given topology is a tree as undirected graph."
