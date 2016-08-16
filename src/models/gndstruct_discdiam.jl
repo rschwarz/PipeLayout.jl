@@ -209,6 +209,7 @@ function make_semimaster(inst::Instance, topo::Topology; solver=GLPKSolverMIP())
     # allow flow only for active arcs
     @constraint(model, active[a=1:narcs], q[a] <= maxflow*y[a])
 
+    # use cost of smallest diameter as topology-based relaxation
     L = pipelengths(topo)
     cmin = inst.diameters[1].cost
     @objective(model, :Min, sum{cmin * L[a] * y[a], a=1:narcs})
@@ -493,4 +494,81 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
     end
 
     Result(:UserLimit, nothing, dual, maxiter)
+end
+
+"Iteration based decomposition with semimaster and ~subproblem."
+function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
+    narcs = length(topo.arcs)
+    ndiams = length(inst.diameters)
+
+    # initialize
+    primal, dual, status, bestsol = Inf, 0.0, :NotSolved, nothing
+    mastermodel, y, q = make_semimaster(inst, topo)
+
+    for iter=1:maxiter
+        debug && println("Iter $(iter)")
+
+        # resolve (relaxed) semimaster problem, build candidate solution
+        status = solve(mastermodel)
+        if status == :Infeasible
+            debug && println("  master problem is infeasible.")
+            if primal == Inf
+                # no solution was found
+                return Result(:Infeasible, nothing, Inf, iter)
+            else
+                @assert bestsol ≠ nothing
+                return Result(:Optimal, bestsol, dual, iter)
+            end
+        elseif status != :Optimal
+            error("Unexpected status: $(:status)")
+        end
+
+        ysol, qsol = getvalue(y), getvalue(q)
+        dual = getobjectivevalue(mastermodel)
+        if debug
+            println("  dual bound: $(dual)")
+            println("  cand. sol:$(find(qsol))")
+        end
+
+        # stopping criterion
+        if dual > primal - ɛ
+            @assert bestsol ≠ nothing
+            println("  proved optimality of best solution.")
+            return Result(:Optimal, bestsol, dual, iter)
+        end
+
+        # check whether candidate has tree topology
+        candtopo = topology_from_candsol(topo, ysol)
+        if !is_tree(candtopo)
+            debug && println("  skip non-tree topology")
+            nogood(mastermodel, y, ysol)
+            continue
+        end
+
+        # solve subproblem (from scratch, no warmstart)
+        zcand = fill(false, narcs, ndiams)
+        zcand[ysol .> 0.5, 1] = true
+        cand = CandSol(zcand, qsol, qsol.^2)
+
+        submodel, candarcs, z = make_semisub(inst, topo, cand)
+        substatus = solve(submodel)
+        if substatus == :Optimal
+            # have found improving solution?
+            newobj = getobjectivevalue(submodel)
+            if newobj < primal
+                primal = newobj
+                znew = fill(false, narcs, ndiams)
+                znew[candarcs,:] = (getvalue(z) .> 0.5)
+                bestsol = CandSol(znew, qsol, qsol.^2)
+                debug && println("  found improving solution: $(primal)")
+            end
+        elseif substatus != :Infeasible
+            error("Unexpected status: $(:substatus)")
+        end
+
+        # generate nogood cut and add to master
+        nogood(mastermodel, y, ysol)
+    end
+
+    Result(:UserLimit, bestsol, dual, maxiter)
 end

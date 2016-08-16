@@ -1,5 +1,5 @@
 import PipeLayout: squaregrid
-import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest, make_semimaster, make_semisub
+import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest, make_semimaster, make_semisub, run_semi
 using JuMP
 
 facts("solve master problem (ground structure, discrete diameters)") do
@@ -341,4 +341,72 @@ facts("Solve semisubproblem with free z vars") do
         @fact status --> :Infeasible
     end
 
+end
+
+facts("Solve semi decomposition with nogoods on y") do
+    #       7    9      even arc numbers for
+    #   () - d2 - ()    reversed arcs
+    #   /1   /3   /5
+    #  s1 - () - d1
+    #    11   13
+
+    # slightly irregular grid
+    nodes = [Node(0,0), Node(45,0), Node(25, 22)]
+    demand = [-50, 20, 30]
+    bounds = fill(Bounds(60,80), 3)
+    diams = [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]]
+
+    topo = Topology([Node(t...) for t in [(0,22), (0,0), (25,22), (25,0), (45,22), (45,0)]],
+                    [Arc(t...) for t in [(1,2), (2,1), (3,4), (4,3), (5,6), (6,5),
+                                         (1,3), (3,1), (3,5), (5,3),
+                                         (2,4), (4,2), (4,6), (6,4)]])
+
+    context("low flow: very easy instance") do
+        inst = Instance(nodes, 1 * demand, bounds, diams)
+        result = run_semi(inst, topo)
+        @fact result.status --> :Optimal
+
+        zsol = result.solution.zsol
+        qsol = result.solution.qsol
+
+        # shortest tree is obvious, smallest diameter enough:
+        @fact zsol[11, 1] --> roughly(1.0)
+        @fact zsol[13, 1] --> roughly(1.0)
+        @fact zsol[4, 1] --> roughly(1.0)
+        @fact sum(zsol) --> roughly(3.0) # all others 0
+
+        # uniq flow solution
+        @fact qsol[11] --> roughly(50.0)
+        @fact qsol[13] --> roughly(20.0)
+        @fact qsol[4] --> roughly(30.0)
+        @fact sum(qsol) --> roughly(100.0) # all others 0
+    end
+
+    context("medium flow: difficult instance") do
+        inst = Instance(nodes, 10 * demand, bounds, diams)
+        result = run_semi(inst, topo)
+        @fact result.status --> :Optimal
+
+        zsol = result.solution.zsol
+        qsol = result.solution.qsol
+
+        # shortest tree is obvious, need one large diameter
+        @fact zsol[2, 2] --> true
+        @fact zsol[7, 2] --> true
+        @fact zsol[11, 1] --> true
+        @fact zsol[13, 2] --> true
+        @fact sum(zsol) --> roughly(4.0) # all others 0
+    end
+
+    context("high flow on triangle: infeasible instance") do
+        inst = Instance([Node(0,0), Node(50,0)],
+                        [-1000, 1000],
+                        [Bounds(60,80), Bounds(60,80)],
+                        [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]])
+        topo = Topology([Node(0,0), Node(50,0), Node(30, 40)],
+                        [Arc(1,3), Arc(1,2), Arc(2,3)])
+
+        result = run_semi(inst, topo)
+        @fact result.status --> :Infeasible
+    end
 end
