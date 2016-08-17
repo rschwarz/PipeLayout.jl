@@ -51,35 +51,33 @@ function find_cycle(topology::Topology)
     digraph = digraph_from_topology(topology)
     graph = Graph(digraph)
 
-    # multistart DFS
-    visited = fill(false, nnodes) # across starts
-    for root in 1:nnodes
-        if visited[root] ≠ 0
-            continue
-        end
+    # assume that graph is connected, so starting from single root is OK
 
-        current = fill(false, nnodes) # from this root
-        stack = [(0,root)]
+    # initialize DFS
+    root = 1
+    stack = [(root, root)] # collect unvisited nodes with parent
+    parent = fill(0, nnodes) # 0 means not visited
 
-        while length(stack) > 0 # not empty
-            u, v = pop!(stack)
-
-            for w in neighbors(graph, v)
-                if w == u
-                    continue # no antiparallel move
-                elseif !visited[w]
-                    push!(stack, (v, w))
-                elseif current[w]
-                    # TODO: extract arcs from cycle!
-                    return true
+    # run search
+    while length(stack) > 0 # not empty
+        from, current = pop!(stack)
+        parent[current] = from
+        for to in neighbors(graph, current)
+            if to == from
+                continue # no antiparallel move
+            elseif parent[to] == 0 # not visited
+                push!(stack, (current, to))
+            else # found cycle, run it in reverse
+                path = [Arc(to, current)]
+                backtrack = current
+                while backtrack ≠ to
+                    push!(path, Arc(backtrack, parent[backtrack]))
+                    backtrack = parent[backtrack]
                 end
+                return path
             end
-
-            current[v] = true
-            visited[v] = true
         end
     end
-    return false
 end
 
 "Euclidean distance of two nodes"
