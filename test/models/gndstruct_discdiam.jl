@@ -134,7 +134,7 @@ facts("solve subproblem (ground structure, discrete diameters)") do
     end
 end
 
-facts("run GBD iterations based on no-good cuts") do
+facts("run GBD iterations") do
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
     #   /1   /3   /5
@@ -185,12 +185,12 @@ facts("run GBD iterations based on no-good cuts") do
     end
 
     context("high flow: iteration limit instance") do
-        inst = Instance(nodes, 10*demand, bounds, diams)
+        inst = Instance(nodes, 30*demand, bounds, diams)
 
         result = run(inst, topo; maxiter=4)
         @fact result.status --> :UserLimit
         @fact result.solution --> nothing
-        @fact result.dualbound --> roughly(72.0)
+        @fact result.dualbound --> roughly(127.4)
         @fact result.niter --> 4
     end
 
