@@ -450,6 +450,17 @@ function critpathcuts(inst::Instance, topo::Topology, master::Master,
     return ncuts
 end
 
+"Cut off all y values for given, undirected topology"
+function avoid_topo_cut(model, y, topo::Topology, edges::Vector{Arc})
+    arcidx = arcindex(topo)
+    antidx = antiparallelindex(topo)
+
+    fwd = [arcidx[e] for e in edges]
+    bwd = [antidx[a] for a in fwd]
+    arcs = vcat(fwd, bwd)
+    @constraint(model, sum{y[a], a in arcs} ≤ length(edges) - 1)
+end
+
 "Construct all Benders cuts from the solution of a subproblem."
 function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
               sub::SubDualSol)
@@ -489,8 +500,9 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         # check whether candidate has tree topology
         candtopo = topology_from_candsol(topo, getvalue(master.y))
         if !is_tree(candtopo)
-            debug && println("  skip non-tree topology")
-            nogood(master.model, master.y, getvalue(master.y))
+            cycle = find_cycle(candtopo)
+            avoid_topo_cut(master.model, master.y, topo, cycle)
+            debug && println("  skip non-tree topology, cycle: $(cycle)")
             continue
         end
 
