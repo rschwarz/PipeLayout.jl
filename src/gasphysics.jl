@@ -64,7 +64,13 @@ const z_m = aga8(p_m, T_m)
 const weymouth = (π/4)^(-2) * λ * R_s * z_m * T_m
 @assert !isa(weymouth, Real)
 
+# alternative coefficient with same order of magnitude for nice, round numbers
+const weymouth_nice = 3000m^2/s^2
+@assert isa(weymouth/weymouth_nice, Real) # same unit
+
 # Unit-less Weymouth coefficient: Add types for length, diameters and flow, then
 # divide by the expected type to get just a float
 const ploss_coeff = weymouth * (km*m^(-5)*(kg/s)^2) / (Bar^2)
+const ploss_coeff_nice = weymouth_nice * (km*m^(-5)*(kg/s)^2) / (Bar^2)
 @assert isa(ploss_coeff, Real)
+@assert isa(ploss_coeff_nice, Real)
