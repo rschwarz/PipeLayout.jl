@@ -134,6 +134,41 @@ facts("solve subproblem (ground structure, discrete diameters)") do
     end
 end
 
+facts("compare relaxation and exact for subproblem") do
+    #     __s1__  __s2
+    #   t3      t4
+    nodes = [Node(100,0), Node(300,0), Node(0,0), Node(200,0)]
+    arcs = [Arc(1,3), Arc(1,4), Arc(2,4)]
+    topo = Topology(nodes, arcs)
+
+    demand = [-600, -400, 400, 600]
+    bounds = fill(Bounds(40, 80), 4)
+    diams = [Diameter(1.0, 1.0), Diameter(2.0, 2.0)]
+    inst = Instance(nodes, demand, bounds, diams)
+
+    zsol = [true false; true false; true false]
+    qsol = [400, 200, 400]
+    cand = CandSol(zsol, qsol, qsol.^2)
+
+    context("solving the exact subproblem") do
+        model, π, Δl, Δu, ploss, plb, pub =
+            make_sub(inst, topo, cand, relaxed=false,
+                     ploss_override=ploss_coeff_nice)
+        status = solve(model)
+        @fact status --> :Optimal
+        @fact getobjectivevalue(model) --> roughly(3600)
+    end
+
+    context("solving the relaxation") do
+        model, π, Δl, Δu, ploss, plb, pub =
+            make_sub(inst, topo, cand, relaxed=true,
+                     ploss_override=ploss_coeff_nice)
+        status = solve(model)
+        @fact status --> :Optimal
+        @fact getobjectivevalue(model) --> roughly(0)
+    end
+end
+
 facts("run GBD iterations") do
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs

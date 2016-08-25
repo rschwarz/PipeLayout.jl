@@ -126,15 +126,22 @@ end
 """
 Build model for subproblem (ground structure with discrete diameters).
 
-Corresponds to the domain relaxation with pressure loss overestimation.
+Corresponds to the domain relaxation with pressure loss overestimation, which
+can be turned off via the flag `relaxed`.
 """
 function make_sub(inst::Instance, topo::Topology, cand::CandSol;
-                  solver=GLPKSolverLP(msg_lev=0))
+                  solver=GLPKSolverLP(msg_lev=0), relaxed::Bool=true,
+                  ploss_override::Float64=NaN)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
     termidx = [findfirst(nodes, t) for t in terms]
     ndiams = length(inst.diameters)
+
+    # TODO: why can't I set `ploss_coeff` as default value?
+    if ploss_override === NaN # damn NaN
+        ploss_override = ploss_coeff
+    end
 
     candarcs = filter(a -> any(cand.zsol[a,:]), 1:narcs)
     ncandarcs = length(candarcs)
@@ -150,9 +157,15 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol;
 
     # overestimated pressure loss inequalities
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
-    C = ploss_coeff * pipelengths(topo)[candarcs]
+    C = ploss_override * pipelengths(topo)[candarcs]
     α = C .* cand.qsol[candarcs].^2 .* (cand.zsol[candarcs,:] * Dm5)
-    @constraint(model, ploss[ca=1:ncandarcs], π[tail[ca]] - π[head[ca]] ≥ α[ca])
+    if relaxed
+        @constraint(model, ploss[ca=1:ncandarcs],
+                    π[tail[ca]] - π[head[ca]] ≥ α[ca])
+    else
+        @constraint(model, ploss[ca=1:ncandarcs],
+                    π[tail[ca]] - π[head[ca]] == α[ca])
+    end
 
     # slack variables to relax the lower and upper bounds for π.
     termlb = [b.lb^2 for b in inst.pressure]
