@@ -485,7 +485,8 @@ function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
 end
 
 "Iteration based implementation of GBD."
-function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
+function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
+             ploss_override=NaN)
 
     # initialize
     master = Master(make_master(inst, topo)...)
@@ -520,14 +521,16 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         end
 
         # solve subproblem (from scratch, no warmstart)
-        submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand)
+        submodel, π, Δl, Δu, ploss, plb, pub =
+            make_sub(inst, topo, cand, ploss_override=ploss_override)
         substatus = solve(submodel, suppress_warnings=true)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
-            submodel2, _ = make_sub(inst, topo, cand, relaxed=false)
+            submodel2, _ = make_sub(inst, topo, cand, relaxed=false,
+                                    ploss_override=ploss_override)
             substatus2 = solve(submodel2, suppress_warnings=true)
             @assert substatus2 == :Optimal "Slack model is always feasible"
             totalslack2 = getobjectivevalue(submodel2)
