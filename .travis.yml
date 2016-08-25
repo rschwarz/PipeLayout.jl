@@ -3,10 +3,15 @@ language: julia
 os:
   - linux
 julia:
-  - release
+  - 0.4
+  - 0.5
   - nightly
 notifications:
   email: false
+sudo: false # use a docker worker
+addons:
+  apt_packages:
+  - libgmp-dev
 # uncomment the following lines to override the default test script
 #script:
 #  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
