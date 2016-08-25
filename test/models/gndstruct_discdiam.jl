@@ -243,6 +243,27 @@ facts("run GBD iterations") do
         @fact result.dualbound --> Inf
         @fact result.niter --> 2
     end
+
+    facts("on the example with subproblem/relaxation gap") do
+        #     __s1__  __s2
+        #   t3      t4
+        nodes = [Node(100,0), Node(300,0), Node(0,0), Node(200,0)]
+        arcs = [Arc(1,3), Arc(1,4), Arc(2,4)]
+        topo = Topology(nodes, arcs)
+
+        demand = [-600, -400, 400, 600]
+        bounds = fill(Bounds(40, 80), 4)
+        diams = [Diameter(1.0, 1.0), Diameter(2.0, 2.0)]
+        inst = Instance(nodes, demand, bounds, diams)
+
+        result = run(inst, topo, ploss_override=ploss_coeff_nice)
+        @fact result.status --> :Optimal
+        zsol = result.solution.zsol
+        @fact sum(zsol[:,2]) --> 1
+        @fact sum(zsol[:,1]) --> 2 # solution not quite uniqe
+        @fact result.dualbound --> roughly(400.0)
+        @fact result.niter --> 2
+    end
 end
 
 facts("Linear overestimation of supremum terms") do
