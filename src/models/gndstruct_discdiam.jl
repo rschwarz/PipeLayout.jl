@@ -525,13 +525,23 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
-            # TODO: should check whether subsolution is only feasible for
-            # relaxation (overestimated pressure loss). If so, should cut off
-            # current candidate with nogood. Maybe this is also a good time to
-            # solve MIP-subproblem with free z?
+            # maybe only the relaxation is feasible, we have to check also the
+            # "exact" subproblem with equations constraints.
+            submodel2, _ = make_sub(inst, topo, cand, relaxed=false)
+            substatus2 = solve(submodel2, suppress_warnings=true)
+            @assert substatus2 == :Optimal "Slack model is always feasible"
+            totalslack2 = getobjectivevalue(submodel2)
+            # TODO: do more efficiently by looking at constraint slacks?
 
-            debug && println("  found feasible solution :-)")
-            return Result(:Optimal, cand, dual, iter)
+            if totalslack2 ≈ 0.0
+                debug && println("  found feasible solution :-)")
+                return Result(:Optimal, cand, dual, iter)
+            else
+                # cut off candidate with no-good on z
+                debug && println("  subproblem/relaxation gap!")
+                nogood(master.model, master.z, cand.zsol)
+                continue
+            end
         end
 
         dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
