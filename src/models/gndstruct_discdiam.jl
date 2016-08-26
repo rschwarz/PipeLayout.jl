@@ -138,7 +138,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol;
     termidx = [findfirst(nodes, t) for t in terms]
     ndiams = length(inst.diameters)
 
-    # TODO: why can't I set `ploss_coeff` as default value?
+    # would like to set `ploss_coeff` as default value, but doesn't work?!
     if ploss_override === NaN # damn NaN
         ploss_override = ploss_coeff
     end
@@ -476,17 +476,21 @@ end
 
 "Construct all Benders cuts from the solution of a subproblem."
 function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
-              sub::SubDualSol)
-    # TODO: parametrize for computational experiments
+              sub::SubDualSol; addnogoods=true, addcritpath=true)
+    @assert any([addnogoods, addcritpath]) # must cut off!
     ncuts = 0
-    ncuts += nogood(master.model, master.z, cand.zsol)
-    ncuts += critpathcuts(inst, topo, master, cand, sub)
+    if addnogoods
+        ncuts += nogood(master.model, master.z, cand.zsol)
+    end
+    if addcritpath
+        ncuts += critpathcuts(inst, topo, master, cand, sub)
+    end
     ncuts
 end
 
 "Iteration based implementation of GBD."
 function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
-             ploss_override=NaN)
+             ploss_override=NaN, addnogoods=true, addcritpath=true)
 
     # initialize
     master = Master(make_master(inst, topo)...)
@@ -534,7 +538,6 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
             substatus2 = solve(submodel2, suppress_warnings=true)
             @assert substatus2 == :Optimal "Slack model is always feasible"
             totalslack2 = getobjectivevalue(submodel2)
-            # TODO: do more efficiently by looking at constraint slacks?
 
             if totalslack2 ≈ 0.0
                 debug && println("  found feasible solution :-)")
@@ -550,7 +553,8 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
         dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
 
         # generate cuts and add to master
-        ncuts = cuts(inst, topo, master, cand, dualsol)
+        ncuts = cuts(inst, topo, master, cand, dualsol,
+                     addnogoods=addnogoods, addcritpath=addcritpath)
         debug && println("  added $(ncuts) cuts.")
     end
 
