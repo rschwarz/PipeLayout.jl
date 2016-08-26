@@ -30,7 +30,7 @@ const λ = nikoradse(D_m, k)
 # universal gas constant (https://en.wikipedia.org/wiki/Gas_constant)
 const R = 8.3144598J/K/mol
 
-# molar mass of methane (TODO other mixture?)
+# molar mass of methane
 const molmass = 16.04g/mol
 
 # specific gas constant
@@ -42,7 +42,7 @@ const p_c = 46.4512Bar
 # critical temperature (default in Lamatto++)
 const T_c = 192.033K
 
-# mean pressure (TODO find rationale)
+# mean pressure
 const p_m = 60Bar
 
 # mean temperature (default in Lamatto++)
