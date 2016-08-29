@@ -43,8 +43,17 @@ immutable Result
     niter::Int
 end
 
-function topology_from_candsol(topo::Topology, ysol::Vector{Float64})
+"""
+Extract sub-topology from active arcs and incident nodes.
+
+The option `keep_nodes` allows to also include the isolated nodes.
+"""
+function topology_from_candsol(topo::Topology, ysol::Vector{Float64},
+                               keep_nodes=false)
     actarcs = topo.arcs[ysol .> 0.5]
+    if keep_nodes
+        return Topology(topo.nodes, actarcs)
+    end
     tails = [arc.tail for arc in actarcs]
     heads = [arc.head for arc in actarcs]
     nodeidx = tails ∪ heads
@@ -524,7 +533,8 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
         # check whether candidate has tree topology
         candtopo = topology_from_candsol(topo, getvalue(master.y))
         if !is_tree(candtopo)
-            cycle = find_cycle(candtopo)
+            fullcandtopo = topology_from_candsol(topo, getvalue(master.y), true)
+            cycle = find_cycle(fullcandtopo)
             avoid_topo_cut(master.model, master.y, topo, cycle)
             debug && println("  skip non-tree topology, cycle: $(cycle)")
             continue
