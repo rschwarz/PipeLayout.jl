@@ -367,6 +367,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     npath = length(path)
     ndiam = length(inst.diameters)
     zsol = cand.zsol[pathidx,:] # sparse solution
+    ϕsol = cand.ϕsol[pathidx,:] # sparse solution
     D = [diam.value for diam in inst.diameters]
 
     # set loose pressure bounds for non-terminal nodes
@@ -380,7 +381,10 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     πub[terminals] = [b.ub^2 for b in inst.pressure]
 
     # coefficients of z in supremum expression
-    β = (zsol * D.^(-5)) * (D.^5)'
+    ν = zsol * D.^(-5)
+    @assert length(ν) == npath
+    β = ν * (D.^5)'
+    @assert size(β) == (npath, ndiam)
     @assert all(β .> 0)
 
     # linearize the supremum, build up dense coefficient matrix
@@ -426,11 +430,13 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     head = path[end].head
     coeffs[end,:] += πlb[head] * β[end,:]
 
+    # coefficients of ϕ
+    C = ploss_coeff * pipelengths(topo)[pathidx]
+    α = ν .* C
+
     # add cut:  coeffs * z + offset ≥ α * ϕ
     z = master.z[pathidx,:]
     ϕ = master.ϕ[pathidx]
-    C = ploss_coeff * pipelengths(topo)[pathidx]
-    α = (zsol * D.^(-5)) .* C
     @constraint(master.model,
                 sum{coeffs[a,i]*z[a,i], a=1:npath, i=1:ndiam} + offset ≥
                 sum{α[a]*ϕ[a], a=1:npath})
