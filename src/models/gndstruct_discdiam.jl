@@ -372,7 +372,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     npath = length(path)
     ndiam = length(inst.diameters)
     zsol = cand.zsol[pathidx,:] # sparse solution
-    ϕsol = cand.ϕsol[pathidx,:] # sparse solution
+    qsol = cand.qsol[pathidx,:] # sparse solution
     D = [diam.value for diam in inst.diameters]
     @show pathidx
 
@@ -471,7 +471,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
                 sum{α[a]*ϕ[a], a=1:npath})
 
     println("lhs: $(sum(coeffs .* zsol) + offset)")
-    println("rhs: $(sum(α .* ϕsol)) == actual ploss")
+    println("rhs: $(sum(α .* qsol.^2)) == actual ploss")
     println("πub - πlb: $(πub[path[1].tail] - πlb[path[end].head])")
     println("--")
 
