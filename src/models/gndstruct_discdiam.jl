@@ -414,7 +414,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         @assert cand_i ≠ 0 && cand_j ≠ 0
 
         # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
-        cuv, cvw, c = linear_overest(supvalues, cand_i, cand_j)
+        cuv, cvw, c = linear_overest(supvalues, cand_i + 1, cand_j + 1)
 
         # need to transform the coefficients to remove aux vars
         coeffs[v-1,:] += cuv[2:end]' - cuv[1]
