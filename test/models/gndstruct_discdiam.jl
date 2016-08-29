@@ -1,4 +1,4 @@
-import PipeLayout: squaregrid
+import PipeLayout: squaregrid, ploss_coeff_nice
 import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest, make_semimaster, make_semisub, run_semi
 using JuMP
 
@@ -144,7 +144,7 @@ facts("compare relaxation and exact for subproblem") do
     demand = [-600, -400, 400, 600]
     bounds = fill(Bounds(40, 80), 4)
     diams = [Diameter(1.0, 1.0), Diameter(2.0, 2.0)]
-    inst = Instance(nodes, demand, bounds, diams)
+    inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
     zsol = [true false; true false; true false]
     qsol = [400, 200, 400]
@@ -152,8 +152,7 @@ facts("compare relaxation and exact for subproblem") do
 
     context("solving the exact subproblem") do
         model, π, Δl, Δu, ploss, plb, pub =
-            make_sub(inst, topo, cand, relaxed=false,
-                     ploss_override=ploss_coeff_nice)
+            make_sub(inst, topo, cand, relaxed=false)
         status = solve(model)
         @fact status --> :Optimal
         @fact getobjectivevalue(model) --> roughly(3600)
@@ -161,8 +160,7 @@ facts("compare relaxation and exact for subproblem") do
 
     context("solving the relaxation") do
         model, π, Δl, Δu, ploss, plb, pub =
-            make_sub(inst, topo, cand, relaxed=true,
-                     ploss_override=ploss_coeff_nice)
+            make_sub(inst, topo, cand, relaxed=true)
         status = solve(model)
         @fact status --> :Optimal
         @fact getobjectivevalue(model) --> roughly(0)
@@ -225,7 +223,7 @@ facts("run GBD iterations") do
         result = run(inst, topo; maxiter=4)
         @fact result.status --> :UserLimit
         @fact result.solution --> nothing
-        @fact result.dualbound --> roughly(127.4)
+        @fact result.dualbound --> roughly(174.4)
         @fact result.niter --> 4
     end
 
@@ -254,9 +252,9 @@ facts("run GBD iterations") do
         demand = [-600, -400, 400, 600]
         bounds = fill(Bounds(40, 80), 4)
         diams = [Diameter(1.0, 1.0), Diameter(2.0, 2.0)]
-        inst = Instance(nodes, demand, bounds, diams)
+        inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-        result = run(inst, topo, ploss_override=ploss_coeff_nice)
+        result = run(inst, topo)
         @fact result.status --> :Optimal
         zsol = result.solution.zsol
         @fact sum(zsol[:,2]) --> 1

@@ -1,6 +1,8 @@
 import SIUnits
 using SIUnits.ShortUnits
 
+import PipeLayout: weymouth
+
 facts("unit consistency in pressure loss") do
     const L = 100.0km
     const D = 1.0m

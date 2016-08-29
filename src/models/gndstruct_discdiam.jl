@@ -139,18 +139,12 @@ Corresponds to the domain relaxation with pressure loss overestimation, which
 can be turned off via the flag `relaxed`.
 """
 function make_sub(inst::Instance, topo::Topology, cand::CandSol;
-                  solver=GLPKSolverLP(msg_lev=0), relaxed::Bool=true,
-                  ploss_override::Float64=NaN)
+                  solver=GLPKSolverLP(msg_lev=0), relaxed::Bool=true)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
     termidx = [findfirst(nodes, t) for t in terms]
     ndiams = length(inst.diameters)
-
-    # would like to set `ploss_coeff` as default value, but doesn't work?!
-    if ploss_override === NaN # damn NaN
-        ploss_override = ploss_coeff
-    end
 
     candarcs = filter(a -> any(cand.zsol[a,:]), 1:narcs)
     ncandarcs = length(candarcs)
@@ -166,7 +160,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol;
 
     # overestimated pressure loss inequalities
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
-    C = ploss_override * pipelengths(topo)[candarcs]
+    C = inst.ploss_coeff * pipelengths(topo)[candarcs]
     α = C .* cand.qsol[candarcs].^2 .* (cand.zsol[candarcs,:] * Dm5)
     if relaxed
         @constraint(model, ploss[ca=1:ncandarcs],
@@ -287,7 +281,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
     L = pipelengths(topo)
     c = [diam.cost for diam in inst.diameters]
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
-    C = ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
+    C = inst.ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
 
     model = Model(solver=solver)
 
@@ -440,7 +434,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     coeffs[end,:] += πlb[head] * β[end,:]
 
     # coefficients of ϕ
-    C = ploss_coeff * pipelengths(topo)[pathidx]
+    C = inst.ploss_coeff * pipelengths(topo)[pathidx]
     α = ν .* C
 
     # add cut:  coeffs * z + offset ≥ α * ϕ
@@ -505,7 +499,7 @@ end
 
 "Iteration based implementation of GBD."
 function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
-             ploss_override=NaN, addnogoods=true, addcritpath=true)
+             addnogoods=true, addcritpath=true)
 
     # initialize
     master = Master(make_master(inst, topo)...)
@@ -541,16 +535,14 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
         end
 
         # solve subproblem (from scratch, no warmstart)
-        submodel, π, Δl, Δu, ploss, plb, pub =
-            make_sub(inst, topo, cand, ploss_override=ploss_override)
+        submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand)
         substatus = solve(submodel, suppress_warnings=true)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
-            submodel2, _ = make_sub(inst, topo, cand, relaxed=false,
-                                    ploss_override=ploss_override)
+            submodel2, _ = make_sub(inst, topo, cand, relaxed=false)
             substatus2 = solve(submodel2, suppress_warnings=true)
             @assert substatus2 == :Optimal "Slack model is always feasible"
             totalslack2 = getobjectivevalue(submodel2)

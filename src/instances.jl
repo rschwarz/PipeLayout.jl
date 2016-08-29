@@ -25,14 +25,19 @@ end
 An instance for the Pipe Layout Problem.
 
 It is defined by boundary nodes, a fixed and balanced flow demand, pressure
-bounds and available diameters.
+bounds and available diameters. The pressure loss coefficients is also
+specified, but is optional.
 """
 immutable Instance
     nodes::Vector{Node}
     demand::Vector{Float64} # [kg/s]
     pressure::Vector{Bounds}
     diameters::Vector{Diameter}
+    ploss_coeff::Float64 # [1e7 m2/s2]
 end
+
+Instance(nodes, demand, pressure, diameters) =
+    Instance(nodes, demand, pressure, diameters, ploss_coeff)
 
 "An arc is specified by integer indices to the node array"
 immutable Arc <: FixedVectorNoTuple{2, Int}
