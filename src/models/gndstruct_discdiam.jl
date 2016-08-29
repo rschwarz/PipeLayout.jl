@@ -395,7 +395,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     # @show ν
     @assert length(ν) == npath
     β = ν * (D.^5)'
-    # @show β
+    @show β
     @assert size(β) == (npath, ndiam)
     @assert all(β .> 0)
 
@@ -425,24 +425,25 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         supvalues[2:end, 2:end] = max(βdiff * πub[node], βdiff * πlb[node])
         # @show β[v, :] * πub[node]
         # @show - β[v-1, :] * πlb[node]
-        # @show repmat(β[v, :]', 1, ndiam)
-        # @show repmat(β[v-1, :], ndiam, 1)
-        # @show βdiff
-        # @show supvalues
+        @show repmat(β[v, :]', 1, ndiam)
+        @show repmat(β[v-1, :], ndiam, 1)
+        @show βdiff
+        @show supvalues
 
         # the current values should be met exactly
         cand_i = findfirst(zsol[v-1,:], true)
         cand_j = findfirst(zsol[v,:], true)
         @assert cand_i ≠ 0 && cand_j ≠ 0
-        # @show cand_i, cand_j
+        @show cand_i, cand_j
 
         # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
         cuv, cvw, c = linear_overest(supvalues, cand_i + 1, cand_j + 1)
-        # @show cuv, cvw, c
+        @show cuv, cvw, c
         # @show repmat(cuv, 1, ndiam + 1)
         # @show repmat(cvw', ndiam + 1, 1)
         # @show repmat(cuv, 1, ndiam + 1) + repmat(cvw', ndiam + 1, 1) + c
         # @show repmat(cuv, 1, ndiam + 1) + repmat(cvw', ndiam + 1, 1) + c - supvalues
+        @show cuv[cand_i] + cvw[cand_j]+ c - supvalues[cand_i, cand_j]
 
         # need to transform the coefficients to remove aux vars
         coeffs[v-1,:] += cuv[2:end]' - cuv[1]
