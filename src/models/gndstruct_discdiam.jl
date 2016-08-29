@@ -452,7 +452,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
 
     # - head of path
     head = path[end].head
-    coeffs[end,:] += πlb[head] * β[end,:]
+    coeffs[end,:] += -1 * πlb[head] * β[end,:]
 
     @show coeffs
     @show offset
