@@ -365,8 +365,6 @@ end
 "Linearized & reformulated cut based on single path."
 function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
                  path::Vector{Arc})
-    println("crit path cut:")
-
     aidx = arcindex(topo)
     pathidx = [aidx[arc] for arc in path]
     npath = length(path)
@@ -374,7 +372,6 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     zsol = cand.zsol[pathidx,:] # sparse solution
     qsol = cand.qsol[pathidx,:] # sparse solution
     D = [diam.value for diam in inst.diameters]
-    @show pathidx
 
     # set loose pressure bounds for non-terminal nodes
     terminals = indexin(inst.nodes, topo.nodes)
@@ -385,17 +382,11 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     πub = fill(πub_max, nnodes)
     πlb[terminals] = [b.lb^2 for b in inst.pressure]
     πub[terminals] = [b.ub^2 for b in inst.pressure]
-    # @show πlb, πub
 
     # coefficients of z in supremum expression
     ν = zsol * D.^(-5)
-    # @show zsol
-    # @show D
-    # @show D.^(-5)
-    # @show ν
     @assert length(ν) == npath
     β = ν * (D.^5)'
-    @show β
     @assert size(β) == (npath, ndiam)
     @assert all(β .> 0)
 
@@ -423,28 +414,15 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         # finally, when both arcs are active
         βdiff = - repmat(β[v-1, :]', 1, ndiam) + repmat(β[v, :], ndiam, 1)
         supvalues[2:end, 2:end] = max(βdiff * πub[node], βdiff * πlb[node])
-        @show β[v-1, :]
-        @show β[v, :]
-        @show - repmat(β[v-1, :]', 1, ndiam)
-        @show repmat(β[v, :], ndiam, 1)
-        @show βdiff
-        @show supvalues
 
         # the current values should be met exactly
         cand_i = findfirst(zsol[v-1,:], true)
         cand_j = findfirst(zsol[v,:], true)
         @assert cand_i ≠ 0 && cand_j ≠ 0
-        @show cand_i, cand_j
 
         # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
         fix_i, fix_j = cand_i + 1, cand_j + 1
         cuv, cvw, c = linear_overest(supvalues, fix_i, fix_j)
-        @show cuv, cvw, c
-        # @show repmat(cuv, 1, ndiam + 1)
-        # @show repmat(cvw', ndiam + 1, 1)
-        # @show repmat(cuv, 1, ndiam + 1) + repmat(cvw', ndiam + 1, 1) + c
-        # @show repmat(cuv, 1, ndiam + 1) + repmat(cvw', ndiam + 1, 1) + c - supvalues
-        @show cuv[fix_i] + cvw[fix_j]+ c - supvalues[fix_i, fix_j]
 
         # need to transform the coefficients to remove aux vars
         coeffs[v-1,:] += cuv[2:end]' - cuv[1]
@@ -456,13 +434,9 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     head = path[end].head
     coeffs[end,:] += -1 * πlb[head] * β[end,:]
 
-    @show coeffs
-    @show offset
-
     # coefficients of ϕ
     C = inst.ploss_coeff * pipelengths(topo)[pathidx]
     α = ν .* C
-    @show α
 
     # add cut:  coeffs * z + offset ≥ α * ϕ
     z = master.z[pathidx,:]
@@ -470,11 +444,6 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     @constraint(master.model,
                 sum{coeffs[a,i]*z[a,i], a=1:npath, i=1:ndiam} + offset ≥
                 sum{α[a]*ϕ[a], a=1:npath})
-
-    println("lhs: $(sum(coeffs .* zsol) + offset)")
-    println("rhs: $(sum(α .* qsol.^2)) == actual ploss")
-    println("πub - πlb: $(πub[path[1].tail] - πlb[path[end].head])")
-    println("--")
 
     return 1
 end
@@ -550,9 +519,6 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
             error("Unexpected status: $(:status)")
         end
         cand = CandSol(getvalue(master.z), getvalue(master.q), getvalue(master.ϕ))
-        @show sparse(cand.qsol)
-        @show sparse(cand.qsol.^2)
-        @show sparse(cand.ϕsol)
 
         dual = getobjectivevalue(master.model)
         if debug
