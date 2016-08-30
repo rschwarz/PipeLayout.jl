@@ -15,7 +15,7 @@ topo = Topology([Node(t...) for t in [(0,22), (0,0), (25,22), (25,0), (45,22), (
 
 inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-result = run(inst, topo, debug=true, addnogoods=false, maxiter=3);
+result = run(inst, topo, debug=true, addnogoods=false, maxiter=10);
 
 @show result.status
 @show result.dualbound
