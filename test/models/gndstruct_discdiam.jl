@@ -214,17 +214,17 @@ facts("run GBD iterations") do
         @fact sum(zsol) --> 3
 
         @fact result.dualbound --> roughly(72.0)
-        @fact result.niter --> 4
+        @fact result.niter --> 3
     end
 
     context("high flow: iteration limit instance") do
         inst = Instance(nodes, 30*demand, bounds, diams)
 
-        result = run(inst, topo; maxiter=4)
+        result = run(inst, topo; maxiter=3)
         @fact result.status --> :UserLimit
         @fact result.solution --> nothing
-        @fact result.dualbound --> roughly(174.4)
-        @fact result.niter --> 4
+        @fact result.dualbound --> roughly(156.0)
+        @fact result.niter --> 3
     end
 
     context("high flow on triangle: infeasible") do
