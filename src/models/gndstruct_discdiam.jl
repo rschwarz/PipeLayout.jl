@@ -370,7 +370,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     npath = length(path)
     ndiam = length(inst.diameters)
     zsol = cand.zsol[pathidx,:] # sparse solution
-    ϕsol = cand.ϕsol[pathidx,:] # sparse solution
+    qsol = cand.qsol[pathidx,:] # sparse solution
     D = [diam.value for diam in inst.diameters]
 
     # set loose pressure bounds for non-terminal nodes
@@ -412,7 +412,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         # similarly for no diameter on the second arc
         supvalues[2:end, 1] = - β[v-1, :] * πlb[node]
         # finally, when both arcs are active
-        βdiff = repmat(β[v, :]', 1, ndiam) - repmat(β[v-1, :], ndiam, 1)
+        βdiff = - repmat(β[v-1, :]', 1, ndiam) + repmat(β[v, :], ndiam, 1)
         supvalues[2:end, 2:end] = max(βdiff * πub[node], βdiff * πlb[node])
 
         # the current values should be met exactly
@@ -421,7 +421,8 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         @assert cand_i ≠ 0 && cand_j ≠ 0
 
         # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
-        cuv, cvw, c = linear_overest(supvalues, cand_i + 1, cand_j + 1)
+        fix_i, fix_j = cand_i + 1, cand_j + 1
+        cuv, cvw, c = linear_overest(supvalues, fix_i, fix_j)
 
         # need to transform the coefficients to remove aux vars
         coeffs[v-1,:] += cuv[2:end]' - cuv[1]
@@ -431,7 +432,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
 
     # - head of path
     head = path[end].head
-    coeffs[end,:] += πlb[head] * β[end,:]
+    coeffs[end,:] += -1 * πlb[head] * β[end,:]
 
     # coefficients of ϕ
     C = inst.ploss_coeff * pipelengths(topo)[pathidx]
@@ -443,6 +444,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     @constraint(master.model,
                 sum{coeffs[a,i]*z[a,i], a=1:npath, i=1:ndiam} + offset ≥
                 sum{α[a]*ϕ[a], a=1:npath})
+
     return 1
 end
 
@@ -499,7 +501,7 @@ end
 
 "Iteration based implementation of GBD."
 function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
-             addnogoods=true, addcritpath=true)
+             addnogoods=false, addcritpath=true)
 
     # initialize
     master = Master(make_master(inst, topo)...)
@@ -517,6 +519,7 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
             error("Unexpected status: $(:status)")
         end
         cand = CandSol(getvalue(master.z), getvalue(master.q), getvalue(master.ϕ))
+
         dual = getobjectivevalue(master.model)
         if debug
             println("  dual bound: $(dual)")
