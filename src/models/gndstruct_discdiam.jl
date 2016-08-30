@@ -421,12 +421,12 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         # similarly for no diameter on the second arc
         supvalues[2:end, 1] = - β[v-1, :] * πlb[node]
         # finally, when both arcs are active
-        βdiff = repmat(β[v, :]', 1, ndiam) - repmat(β[v-1, :], ndiam, 1)
+        βdiff = - repmat(β[v-1, :]', 1, ndiam) + repmat(β[v, :], ndiam, 1)
         supvalues[2:end, 2:end] = max(βdiff * πub[node], βdiff * πlb[node])
-        # @show β[v, :] * πub[node]
-        # @show - β[v-1, :] * πlb[node]
-        @show repmat(β[v, :]', 1, ndiam)
-        @show repmat(β[v-1, :], ndiam, 1)
+        @show β[v-1, :]
+        @show β[v, :]
+        @show - repmat(β[v-1, :]', 1, ndiam)
+        @show repmat(β[v, :], ndiam, 1)
         @show βdiff
         @show supvalues
 
@@ -437,13 +437,14 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         @show cand_i, cand_j
 
         # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
-        cuv, cvw, c = linear_overest(supvalues, cand_i + 1, cand_j + 1)
+        fix_i, fix_j = cand_i + 1, cand_j + 1
+        cuv, cvw, c = linear_overest(supvalues, fix_i, fix_j)
         @show cuv, cvw, c
         # @show repmat(cuv, 1, ndiam + 1)
         # @show repmat(cvw', ndiam + 1, 1)
         # @show repmat(cuv, 1, ndiam + 1) + repmat(cvw', ndiam + 1, 1) + c
         # @show repmat(cuv, 1, ndiam + 1) + repmat(cvw', ndiam + 1, 1) + c - supvalues
-        @show cuv[cand_i] + cvw[cand_j]+ c - supvalues[cand_i, cand_j]
+        @show cuv[fix_i] + cvw[fix_j]+ c - supvalues[fix_i, fix_j]
 
         # need to transform the coefficients to remove aux vars
         coeffs[v-1,:] += cuv[2:end]' - cuv[1]
