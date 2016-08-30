@@ -501,7 +501,7 @@ end
 
 "Iteration based implementation of GBD."
 function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
-             addnogoods=true, addcritpath=true)
+             addnogoods=false, addcritpath=true)
 
     # initialize
     master = Master(make_master(inst, topo)...)
