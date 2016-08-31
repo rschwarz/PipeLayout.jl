@@ -458,7 +458,8 @@ facts("Solve semi decomposition with nogoods on y") do
                         [Bounds(60,80), Bounds(60,80)],
                         [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]])
         topo = Topology([Node(0,0), Node(50,0), Node(30, 40)],
-                        [Arc(1,3), Arc(1,2), Arc(2,3)])
+                        [Arc(1,3), Arc(1,2), Arc(2,3),
+                         Arc(3,1), Arc(2,1), Arc(3,2)])
 
         result = run_semi(inst, topo)
         @fact result.status --> :Infeasible

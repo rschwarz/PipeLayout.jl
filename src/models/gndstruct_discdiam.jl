@@ -616,9 +616,10 @@ function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         # check whether candidate has tree topology
         candtopo = topology_from_candsol(topo, ysol)
         if !is_tree(candtopo)
-            debug && println("  skip non-tree topology")
-            # TODO: exclude smaller topology, with anti-parallel arcs!
-            nogood(mastermodel, y, ysol)
+            fullcandtopo = topology_from_candsol(topo, ysol, true)
+            cycle = find_cycle(fullcandtopo)
+            avoid_topo_cut(mastermodel, y, topo, cycle)
+            debug && println("  skip non-tree topology, cycle: $(cycle)")
             continue
         end
 
