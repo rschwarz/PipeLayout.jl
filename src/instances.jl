@@ -34,6 +34,14 @@ immutable Instance
     pressure::Vector{Bounds}
     diameters::Vector{Diameter}
     ploss_coeff::Float64 # [1e7 m2/s2]
+
+    function Instance(nodes, demand, pressure, diameters, ploss_coeff)
+        @assert length(nodes) == length(demand)
+        @assert length(nodes) == length(pressure)
+        @assert length(nodes) >= 2
+        @assert length(diameters) >= 1
+        new(nodes, demand, pressure, diameters, ploss_coeff)
+    end
 end
 
 Instance(nodes, demand, pressure, diameters) =
