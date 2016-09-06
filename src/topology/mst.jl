@@ -2,8 +2,14 @@ using DataStructures: DisjointSets, union!, in_same_set, num_groups
 
 "Compute array of edges (Nodes in columns), sorted by length"
 function sorted_edges(nodes::Vector{Node})
-    edges = hcat(combinations(nodes, 2)...)
-    sortcols(edges, by=edge -> begin
+    nnodes = length(nodes)
+    edges = []
+    for i in 1:nnodes
+        for j in i+1:nnodes
+            push!(edges, nodes[[i,j]])
+        end
+    end
+    sortcols(hcat(edges...), by=edge -> begin
              u, v = edge
              (u.x - v.x)^2 + (u.y - v.y)^2
              end)
