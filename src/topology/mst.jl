@@ -27,7 +27,7 @@ function min_spanning_tree(nodes::Vector{Node})
     edges = sorted_edges(nodes)
     @assert size(edges, 1) == 2 # column-wise
 
-    nodeidx = Dict(nodes[i] => i for i in 1:n)
+    nodeidx = [nodes[i] => i for i in 1:n]
 
     tree_edges = Arc[]
     sizehint!(tree_edges, n-1)
