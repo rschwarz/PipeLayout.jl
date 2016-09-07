@@ -262,6 +262,28 @@ facts("run GBD iterations") do
         @fact result.dualbound --> roughly(400.0)
         @fact result.niter --> 2
     end
+
+    context("difficult instance with disconnected candidates") do
+        inst = Instance([Node(0,0), Node(100,0), Node(200, 100)],
+                        [800, -900, 100],
+                        fill(Bounds(40,80), 3),
+                        [Diameter(t...) for t in [(1.0, 1.0), (2.0, 3.2)]],
+                        ploss_coeff_nice)
+        topo = squaregrid(2, 3, 100.0, antiparallel=true)
+
+        # trigger the cuts for disconnected candidate
+        result = run(inst, topo, addnogoods=true, addcritpath=false)
+        @fact result.status --> :Optimal
+
+        zsol = result.solution.zsol
+        @fact zsol[6,1] --> true
+        @fact zsol[12,2] --> true
+        @fact zsol[13,1] --> true
+        @fact sum(zsol) --> 3
+
+        @fact result.dualbound --> roughly(520.0)
+    end
+
 end
 
 facts("Linear overestimation of supremum terms") do

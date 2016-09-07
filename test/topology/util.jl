@@ -21,7 +21,7 @@ facts("check cycle finding") do
     nodes = [Node(i,i^2) for i in 1:4]
     arcs = [Arc(1,2), Arc(2,3), Arc(3,4), Arc(2,4)]
 
-    @fact find_cycle(Topology(nodes, arcs[1:3])) --> nothing
+    @fact find_cycle(Topology(nodes, arcs[1:3])) --> []
 
     result = find_cycle(Topology(nodes, arcs))
     @fact length(result) --> 3

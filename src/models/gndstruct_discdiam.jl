@@ -533,12 +533,21 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
         end
 
         # check whether candidate has tree topology
-        candtopo = topology_from_candsol(topo, getvalue(master.y))
+        ysol = getvalue(master.y)
+        candtopo = topology_from_candsol(topo, ysol)
         if !is_tree(candtopo)
-            fullcandtopo = topology_from_candsol(topo, getvalue(master.y), true)
+            fullcandtopo = topology_from_candsol(topo, ysol, true)
             cycle = find_cycle(fullcandtopo)
-            avoid_topo_cut(master.model, master.y, topo, cycle)
-            debug && println("  skip non-tree topology, cycle: $(cycle)")
+            if length(cycle) == 0
+                # TODO: Actually, this might be optimal, but it could also occur
+                # when adding some irrelevant pipe is cheaper than increasing
+                # the diameter. How to distinguish these cases?
+                nogood(master.model, master.y, ysol)
+                debug && println("  skip disconnected topology with nogood.")
+            else
+                avoid_topo_cut(master.model, master.y, topo, cycle)
+                debug && println("  skip non-tree topology, cycle: $(cycle)")
+            end
             continue
         end
 

@@ -78,6 +78,9 @@ function find_cycle(topology::Topology)
             end
         end
     end
+
+    # found no cycle
+    return []
 end
 
 "Euclidean distance of two nodes"
