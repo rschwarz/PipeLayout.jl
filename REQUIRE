@@ -4,10 +4,9 @@ DataStructures
 FactCheck
 FixedSizeArrays
 GLPKMathProgInterface
-GR
 JSON
 JuMP
 Lazy
 LightGraphs
-Plots
+RecipesBase
 SIUnits

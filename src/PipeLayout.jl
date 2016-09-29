@@ -26,7 +26,7 @@ using ..PipeLayout
 include("models/gndstruct_discdiam.jl")
 end
 
-# visualization
-include("draw.jl")
+# visualization via Plots recipes
+include("plot_recipes.jl")
 
 end
