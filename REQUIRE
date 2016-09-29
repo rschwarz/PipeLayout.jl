@@ -1,12 +1,12 @@
-julia 0.4
-Colors
-DataStructures
-FactCheck
-FixedSizeArrays
-GLPKMathProgInterface
-JSON
-JuMP
-Lazy
-LightGraphs
-RecipesBase
-SIUnits
+julia 0.5
+Colors 0.6.8
+DataStructures 0.4.6
+FactCheck 0.4.3
+FixedSizeArrays 0.2.3
+GLPKMathProgInterface 0.2.3
+JSON 0.7.0
+JuMP 0.14.1
+Lazy 0.11.2
+LightGraphs 0.7.0
+RecipesBase 0.0.6
+SIUnits 0.0.6
