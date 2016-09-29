@@ -2,13 +2,14 @@ using PipeLayout
 
 # create topologies for ground structures
 #  [x] square meshes of increasing sizes
+#  [ ] other meshes (with crossing diagonals? cf. Jakob's thesis)
 #  [ ] random (or sobolev) points with voronoi triangulation
 #  [ ] grids with holes
-ground_structures = Topology[]
-append!(ground_structures,
-        [squaregrid(args..., antiparallel=true) for args in
-         [(6, 7, 15.0), (9, 9, 10.0), (13, 13, 7.5), (19, 19, 5.0)]])
-# TODO: also create names for these, and store them in Dict?
+ground_structures = Dict{String, Topology}()
+for args in [(6, 7, 15.0), (9, 9, 10.0), (13, 13, 7.5), (19, 19, 5.0)]
+    key = @sprintf "%02d_%02d_%04.1f" args...
+    ground_structures[key] = squaregrid(args..., antiparallel=true)
+end
 
 # for each topology: select subsets of nodes for terminals
 #  [ ] randomly
