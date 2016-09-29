@@ -1,4 +1,4 @@
-import PipeLayout: squaregrid, dist
+import PipeLayout:  dist
 using PipeLayout
 
 facts("build grid topology") do

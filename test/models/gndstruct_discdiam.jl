@@ -1,4 +1,4 @@
-import PipeLayout: squaregrid, ploss_coeff_nice
+import PipeLayout: ploss_coeff_nice
 import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest, make_semimaster, make_semisub, run_semi
 using JuMP
 

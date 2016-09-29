@@ -1,3 +1,5 @@
+export squaregrid
+
 "Create a grid of square cells with m by n nodes and given edge width."
 function squaregrid(m::Int, n::Int, width::Float64; antiparallel=false)
     nodes = Node[]

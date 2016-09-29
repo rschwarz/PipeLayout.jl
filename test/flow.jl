@@ -1,4 +1,4 @@
-import PipeLayout: uniq_flow, flow_path_decomp, squaregrid
+import PipeLayout: uniq_flow, flow_path_decomp
 
 facts("compute unique flow on trees") do
     nodes = [Node(i,i) for i in 1:6]
