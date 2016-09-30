@@ -7,16 +7,25 @@ using PipeLayout
 #  [ ] grids with holes
 ground_structures = Dict{String, Topology}()
 for args in [(6, 7, 15.0), (9, 9, 10.0), (13, 13, 7.5), (19, 19, 5.0)]
-    key = @sprintf "%02d_%02d_%04.1f" args...
+    key = @sprintf "m%02d_n%02d_l%04.1f" args...
     ground_structures[key] = squaregrid(args..., antiparallel=true)
 end
 
+
 # for each topology: select subsets of nodes for terminals
-#  [ ] randomly
+#  [x] randomly
 #  [ ] greedy farthest neighbor
+terminals = Dict{String, Vector{Node}}()
+for (gskey, topo) in ground_structures
+    for nterminals in [3, 5, 7, 11]
+        key = @sprintf "%s-t%02d"  gskey nterminals
+        terminals[key] = select_subset(topo.nodes, nterminals)
+    end
+end
 
 # for each set of terminals (and related topo), create demand situations
 #  [ ] random distribution (source vs sink)
+#  [ ] same, but single source
 #  [ ] hard distribution: maximize transport momentum
 #  [ ] for each normalized demand: several flow scalings
 
