@@ -50,11 +50,16 @@ for (tkey, nodes) in terminals
 end
 
 # uniform pressure bounds
-#  [ ] one for each boundary node
+#  [x] one for each boundary node
+pressure_bounds = Bounds(40.0, 80.0)
 
 # diameter data
-#  [ ] full data and smaller subset
+#  [x] full data and smaller subset
+_diams = [0.4,  0.6,  0.8, 1.0,  1.2]
+_costs = [0.68, 0.91, 1.2, 1.55, 1.96]
+diams_full = [Diameter(d,c) for (d,c) in zip(_diams, _costs)]
+diams_some = diams_full[1:2:end]
 
 # create instances by combination
-#  [ ] come up with uniq naming
+#  [x] come up with uniq naming
 #  [ ] write instances to files (json)
