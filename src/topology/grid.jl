@@ -1,7 +1,7 @@
 export squaregrid
 
 "Create a grid of square cells with m by n nodes and given edge width."
-function squaregrid(m::Int, n::Int, width::Float64; antiparallel=false)
+function squaregrid{T<:Real}(m::Int, n::Int, width::T; antiparallel=false)
     nodes = Node[]
     sizehint!(nodes, m*n)
     for j in 1:n
