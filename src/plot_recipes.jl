@@ -18,15 +18,15 @@ function map2color(data::Array{Float64}; ncolors::Int=20, cmap="Blues")
     colors[indices]
 end
 
-# a recipe to display topologies with arcs and nodes"
-@recipe function f(topo::PipeLayout.Topology)
+# a recipe to display topologies with arcs and nodes
+@recipe function f(nodes::Array{PipeLayout.Node}, arcs::Array{PipeLayout.Arc})
     # prepare node data
-    nodepos = reshape(reinterpret(Float64, topo.nodes), (2, length(topo.nodes)))'
+    nodepos = reshape(reinterpret(Float64, nodes), (2, length(nodes)))'
     x = nodepos[:, 1]
     y = nodepos[:, 2]
 
     # prepare arc data
-    arcidx = reshape(reinterpret(Int64, topo.arcs), (2, length(topo.arcs)))
+    arcidx = reshape(reinterpret(Int64, arcs), (2, length(arcs)))
 
     # first draw the arcs
     @series begin
@@ -41,8 +41,19 @@ end
         markercolor --> :white
         markersize --> 3
         grid --> false
+        foreground_color_border	--> :white
         legend --> false
         ticks --> nothing
         x, y
     end
+end
+
+# a recipe to display only nodes
+@recipe function f(nodes::Array{PipeLayout.Node})
+    markeralpha --> 0.5
+    nodes, Arc[]
+end
+
+@recipe function f(topo::PipeLayout.Topology)
+    topo.nodes, topo.arcs
 end
