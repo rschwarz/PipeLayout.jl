@@ -38,3 +38,15 @@ end
 function deserialize{T}(::Type{Vector{T}}, A::Vector{Any})
     T[deserialize(T, a) for a in A]
 end
+
+"convenience to load json files with instance and topology"
+function read_files(prefix, key::String)
+    res = []
+    open(joinpath(prefix, "$(key).instance.json")) do f
+        push!(res, PipeLayout.deserialize(Instance, readstring(f)))
+    end
+    open(joinpath(prefix, "$(key).topology.json")) do f
+        push!(res, PipeLayout.deserialize(Topology, readstring(f)))
+    end
+    res
+end
