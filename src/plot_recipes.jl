@@ -51,6 +51,8 @@ end
 # a recipe to display only nodes
 @recipe function f(nodes::Array{PipeLayout.Node})
     markeralpha --> 0.5
+    markercolor --> :red
+    markersize --> 6
     nodes, Arc[]
 end
 
