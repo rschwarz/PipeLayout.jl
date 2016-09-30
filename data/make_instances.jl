@@ -1,5 +1,8 @@
 using PipeLayout
 
+# set random seed for reproducible results
+srand(23)
+
 # create topologies for ground structures
 #  [x] square meshes of increasing sizes
 #  [ ] other meshes (with crossing diagonals? cf. Jakob's thesis)
