@@ -56,6 +56,24 @@ end
     nodes, Arc[]
 end
 
+# a recipe for topologies: just nodes and arcs
 @recipe function f(topo::PipeLayout.Topology)
     topo.nodes, topo.arcs
+end
+
+# a recipe to display an instance: nodes with demand
+@recipe function f(instance::PipeLayout.Instance)
+    nodes = instance.nodes
+    demand = instance.demand
+
+    colors = fill(:gray, length(nodes))
+    colors[demand .> 0] = :red
+    colors[demand .< 0] = :blue
+
+    sizes = sqrt(abs(demand))
+    sizes = 10 * sizes / maximum(sizes) + 4
+
+    markercolor --> colors
+    markersize --> sizes
+    nodes, Arc[]
 end
