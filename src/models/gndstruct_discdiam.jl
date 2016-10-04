@@ -3,6 +3,40 @@ using GLPKMathProgInterface
 using JuMP
 
 export CandSol, SubDualSol, Master
+export IterGBD, IterTopo, optimize
+
+"""
+GBD iterations for Ground Structure with Discrete Diameters.
+
+Solver object to store parameter values.
+"""
+immutable IterGBD <: GroundStructureSolver
+    addnogoods::Bool
+    addcritpath::Bool
+    maxiter::Int
+    debug::Bool
+    writemodels::Bool
+
+    function IterGBD(; addnogoods=false, addcritpath=true, maxiter::Int=100,
+                     debug=false, writemodels=false)
+        new(addnogoods, addcritpath, maxiter, debug, writemodels)
+    end
+end
+
+"""
+Topology enumeration for Ground Structure with Discrete Diameters.
+
+Solver object to store parameter values.
+"""
+immutable IterTopo <: GroundStructureSolver
+    maxiter::Int
+    debug::Bool
+
+    function IterTopo(; maxiter::Int=100, debug=false)
+        new(maxiter, debug)
+    end
+end
+
 
 """
 Data type for master problem.
@@ -504,8 +538,14 @@ function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
 end
 
 "Iteration based implementation of GBD."
-function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
-             addnogoods=false, addcritpath=true, writemodels=false)
+function optimize(inst::Instance, topo::Topology, solver::IterGBD)
+    run_gbd(inst, topo, maxiter=solver.maxiter, debug=solver.debug,
+            addnogoods=solver.addnogoods, addcritpath=solver.addcritpath,
+            writemodels=solver.writemodels)
+end
+
+function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
+                 addnogoods=false, addcritpath=true, writemodels=false)
 
     # initialize
     master = Master(make_master(inst, topo)...)
@@ -589,6 +629,10 @@ function run(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
 end
 
 "Iteration based decomposition with semimaster and ~subproblem."
+function optimize(inst::Instance, topo::Topology, solver::IterTopo)
+    run_semi(inst, topo, maxiter=solver.maxiter, debug=solver.debug)
+end
+
 function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
     narcs = length(topo.arcs)
     ndiams = length(inst.diameters)

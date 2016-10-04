@@ -1,5 +1,6 @@
+using PipeLayout.GndStructDiscDiam
 import PipeLayout: ploss_coeff_nice
-import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, run, linear_overest, make_semimaster, make_semisub, run_semi
+import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, linear_overest, make_semimaster, make_semisub
 using JuMP
 
 facts("solve master problem (ground structure, discrete diameters)") do
@@ -188,7 +189,7 @@ facts("run GBD iterations") do
     context("low flow: very easy instance") do
         inst = Instance(nodes, 1*demand, bounds, diams)
 
-        result = run(inst, topo)
+        result = optimize(inst, topo, IterGBD())
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
@@ -204,7 +205,7 @@ facts("run GBD iterations") do
     context("medium flow: difficult instance") do
         inst = Instance(nodes, 5*demand, bounds, diams)
 
-        result = run(inst, topo)
+        result = optimize(inst, topo, IterGBD())
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
@@ -220,7 +221,7 @@ facts("run GBD iterations") do
     context("high flow: iteration limit instance") do
         inst = Instance(nodes, 30*demand, bounds, diams)
 
-        result = run(inst, topo; maxiter=3)
+        result = optimize(inst, topo, IterGBD(maxiter=3))
         @fact result.status --> :UserLimit
         @fact result.solution --> nothing
         @fact result.dualbound --> roughly(156.0)
@@ -235,7 +236,7 @@ facts("run GBD iterations") do
         topo3 = Topology([Node(0,0), Node(50,0), Node(30, 40)],
                          [Arc(1,3), Arc(1,2), Arc(2,3)])
 
-        result = run(inst3, topo3)
+        result = optimize(inst3, topo3, IterGBD())
         @fact result.status --> :Infeasible
         @fact result.solution --> nothing
         @fact result.dualbound --> Inf
@@ -254,7 +255,7 @@ facts("run GBD iterations") do
         diams = [Diameter(1.0, 1.0), Diameter(2.0, 2.0)]
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-        result = run(inst, topo)
+        result = optimize(inst, topo, IterGBD())
         @fact result.status --> :Optimal
         zsol = result.solution.zsol
         @fact sum(zsol[:,2]) --> 1
@@ -272,7 +273,7 @@ facts("run GBD iterations") do
         topo = squaregrid(2, 3, 100.0, antiparallel=true)
 
         # trigger the cuts for disconnected candidate
-        result = run(inst, topo, addnogoods=true, addcritpath=false)
+        result = optimize(inst, topo, IterGBD(addnogoods=true, addcritpath=false))
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
@@ -439,7 +440,7 @@ facts("Solve semi decomposition with nogoods on y") do
 
     context("low flow: very easy instance") do
         inst = Instance(nodes, 1 * demand, bounds, diams)
-        result = run_semi(inst, topo)
+        result = optimize(inst, topo, IterTopo())
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
@@ -460,7 +461,7 @@ facts("Solve semi decomposition with nogoods on y") do
 
     context("medium flow: difficult instance") do
         inst = Instance(nodes, 10 * demand, bounds, diams)
-        result = run_semi(inst, topo)
+        result = optimize(inst, topo, IterTopo())
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
@@ -483,7 +484,7 @@ facts("Solve semi decomposition with nogoods on y") do
                         [Arc(1,3), Arc(1,2), Arc(2,3),
                          Arc(3,1), Arc(2,1), Arc(3,2)])
 
-        result = run_semi(inst, topo)
+        result = optimize(inst, topo, IterTopo())
         @fact result.status --> :Infeasible
     end
 end

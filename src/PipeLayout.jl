@@ -3,6 +3,7 @@ module PipeLayout
 include("instances.jl")
 # --> deserialization.jl
 # --> random.jl
+include("types.jl")
 
 include("util.jl")
 include("gasphysics.jl")
