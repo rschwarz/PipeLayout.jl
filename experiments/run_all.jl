@@ -23,6 +23,7 @@ function submit(key)
     options = ["--account=$ACCOUNT",
                "--partition=$PARTITION",
                "--cpus-per-task=1",
+               "--time=2:05:00",
                "--output=$OUT",
                "--error=$ERR"]
     job = ["run.jl", abspath(CONFIG), joinpath(INDIR, key)]
