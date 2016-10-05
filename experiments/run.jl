@@ -1,3 +1,5 @@
+#! /usr/bin/env julia
+
 using PipeLayout
 using PipeLayout.GndStructDiscDiam
 
@@ -13,7 +15,7 @@ instname = ARGS[2]
 
 include(config) # creates solver
 
-println("solving $(instname) with $(config)")
+println("solving $instname with $(basename(config))")
 
 tic()
 println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")

@@ -1,27 +1,36 @@
-const account = "gas"
+#! /usr/bin/env julia
 
-config    = ARGS[1]
-instlist  = ARGS[2]
-partition = ARGS[3]
-results   = ARGS[4]
+const ACCOUNT = "gas"
+
+CONFIG    = ARGS[1]
+INSTLIST  = ARGS[2]
+PARTITION = ARGS[3]
+RESULTS   = ARGS[4]
+
+stem(path) = split(basename(path), ".")[1]
+
+# location of instances
+INDIR = abspath(dirname(INSTLIST))
 
 # create dir for results
-outdir = joinpath(results, basename(instlist), basename(config))
-mkpath(outdir)
+OUTDIR = joinpath(RESULTS, stem(INSTLIST), stem(CONFIG))
+mkpath(OUTDIR)
 
 "submit a job to SLURM"
 function submit(key)
-    account = "--account $account --partition $partition"
-    limits = "--cpus-per-task 1"
-    out, err = joinpath(outdir, "$key.log"), joinpath(outdir, "$key.err")
-    output = "--output $out --error $err"
-    options = "$account $limits $output"
-    job = "julia run.jl $config $key"
+    OUT = joinpath(OUTDIR, "$key.log")
+    ERR = joinpath(OUTDIR, "$key.err")
+    options = ["--account=$ACCOUNT",
+               "--partition=$PARTITION",
+               "--cpus-per-task=1",
+               "--output=$OUT",
+               "--error=$ERR"]
+    job = ["run.jl", abspath(CONFIG), joinpath(INDIR, key)]
     run(`sbatch $options $job`)
 end
 
 # one job per instance
-open(instlist) do f
+open(INSTLIST) do f
     for line in eachline(f)
         key = strip(line)
         submit(key)
