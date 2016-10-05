@@ -44,9 +44,11 @@ function read_instance(prefix, key::String)
         PipeLayout.deserialize(Instance, readstring(f))
     end
 end
+read_instance(key::String) = read_instance(".", key)
 
 function read_topology(prefix, key::String)
     open(joinpath(prefix, "$(key).topology.json")) do f
         PipeLayout.deserialize(Topology, readstring(f))
     end
 end
+read_topology(key::String) = read_topology(".", key)
