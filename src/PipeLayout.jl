@@ -1,3 +1,5 @@
+__precompile__()
+
 module PipeLayout
 
 include("instances.jl")
