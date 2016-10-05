@@ -1,4 +1,5 @@
 using PipeLayout
+using PipeLayout.GndStructDiscDiam
 
 function solve_with(instance::AbstractString, solver::GroundStructureSolver)
     inst = PipeLayout.read_instance(instance)
