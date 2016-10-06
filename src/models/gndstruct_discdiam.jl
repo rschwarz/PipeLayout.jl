@@ -678,8 +678,14 @@ function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         if !is_tree(candtopo)
             fullcandtopo = topology_from_candsol(topo, ysol, true)
             cycle = find_cycle(fullcandtopo)
-            avoid_topo_cut(mastermodel, y, topo, cycle)
-            debug && println("  skip non-tree topology, cycle: $(cycle)")
+            if length(cycle) == 0
+                # TODO: see above (candidate disconnected?)
+                nogood(mastermodel, y, ysol)
+                debug && println("  skip disconnected topology with nogood.")
+            else
+                avoid_topo_cut(mastermodel, y, topo, cycle)
+                debug && println("  skip non-tree topology, cycle: $(cycle)")
+            end
             continue
         end
 
