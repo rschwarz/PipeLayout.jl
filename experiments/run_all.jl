@@ -24,7 +24,7 @@ function submit(key)
                "--partition=$PARTITION",
                "--cpus-per-task=1",
                "--time=2:05:00",
-               "--signal=SIGINT",
+               "--signal=B:INT",
                "--output=$OUT",
                "--error=$ERR"]
     job = ["run.jl", abspath(CONFIG), joinpath(INDIR, key)]
