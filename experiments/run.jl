@@ -1,5 +1,8 @@
 #! /usr/bin/env julia
 
+# raise exception when receiving SIGINT
+ccall(:jl_exit_on_sigint, Void, (Cint,), 0)
+
 using PipeLayout
 using PipeLayout.GndStructDiscDiam
 
@@ -19,7 +22,15 @@ println("solving $instname with $(basename(config))")
 
 tic()
 println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
-result = solve_with(instname, solver)
+try
+    result = solve_with(instname, solver)
+catch ex
+    if isa(ex, InterruptException)
+        println("-- was interrupted --")
+    else
+        rethrow()
+    end
+end
 println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
 toc()
 
