@@ -1,4 +1,4 @@
-using Colors: colormap, RGB
+using Colors: colormap
 using RecipesBase
 
 "scale and shift numbers to interval [lb=0, ub=1]"
@@ -10,11 +10,13 @@ function normalize{T<:Real}(data::Array{T}; lb=zero(T), ub=one(T))
 end
 
 "map numbers to colors"
-function map2color(data::Array{Float64}; ncolors::Int=20, cmap="Blues")
-    data = normalize(data, lb=0.1, ub=0.9 - 1E-9)
+function map2color{T<:Real}(data::Array{T}; ncolors::Int=20, cmap="Blues")
+    data = normalize(data)
 
-    colors = colormap(cmap, ncolors)
-    indices = round(Int, ncolors*data + 1, RoundDown)
+    # take two extra colors, one to leave out at each extremity, and another one
+    # because the normalized data is in [0, 1] inclusive
+    colors = colormap(cmap, ncolors + 3)
+    indices = round(Int, ncolors*data + 2, RoundDown)
     colors[indices]
 end
 
@@ -76,4 +78,20 @@ end
     markercolor --> colors
     markersize --> sizes
     nodes, Arc[]
+end
+
+# a recipe to display an instance: nodes with demand
+@recipe function f(topo::PipeLayout.Topology,
+                   cand::PipeLayout.GndStructDiscDiam.CandSol)
+    narcs, ndiams = size(cand.zsol)
+    arcidx, diamidx = findn(cand.zsol)
+    arcs = topo.arcs[arcidx]
+
+    linewidth --> 3 * diamidx'
+    linecolor --> map2color(diamidx', ncolors=ndiams, cmap="Greens")
+
+    # need to redraw nodes, because arcs reference them
+    markersize --> 0
+
+    topo.nodes, arcs
 end
