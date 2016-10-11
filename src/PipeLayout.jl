@@ -26,7 +26,7 @@ end
 
 module GndStructDiscDiam
 using ..PipeLayout
-include("models/gndstruct_discdiam.jl")
+include("models/gndstruct_discdiam/main.jl")
 end
 
 # visualization via Plots recipes

@@ -1,10 +1,3 @@
-import PipeLayout: digraph_from_topology
-using GLPKMathProgInterface
-using JuMP
-
-export CandSol, SubDualSol, Master
-export IterGBD, IterTopo, optimize
-
 """
 GBD iterations for Ground Structure with Discrete Diameters.
 
@@ -23,80 +16,11 @@ immutable IterGBD <: GroundStructureSolver
     end
 end
 
-"""
-Topology enumeration for Ground Structure with Discrete Diameters.
-
-Solver object to store parameter values.
-"""
-immutable IterTopo <: GroundStructureSolver
-    maxiter::Int
-    debug::Bool
-
-    function IterTopo(; maxiter::Int=100, debug=false)
-        new(maxiter, debug)
-    end
-end
-
-
-"""
-Data type for master problem.
-
-Variable meanings:
-  y: select arc
-  z: select diameter for arc
-  q: flow through arc
-  ϕ: squared flow through arc (ϕ = q²)
-"""
-immutable Master
-    model::Model
-    y::Vector{Variable}
-    z::Array{Variable,2}
-    q::Vector{Variable}
-    ϕ::Vector{Variable}
-end
-
-"Data type for candidate solutions from master problem."
-immutable CandSol
-    zsol::Array{Bool,2}
-    qsol::Vector{Float64}
-    ϕsol::Vector{Float64}
-end
-
 "Data type for dual solution of subproblem"
 immutable SubDualSol
     μ::Array{Float64}
     λl::Array{Float64}
     λu::Array{Float64}
-end
-
-"Result data from GBD algorithm"
-immutable Result
-    status::Symbol
-    solution
-    dualbound::Float64
-    niter::Int
-end
-
-"""
-Extract sub-topology from active arcs and incident nodes.
-
-The option `keep_nodes` allows to also include the isolated nodes.
-"""
-function topology_from_candsol(topo::Topology, ysol::Vector{Float64},
-                               keep_nodes=false)
-    actarcs = topo.arcs[ysol .> 0.5]
-    if keep_nodes
-        return Topology(topo.nodes, actarcs)
-    end
-    tails = [arc.tail for arc in actarcs]
-    heads = [arc.head for arc in actarcs]
-    nodeidx = tails ∪ heads
-    nodemap = fill(0, length(topo.nodes))
-    for (target, idx) in enumerate(nodeidx)
-        nodemap[idx] = target
-    end
-    Topology(topo.nodes[nodeidx],
-             [Arc(nodemap[arc.tail], nodemap[arc.head]) for arc in actarcs])
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
@@ -221,125 +145,6 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol;
     @objective(model, :Min, sum{Δl[v] + Δu[v], v=1:nnodes})
 
     model, π, Δl, Δu, ploss, pres_lb, pres_ub
-end
-
-"""
-Build master model using only arc selection y and flows q.
-
-This is used to enumerate (embedded) topologies, each of which is evaluated with
-a "semi-subproblem". Returns model and variables y, q.
-"""
-function make_semimaster(inst::Instance, topo::Topology;
-                         solver=GLPKSolverMIP(msg_lev=0))
-    nodes, nnodes = topo.nodes, length(topo.nodes)
-    arcs, narcs = topo.arcs, length(topo.arcs)
-    terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(nodes, t) for t in terms]
-    all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
-
-    # demand for all nodes, including junctions
-    dem = fill(0.0, nnodes)
-    for t in 1:nterms
-        dem[termidx[t]] = inst.demand[t]
-    end
-
-    # adjacency lists
-    inarcs, outarcs = [Int[] for v in 1:nnodes], [Int[] for v in 1:nnodes]
-    for a in 1:narcs
-        tail, head = arcs[a]
-        push!(inarcs[head], a)
-        push!(outarcs[tail], a)
-    end
-
-    # "big-M" bound for flow on arcs
-    const maxflow = 0.5 * sum(abs(inst.demand))
-
-    model = Model(solver=solver)
-
-    # select arcs from topology with y
-    @variable(model, y[1:narcs], Bin)
-
-    # flow through arcs
-    @variable(model, 0 <= q[1:narcs] <= maxflow)
-
-    # mass flow balance at nodes
-    @constraint(model, flowbalance[v=1:nnodes],
-                sum{q[a], a=inarcs[v]} - sum{q[a], a=outarcs[v]} == dem[v])
-
-    # allow flow only for active arcs
-    @constraint(model, active[a=1:narcs], q[a] <= maxflow*y[a])
-
-    # exclude antiparallel arcs.
-    antiidx = antiparallelindex(topo)
-    for a in 1:narcs
-        if a < antiidx[a] # only at most once per pair
-            @constraint(model, y[a] + y[antiidx[a]] ≤ 1)
-        end
-    end
-
-    # use cost of smallest diameter as topology-based relaxation
-    L = pipelengths(topo)
-    cmin = inst.diameters[1].cost
-    @objective(model, :Min, sum{cmin * L[a] * y[a], a=1:narcs})
-
-    model, y, q
-end
-
-"""
-Build model for a problem where the topology y and flow q are fixed, but the
-diameters z are still free. This is between the master- and subproblem and can
-be used
- - as a primal heuristic
- - to generate stronger no-good cuts on the y variables
-
-Returns model, list of candidate arcs and (sparse) variables z
-"""
-function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
-                      solver=GLPKSolverMIP(msg_lev=0))
-    nnodes = length(topo.nodes)
-    arcs = topo.arcs
-    termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
-    ndiams = length(inst.diameters)
-    candarcs = filter(a -> any(cand.zsol[a,:]), 1:length(arcs))
-    ncandarcs = length(candarcs)
-    tail = [arcs[a].tail for a in candarcs]
-    head = [arcs[a].head for a in candarcs]
-
-    πlb_min = minimum([b.lb for b in inst.pressure])^2
-    πub_max = maximum([b.ub for b in inst.pressure])^2
-    πlb = fill(πlb_min, nnodes)
-    πub = fill(πub_max, nnodes)
-    πlb[termidx] = [b.lb^2 for b in inst.pressure]
-    πub[termidx] = [b.ub^2 for b in inst.pressure]
-
-    L = pipelengths(topo)
-    c = [diam.cost for diam in inst.diameters]
-    Dm5 = [diam.value^(-5) for diam in inst.diameters]
-    C = inst.ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
-
-    model = Model(solver=solver)
-
-    @variable(model, z[1:ncandarcs, 1:ndiams], Bin)
-    @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])
-
-    @constraint(model, ploss[a=1:ncandarcs],
-                π[tail[a]] - π[head[a]] ≥ C[a] * sum{Dm5[i]*z[a,i], i=1:ndiams})
-    @constraint(model, choice[a=1:ncandarcs], sum{z[a,i], i=1:ndiams} == 1)
-
-    @objective(model, :Min, sum{c[i] * L[a] * z[a,i], a=1:ncandarcs, i=1:ndiams})
-
-    model, candarcs, z
-end
-
-"Generic no-good cut"
-function nogood{T<:Real}(model::Model, vars::Array{Variable}, sol::Array{T})
-    @assert size(vars) == size(sol)
-    nvars = length(vars)
-    active = (sol .> 0.5)
-    nactive = sum(active)
-    coef = 2.0*active - 1.0
-    @constraint(model, sum{coef[i]*vars[i], i=1:nvars} <= nactive - 1)
-    return 1
 end
 
 "Add tangent cut to quadratic inequality (ϕ ≥ q^2) if violated."
@@ -512,17 +317,6 @@ function critpathcuts(inst::Instance, topo::Topology, master::Master,
     return ncuts
 end
 
-"Cut off all y values for given, undirected topology"
-function avoid_topo_cut(model, y, topo::Topology, edges::Vector{Arc})
-    arcidx = arcindex(topo)
-    antidx = antiparallelindex(topo)
-
-    fwd = [arcidx[e] for e in edges]
-    bwd = [antidx[a] for a in fwd]
-    arcs = vcat(fwd, bwd)
-    @constraint(model, sum{y[a], a in arcs} ≤ length(edges) - 1)
-end
-
 "Construct all Benders cuts from the solution of a subproblem."
 function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
               sub::SubDualSol; addnogoods=true, addcritpath=true)
@@ -626,93 +420,4 @@ function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
     end
 
     Result(:UserLimit, nothing, dual, maxiter)
-end
-
-"Iteration based decomposition with semimaster and ~subproblem."
-function optimize(inst::Instance, topo::Topology, solver::IterTopo)
-    run_semi(inst, topo, maxiter=solver.maxiter, debug=solver.debug)
-end
-
-function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
-    narcs = length(topo.arcs)
-    ndiams = length(inst.diameters)
-
-    # initialize
-    primal, dual, status, bestsol = Inf, 0.0, :NotSolved, nothing
-    mastermodel, y, q = make_semimaster(inst, topo)
-
-    for iter=1:maxiter
-        debug && println("Iter $(iter)")
-
-        # resolve (relaxed) semimaster problem, build candidate solution
-        status = solve(mastermodel, suppress_warnings=true)
-        if status == :Infeasible
-            debug && println("  master problem is infeasible.")
-            if primal == Inf
-                # no solution was found
-                return Result(:Infeasible, nothing, Inf, iter)
-            else
-                @assert bestsol ≠ nothing
-                return Result(:Optimal, bestsol, dual, iter)
-            end
-        elseif status != :Optimal
-            error("Unexpected status: $(:status)")
-        end
-
-        ysol, qsol = getvalue(y), getvalue(q)
-        dual = getobjectivevalue(mastermodel)
-        if debug
-            println("  dual bound: $(dual)")
-            println("  cand. sol:$(find(qsol))")
-        end
-
-        # stopping criterion
-        if dual > primal - ɛ
-            @assert bestsol ≠ nothing
-            debug && println("  proved optimality of best solution.")
-            return Result(:Optimal, bestsol, dual, iter)
-        end
-
-        # check whether candidate has tree topology
-        candtopo = topology_from_candsol(topo, ysol)
-        if !is_tree(candtopo)
-            fullcandtopo = topology_from_candsol(topo, ysol, true)
-            cycle = find_cycle(fullcandtopo)
-            if length(cycle) == 0
-                # TODO: see above (candidate disconnected?)
-                nogood(mastermodel, y, ysol)
-                debug && println("  skip disconnected topology with nogood.")
-            else
-                avoid_topo_cut(mastermodel, y, topo, cycle)
-                debug && println("  skip non-tree topology, cycle: $(cycle)")
-            end
-            continue
-        end
-
-        # solve subproblem (from scratch, no warmstart)
-        zcand = fill(false, narcs, ndiams)
-        zcand[ysol .> 0.5, 1] = true
-        cand = CandSol(zcand, qsol, qsol.^2)
-
-        submodel, candarcs, z = make_semisub(inst, topo, cand)
-        substatus = solve(submodel, suppress_warnings=true)
-        if substatus == :Optimal
-            # have found improving solution?
-            newobj = getobjectivevalue(submodel)
-            if newobj < primal
-                primal = newobj
-                znew = fill(false, narcs, ndiams)
-                znew[candarcs,:] = (getvalue(z) .> 0.5)
-                bestsol = CandSol(znew, qsol, qsol.^2)
-                debug && println("  found improving solution: $(primal)")
-            end
-        elseif substatus != :Infeasible
-            error("Unexpected status: $(:substatus)")
-        end
-
-        # generate nogood cut and add to master
-        nogood(mastermodel, y, ysol)
-    end
-
-    Result(:UserLimit, bestsol, dual, maxiter)
 end
