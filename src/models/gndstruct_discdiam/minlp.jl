@@ -1,13 +1,20 @@
 immutable MINLP <: GroundStructureSolver
     solver # to solve MINLP model
     debug::Bool
+    contz::Bool
 
-    function MINLP(solver; debug=false)
-        new(solver, debug)
+    function MINLP(solver; debug=false, contz=false)
+        new(solver, debug, contz)
     end
 end
 
-function make_minlp(inst::Instance, topo::Topology, solver::MINLP)
+"""
+Build MINLP model for instance on given ground structure.
+
+To be solved with given MPB solver (capable of NLP).
+Use continuous variables 0 ≤ z ≤ 1 if `contz` is true.
+"""
+function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -47,13 +54,17 @@ function make_minlp(inst::Instance, topo::Topology, solver::MINLP)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff * L
 
-    model = Model(solver=solver.solver)
+    model = Model(solver=solver)
 
     # select arcs from topology
     @variable(model, y[1:narcs], Bin)
 
     # select diameter on arcs
-    @variable(model, z[1:narcs, 1:ndiams], Bin)
+    if contz # continuous
+        @variable(model, 0 ≤ z[1:narcs, 1:ndiams] ≤ 1)
+    else # discrete
+        @variable(model, z[1:narcs, 1:ndiams], Bin)
+    end
 
     # flow through arcs
     @variable(model, 0 <= q[1:narcs] <= qmax)
@@ -83,7 +94,7 @@ function make_minlp(inst::Instance, topo::Topology, solver::MINLP)
 end
 
 function optimize(inst::Instance, topo::Topology, solver::MINLP)
-    model, y, z, q, π = make_minlp(inst, topo, solver)
+    model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
     status = solve(model)
 
     zsol = round(Bool, getvalue(z) .>= 0.5)
