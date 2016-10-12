@@ -20,10 +20,14 @@ include(config) # creates solver
 
 println("solving $instname with $(basename(config))")
 
-tic()
-println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
 try
+    tic()
+    println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
     result = solve_with(instname, solver)
+    println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
+    toc()
+    println("Status: $(result.status)")
+    println("Solution: $(findn(result.solution.zsol))")
 catch ex
     if isa(ex, InterruptException)
         println("-- was interrupted --")
@@ -31,7 +35,3 @@ catch ex
         rethrow()
     end
 end
-println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
-toc()
-
-println("Status: $(result.status)")
