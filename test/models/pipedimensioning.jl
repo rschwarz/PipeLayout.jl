@@ -1,9 +1,10 @@
 import PipeLayout.PipeDimensioning: make_model
 using JuMP
+using Clp
 
 facts("check dimensioning on single pipe") do
     inst, topo = single_pipe()
-    model, π, l = make_model(inst, topo)
+    model, π, l = make_model(inst, topo, ClpSolver())
     status = solve(model)
     @fact status --> :Optimal
 

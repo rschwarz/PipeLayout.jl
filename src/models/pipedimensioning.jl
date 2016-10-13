@@ -1,7 +1,6 @@
-using GLPKMathProgInterface
 using JuMP
 
-function make_model(inst::Instance, topo::Topology; solver=GLPKSolverLP())
+function make_model(inst::Instance, topo::Topology, solver)
     nnodes = length(inst.nodes)
     length(topo.nodes) == nnodes ||
         throw(ArgumentError("Steiner nodes not allowed"))
