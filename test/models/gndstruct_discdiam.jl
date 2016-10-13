@@ -228,6 +228,14 @@ facts("run GBD iterations") do
         @fact result.niter --> 3
     end
 
+    context("high flow: time limit instance") do
+        inst = Instance(nodes, 30*demand, bounds, diams)
+
+        result = optimize(inst, topo, IterGBD(timelimit=5.0))
+        @fact result.status --> :UserLimit
+        @fact result.solution --> nothing
+    end
+
     context("high flow on triangle: infeasible") do
         inst3 = Instance([Node(0,0), Node(50,0)],
                          20*[-50, 50],
