@@ -7,12 +7,13 @@ immutable IterGBD <: GroundStructureSolver
     addnogoods::Bool
     addcritpath::Bool
     maxiter::Int
+    timelimit::Float64 # seconds
     debug::Bool
     writemodels::Bool
 
     function IterGBD(; addnogoods=false, addcritpath=true, maxiter::Int=100,
-                     debug=false, writemodels=false)
-        new(addnogoods, addcritpath, maxiter, debug, writemodels)
+                     timelimit=Inf, debug=false, writemodels=false)
+        new(addnogoods, addcritpath, maxiter, timelimit, debug, writemodels)
     end
 end
 
@@ -333,19 +334,29 @@ end
 
 "Iteration based implementation of GBD."
 function optimize(inst::Instance, topo::Topology, solver::IterGBD)
-    run_gbd(inst, topo, maxiter=solver.maxiter, debug=solver.debug,
-            addnogoods=solver.addnogoods, addcritpath=solver.addcritpath,
-            writemodels=solver.writemodels)
+    @show solver
+    run_gbd(inst, topo, maxiter=solver.maxiter, timelimit=solver.timelimit,
+            debug=solver.debug, addnogoods=solver.addnogoods,
+            addcritpath=solver.addcritpath, writemodels=solver.writemodels)
 end
 
-function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100, debug=false,
-                 addnogoods=false, addcritpath=true, writemodels=false)
+function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
+                 timelimit=Inf, debug=false, addnogoods=false, addcritpath=true,
+                 writemodels=false)
+    tbegin = time()
+    println("starting at $tbegin with limit of $timelimit, debug: $debug")
 
     # initialize
     master = Master(make_master(inst, topo)...)
     dual, status = 0.0, :NotSolved
 
     for iter=1:maxiter
+        elapsed = time() - tbegin
+        if elapsed >= timelimit
+            debug && println("Timelimit reached after: $elapsed seconds")
+            break
+        end
+
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) master problem, build candidate solution
