@@ -334,7 +334,6 @@ end
 
 "Iteration based implementation of GBD."
 function optimize(inst::Instance, topo::Topology, solver::IterGBD)
-    @show solver
     run_gbd(inst, topo, maxiter=solver.maxiter, timelimit=solver.timelimit,
             debug=solver.debug, addnogoods=solver.addnogoods,
             addcritpath=solver.addcritpath, writemodels=solver.writemodels)
@@ -343,17 +342,15 @@ end
 function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
                  timelimit=Inf, debug=false, addnogoods=false, addcritpath=true,
                  writemodels=false)
-    tbegin = time()
-    println("starting at $tbegin with limit of $timelimit, debug: $debug")
+    finaltime = time() + timelimit
 
     # initialize
     master = Master(make_master(inst, topo)...)
     dual, status = 0.0, :NotSolved
 
     for iter=1:maxiter
-        elapsed = time() - tbegin
-        if elapsed >= timelimit
-            debug && println("Timelimit reached after: $elapsed seconds")
+        if !stilltime(finaltime)
+            debug && println("Timelimit reached.")
             break
         end
 
@@ -361,6 +358,7 @@ function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
 
         # resolve (relaxed) master problem, build candidate solution
         writemodels && writeLP(master.model, "master_iter$(iter).lp")
+        settimelimit!(master.model, finaltime - time())
         status = solve(master.model, suppress_warnings=true)
         if status == :Infeasible
             debug && println("  relaxed master is infeasible :-(")
@@ -399,6 +397,7 @@ function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
         # solve subproblem (from scratch, no warmstart)
         submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand)
         writemodels && writeLP(submodel, "sub_relax_iter$(iter).lp")
+        settimelimit!(submodel, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
