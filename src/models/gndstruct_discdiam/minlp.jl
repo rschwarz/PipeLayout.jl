@@ -2,9 +2,10 @@ immutable MINLP <: GroundStructureSolver
     solver # to solve MINLP model
     debug::Bool
     contz::Bool
+    timelimit::Float64 # seconds
 
-    function MINLP(solver; debug=false, contz=false)
-        new(solver, debug, contz)
+    function MINLP(solver; debug=false, contz=false, timelimit=Inf)
+        new(solver, debug, contz, timelimit)
     end
 end
 
@@ -95,6 +96,7 @@ end
 
 function optimize(inst::Instance, topo::Topology, solver::MINLP)
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
+    settimelimit!(model, solver.timelimit)
     status = solve(model)
 
     zsol = round(Bool, getvalue(z) .>= 0.5)
