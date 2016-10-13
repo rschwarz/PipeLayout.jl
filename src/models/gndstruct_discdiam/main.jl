@@ -1,4 +1,3 @@
-using GLPKMathProgInterface
 using JuMP
 using MathProgBase
 

@@ -19,8 +19,7 @@ Build master model using only arc selection y and flows q.
 This is used to enumerate (embedded) topologies, each of which is evaluated with
 a "semi-subproblem". Returns model and variables y, q.
 """
-function make_semimaster(inst::Instance, topo::Topology;
-                         solver=GLPKSolverMIP(msg_lev=0))
+function make_semimaster(inst::Instance, topo::Topology)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -44,7 +43,7 @@ function make_semimaster(inst::Instance, topo::Topology;
     # "big-M" bound for flow on arcs
     const maxflow = 0.5 * sum(abs(inst.demand))
 
-    model = Model(solver=solver)
+    model = Model()
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -84,8 +83,7 @@ be used
 
 Returns model, list of candidate arcs and (sparse) variables z
 """
-function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
-                      solver=GLPKSolverMIP(msg_lev=0))
+function make_semisub(inst::Instance, topo::Topology, cand::CandSol)
     nnodes = length(topo.nodes)
     arcs = topo.arcs
     termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
@@ -107,7 +105,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
 
-    model = Model(solver=solver)
+    model = Model()
 
     @variable(model, z[1:ncandarcs, 1:ndiams], Bin)
     @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])

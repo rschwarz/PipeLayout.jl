@@ -25,8 +25,7 @@ immutable SubDualSol
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
-function make_master(inst::Instance, topo::Topology;
-                     solver=GLPKSolverMIP(msg_lev=0))
+function make_master(inst::Instance, topo::Topology)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -51,7 +50,7 @@ function make_master(inst::Instance, topo::Topology;
     # "big-M" bound for flow on arcs
     const maxflow = 0.5 * sum(abs(inst.demand))
 
-    model = Model(solver=solver)
+    model = Model()
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -98,7 +97,7 @@ Corresponds to the domain relaxation with pressure loss overestimation, which
 can be turned off via the flag `relaxed`.
 """
 function make_sub(inst::Instance, topo::Topology, cand::CandSol;
-                  solver=GLPKSolverLP(msg_lev=0), relaxed::Bool=true)
+                  relaxed::Bool=true)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -110,7 +109,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol;
     tail = [arcs[a].tail for a in candarcs]
     head = [arcs[a].head for a in candarcs]
 
-    model = Model(solver=solver)
+    model = Model()
 
     # unconstrained variable for squared pressure, the bounds are added with
     # inequalities having slack vars.
@@ -175,8 +174,7 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int)
     @assert 1 <= cand_i <= m
     @assert 1 <= cand_j <= n
 
-    solver = GLPKSolverLP(msg_lev=0)
-    model = Model(solver=solver)
+    model = Model()
 
     # coefficients to be found
     @variable(model, a[1:m])
