@@ -17,14 +17,17 @@ function select_subset{T}(base::Array{T}, size::Int)
     candidates[1:size]
 end
 
+const timebuffer = 10.0 # seconds
+
 "update timelimit (in seconds) for internal solver"
 function settimelimit!(model::JuMP.Model, limit)
+    limit = min(limit, timebuffer) # at least buffer
     if limit < Inf
         setparameters!(internalmodel(model), TimeLimit=limit)
     end
 end
 
 "is there still enough until final limit?"
-function stilltime(finaltime; buffer=10.0)
+function stilltime(finaltime; buffer=timebuffer)
     time() + buffer < finaltime
 end
