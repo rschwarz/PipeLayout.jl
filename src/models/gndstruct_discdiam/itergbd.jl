@@ -10,10 +10,14 @@ immutable IterGBD <: GroundStructureSolver
     timelimit::Float64 # seconds
     debug::Bool
     writemodels::Bool
+    mastersolver
+    subsolver
 
-    function IterGBD(; addnogoods=false, addcritpath=true, maxiter::Int=100,
+    function IterGBD(mastersolver, subsolver;
+                     addnogoods=false, addcritpath=true, maxiter::Int=100,
                      timelimit=Inf, debug=false, writemodels=false)
-        new(addnogoods, addcritpath, maxiter, timelimit, debug, writemodels)
+        new(addnogoods, addcritpath, maxiter, timelimit, debug, writemodels,
+            mastersolver, subsolver)
     end
 end
 
@@ -25,7 +29,7 @@ immutable SubDualSol
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
-function make_master(inst::Instance, topo::Topology)
+function make_master(inst::Instance, topo::Topology, solver)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -50,7 +54,7 @@ function make_master(inst::Instance, topo::Topology)
     # "big-M" bound for flow on arcs
     const maxflow = 0.5 * sum(abs(inst.demand))
 
-    model = Model()
+    model = Model(solver=solver)
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -96,7 +100,7 @@ Build model for subproblem (ground structure with discrete diameters).
 Corresponds to the domain relaxation with pressure loss overestimation, which
 can be turned off via the flag `relaxed`.
 """
-function make_sub(inst::Instance, topo::Topology, cand::CandSol;
+function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
                   relaxed::Bool=true)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
@@ -109,7 +113,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol;
     tail = [arcs[a].tail for a in candarcs]
     head = [arcs[a].head for a in candarcs]
 
-    model = Model()
+    model = Model(solver=solver)
 
     # unconstrained variable for squared pressure, the bounds are added with
     # inequalities having slack vars.
@@ -168,13 +172,13 @@ where x_i and y_j take values 0 or 1, with exactly one term active per sum.
 
 The coefficients a, b, c are returned.
 """
-function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int)
+function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, solver)
     m, n = size(values)
 
     @assert 1 <= cand_i <= m
     @assert 1 <= cand_j <= n
 
-    model = Model()
+    model = Model(solver=solver)
 
     # coefficients to be found
     @variable(model, a[1:m])
@@ -202,7 +206,7 @@ end
 
 "Linearized & reformulated cut based on single path."
 function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
-                 path::Vector{Arc})
+                 path::Vector{Arc}, solver)
     aidx = arcindex(topo)
     pathidx = [aidx[arc] for arc in path]
     npath = length(path)
@@ -264,7 +268,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
 
         # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
         fix_i, fix_j = cand_i + 1, cand_j + 1
-        cuv, cvw, c = linear_overest(supvalues, fix_i, fix_j)
+        cuv, cvw, c = linear_overest(supvalues, fix_i, fix_j, solver)
 
         # need to transform the coefficients to remove aux vars
         coeffs[[v-1],:] += cuv[2:end]' - cuv[1]
@@ -292,7 +296,7 @@ end
 
 "Linearized & reformulated cuts based on critical paths."
 function critpathcuts(inst::Instance, topo::Topology, master::Master,
-                      cand::CandSol, sub::SubDualSol)
+                      cand::CandSol, sub::SubDualSol, solver)
     ncuts = 0
 
     # compute dense dual flow
@@ -305,7 +309,7 @@ function critpathcuts(inst::Instance, topo::Topology, master::Master,
 
     # TODO: test that cuts are valid and separating
     for path in paths
-        ncuts += pathcut(inst, topo, master, cand, path)
+        ncuts += pathcut(inst, topo, master, cand, path, solver)
     end
 
     for aidx in 1:narcs
@@ -318,32 +322,33 @@ end
 
 "Construct all Benders cuts from the solution of a subproblem."
 function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
-              sub::SubDualSol; addnogoods=true, addcritpath=true)
+              sub::SubDualSol, solver; addnogoods=true, addcritpath=true)
     @assert any([addnogoods, addcritpath]) # must cut off!
     ncuts = 0
     if addnogoods
         ncuts += nogood(master.model, master.z, cand.zsol)
     end
     if addcritpath
-        ncuts += critpathcuts(inst, topo, master, cand, sub)
+        ncuts += critpathcuts(inst, topo, master, cand, sub, solver)
     end
     ncuts
 end
 
 "Iteration based implementation of GBD."
 function optimize(inst::Instance, topo::Topology, solver::IterGBD)
-    run_gbd(inst, topo, maxiter=solver.maxiter, timelimit=solver.timelimit,
+    run_gbd(inst, topo, solver.mastersolver, solver.subsolver,
+            maxiter=solver.maxiter, timelimit=solver.timelimit,
             debug=solver.debug, addnogoods=solver.addnogoods,
             addcritpath=solver.addcritpath, writemodels=solver.writemodels)
 end
 
-function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
-                 timelimit=Inf, debug=false, addnogoods=false, addcritpath=true,
-                 writemodels=false)
+function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
+                 maxiter::Int=100, timelimit=Inf, debug=false, addnogoods=false,
+                 addcritpath=true, writemodels=false)
     finaltime = time() + timelimit
 
     # initialize
-    master = Master(make_master(inst, topo)...)
+    master = Master(make_master(inst, topo, mastersolver)...)
     dual, status = 0.0, :NotSolved
 
     for iter=1:maxiter
@@ -356,7 +361,7 @@ function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
 
         # resolve (relaxed) master problem, build candidate solution
         writemodels && writeLP(master.model, "master_iter$(iter).lp")
-        settimelimit!(master.model, finaltime - time())
+        settimelimit!(master.model, mastersolver, finaltime - time())
         status = solve(master.model, suppress_warnings=true)
         if status == :Infeasible
             debug && println("  relaxed master is infeasible :-(")
@@ -364,7 +369,8 @@ function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
         elseif status != :Optimal
             error("Unexpected status: $(:status)")
         end
-        cand = CandSol(getvalue(master.z), getvalue(master.q), getvalue(master.ϕ))
+        zsol = getvalue(master.z)
+        cand = CandSol(zsol .>= 0.5, getvalue(master.q), getvalue(master.ϕ))
 
         dual = getobjectivevalue(master.model)
         if debug
@@ -393,17 +399,18 @@ function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
         end
 
         # solve subproblem (from scratch, no warmstart)
-        submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand)
+        submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand, subsolver)
         writemodels && writeLP(submodel, "sub_relax_iter$(iter).lp")
-        settimelimit!(submodel, finaltime - time())
+        settimelimit!(submodel, subsolver, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
-            submodel2, _ = make_sub(inst, topo, cand, relaxed=false)
+            submodel2, _ = make_sub(inst, topo, cand, subsolver, relaxed=false)
             writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp")
+            settimelimit!(submodel2, subsolver, finaltime - time())
             substatus2 = solve(submodel2, suppress_warnings=true)
             @assert substatus2 == :Optimal "Slack model is always feasible"
             totalslack2 = getobjectivevalue(submodel2)
@@ -422,7 +429,7 @@ function run_gbd(inst::Instance, topo::Topology; maxiter::Int=100,
         dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
 
         # generate cuts and add to master
-        ncuts = cuts(inst, topo, master, cand, dualsol,
+        ncuts = cuts(inst, topo, master, cand, dualsol, subsolver,
                      addnogoods=addnogoods, addcritpath=addcritpath)
         debug && println("  added $(ncuts) cuts.")
     end

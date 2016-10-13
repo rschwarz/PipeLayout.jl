@@ -1,4 +1,5 @@
 using JuMP
+using MathProgBase
 
 export ɛ, select_subset, settimelimit!, stilltime
 
@@ -20,10 +21,17 @@ end
 const timebuffer = 10.0 # seconds
 
 "update timelimit (in seconds) for internal solver"
-function settimelimit!(model::JuMP.Model, limit)
+function settimelimit!(model::JuMP.Model, solver, limit)
     limit = max(limit, timebuffer) # at least buffer
     if limit < Inf
-        setparameters!(internalmodel(model), TimeLimit=limit)
+        internal = internalmodel(model)
+        if isa(internal, MathProgBase.AbstractMathProgModel)
+            # model is already built, want to modify current params
+            MathProgBase.setparameters!(internal, TimeLimit=limit)
+        else
+            # model not yet build, want to modify future params
+            MathProgBase.setparameters!(solver, TimeLimit=limit)
+        end
     end
 end
 

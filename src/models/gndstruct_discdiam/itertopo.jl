@@ -7,9 +7,12 @@ immutable IterTopo <: GroundStructureSolver
     maxiter::Int
     timelimit::Float64 # seconds
     debug::Bool
+    mastersolver
+    subsolver
 
-    function IterTopo(; maxiter::Int=100, timelimit=Inf, debug=false)
-        new(maxiter, timelimit, debug)
+    function IterTopo(mastersolver, subsolver;
+                      maxiter::Int=100, timelimit=Inf, debug=false)
+        new(maxiter, timelimit, debug, mastersolver, subsolver)
     end
 end
 
@@ -19,7 +22,7 @@ Build master model using only arc selection y and flows q.
 This is used to enumerate (embedded) topologies, each of which is evaluated with
 a "semi-subproblem". Returns model and variables y, q.
 """
-function make_semimaster(inst::Instance, topo::Topology)
+function make_semimaster(inst::Instance, topo::Topology, solver)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -43,7 +46,7 @@ function make_semimaster(inst::Instance, topo::Topology)
     # "big-M" bound for flow on arcs
     const maxflow = 0.5 * sum(abs(inst.demand))
 
-    model = Model()
+    model = Model(solver=solver)
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -83,7 +86,7 @@ be used
 
 Returns model, list of candidate arcs and (sparse) variables z
 """
-function make_semisub(inst::Instance, topo::Topology, cand::CandSol)
+function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
     nnodes = length(topo.nodes)
     arcs = topo.arcs
     termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
@@ -105,7 +108,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
 
-    model = Model()
+    model = Model(solver=solver)
 
     @variable(model, z[1:ncandarcs, 1:ndiams], Bin)
     @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])
@@ -121,11 +124,12 @@ end
 
 "Iteration based decomposition with semimaster and ~subproblem."
 function optimize(inst::Instance, topo::Topology, solver::IterTopo)
-    run_semi(inst, topo, maxiter=solver.maxiter, timelimit=solver.timelimit,
+    run_semi(inst, topo, solver.mastersolver, solver.subsolver,
+             maxiter=solver.maxiter, timelimit=solver.timelimit,
              debug=solver.debug)
 end
 
-function run_semi(inst::Instance, topo::Topology;
+function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
                   maxiter::Int=100, timelimit=timelimit, debug=false)
     finaltime = time() + timelimit
     narcs = length(topo.arcs)
@@ -133,7 +137,7 @@ function run_semi(inst::Instance, topo::Topology;
 
     # initialize
     primal, dual, status, bestsol = Inf, 0.0, :NotSolved, nothing
-    mastermodel, y, q = make_semimaster(inst, topo)
+    mastermodel, y, q = make_semimaster(inst, topo, mastersolver)
 
     for iter=1:maxiter
         if !stilltime(finaltime)
@@ -143,7 +147,7 @@ function run_semi(inst::Instance, topo::Topology;
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) semimaster problem, build candidate solution
-        settimelimit!(mastermodel, finaltime - time())
+        settimelimit!(mastermodel, mastersolver, finaltime - time())
         status = solve(mastermodel, suppress_warnings=true)
         if status == :Infeasible
             debug && println("  master problem is infeasible.")
@@ -193,8 +197,8 @@ function run_semi(inst::Instance, topo::Topology;
         zcand[ysol .> 0.5, 1] = true
         cand = CandSol(zcand, qsol, qsol.^2)
 
-        submodel, candarcs, z = make_semisub(inst, topo, cand)
-        settimelimit!(submodel, finaltime - time())
+        submodel, candarcs, z = make_semisub(inst, topo, cand, subsolver)
+        settimelimit!(submodel, subsolver, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         if substatus == :Optimal
             # have found improving solution?
