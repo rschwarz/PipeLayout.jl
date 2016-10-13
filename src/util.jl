@@ -21,7 +21,7 @@ const timebuffer = 10.0 # seconds
 
 "update timelimit (in seconds) for internal solver"
 function settimelimit!(model::JuMP.Model, limit)
-    limit = min(limit, timebuffer) # at least buffer
+    limit = max(limit, timebuffer) # at least buffer
     if limit < Inf
         setparameters!(internalmodel(model), TimeLimit=limit)
     end
