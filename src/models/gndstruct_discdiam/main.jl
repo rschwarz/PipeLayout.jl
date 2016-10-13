@@ -1,5 +1,6 @@
 using GLPKMathProgInterface
 using JuMP
+using MathProgBase
 
 export CandSol, SubDualSol, Master
 export IterGBD, IterTopo, MINLP, optimize

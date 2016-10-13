@@ -95,8 +95,8 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
 end
 
 function optimize(inst::Instance, topo::Topology, solver::MINLP)
+    MathProgBase.setparameters!(solver.solver, TimeLimit=solver.timelimit)
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
-    settimelimit!(model, solver.timelimit)
     status = solve(model)
 
     zsol = round(Bool, getvalue(z) .>= 0.5)
