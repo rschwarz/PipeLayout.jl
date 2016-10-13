@@ -19,7 +19,7 @@ OUTDIR = joinpath(RESULTS, stem(INSTLIST), stem(CONFIG))
 mkpath(OUTDIR)
 
 # conservative timelimit (in minutes)
-include(config) # creates solver
+include(CONFIG) # creates solver
 timelimit = round(Int, 2 * solver.timelimit / 60)
 
 "submit a job to SLURM"
