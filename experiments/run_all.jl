@@ -20,6 +20,7 @@ mkpath(OUTDIR)
 
 # conservative timelimit (in minutes)
 include(CONFIG) # creates solver
+@assert solver.timelimit < Inf
 timelimit = round(Int, 2 * solver.timelimit / 60)
 
 "submit a job to SLURM"
