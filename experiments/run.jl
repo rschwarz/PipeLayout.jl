@@ -27,7 +27,11 @@ try
     println("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^")
     toc()
     println("Status: $(result.status)")
-    println("Solution: $(findn(result.solution.zsol))")
+    if result.solution != nothing
+        println("Solution: $(findn(result.solution.zsol))")
+    else
+        println("No solution")
+    end
 catch ex
     if isa(ex, InterruptException)
         println("-- was interrupted --")
