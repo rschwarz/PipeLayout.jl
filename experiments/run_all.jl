@@ -1,4 +1,6 @@
 #! /usr/bin/env julia
+using PipeLayout
+using PipeLayout.GndStructDiscDiam
 
 const ACCOUNT = "gas"
 
@@ -16,6 +18,10 @@ INDIR = abspath(dirname(INSTLIST))
 OUTDIR = joinpath(RESULTS, stem(INSTLIST), stem(CONFIG))
 mkpath(OUTDIR)
 
+# conservative timelimit (in minutes)
+include(config) # creates solver
+timelimit = round(Int, 2 * solver.timelimit / 60)
+
 "submit a job to SLURM"
 function submit(key)
     OUT = joinpath(OUTDIR, "$key.log")
@@ -23,7 +29,7 @@ function submit(key)
     options = ["--account=$ACCOUNT",
                "--partition=$PARTITION",
                "--cpus-per-task=1",
-               "--time=2:05:00",
+               "--time=$timelimit",
                "--signal=B:INT",
                "--output=$OUT",
                "--error=$ERR"]
