@@ -5,10 +5,11 @@ Solver object to store parameter values.
 """
 immutable IterTopo <: GroundStructureSolver
     maxiter::Int
+    timelimit::Float64 # seconds
     debug::Bool
 
-    function IterTopo(; maxiter::Int=100, debug=false)
-        new(maxiter, debug)
+    function IterTopo(; maxiter::Int=100, timelimit=Inf, debug=false)
+        new(maxiter, timelimit, debug)
     end
 end
 
@@ -122,10 +123,13 @@ end
 
 "Iteration based decomposition with semimaster and ~subproblem."
 function optimize(inst::Instance, topo::Topology, solver::IterTopo)
-    run_semi(inst, topo, maxiter=solver.maxiter, debug=solver.debug)
+    run_semi(inst, topo, maxiter=solver.maxiter, timelimit=solver.timelimit,
+             debug=solver.debug)
 end
 
-function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
+function run_semi(inst::Instance, topo::Topology;
+                  maxiter::Int=100, timelimit=timelimit, debug=false)
+    finaltime = time() + timelimit
     narcs = length(topo.arcs)
     ndiams = length(inst.diameters)
 
@@ -134,9 +138,14 @@ function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
     mastermodel, y, q = make_semimaster(inst, topo)
 
     for iter=1:maxiter
+        if !stilltime(finaltime)
+            debug && println("Timelimit reached.")
+            break
+        end
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) semimaster problem, build candidate solution
+        settimelimit!(mastermodel, finaltime - time())
         status = solve(mastermodel, suppress_warnings=true)
         if status == :Infeasible
             debug && println("  master problem is infeasible.")
@@ -187,6 +196,7 @@ function run_semi(inst::Instance, topo::Topology; maxiter::Int=100, debug=false)
         cand = CandSol(zcand, qsol, qsol.^2)
 
         submodel, candarcs, z = make_semisub(inst, topo, cand)
+        settimelimit!(submodel, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         if substatus == :Optimal
             # have found improving solution?
