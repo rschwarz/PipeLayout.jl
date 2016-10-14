@@ -119,7 +119,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
                 π[tail[a]] - π[head[a]] ≥ C[a] * sum{Dm5[i]*z[a,i], i=1:ndiams})
     @constraint(model, choice[a=1:ncandarcs], sum{z[a,i], i=1:ndiams} == 1)
 
-    @objective(model, :Min, sum{c[i] * L[a] * z[a,i], a=1:ncandarcs, i=1:ndiams})
+    @objective(model, :Min, sum{c[i] * L[candarcs[a]] * z[a,i], a=1:ncandarcs, i=1:ndiams})
 
     model, candarcs, z
 end
