@@ -48,19 +48,23 @@ facts("decompose positive arc flow in paths") do
     end
 
     context("on a grid with flow on subtree") do
-        topo = squaregrid(2, 3, 50.0, antiparallel=true)
+        # ()-1-()-6-
+        # 2    7
+        # ()-4-()-10-
+        grid = RegGrid{2,3,4}(50.0)
+        topo = gridtopology(grid)
         nnodes, narcs = length(topo.nodes), length(topo.arcs)
         arcflow = fill(0.0, narcs)
-        arcflow[11] = 3.0
-        arcflow[13] = 2.0
-        arcflow[ 4] = 1.0
+        arcflow[1] = 3.0
+        arcflow[6] = 2.0
+        arcflow[7] = 1.0
 
         paths, pathflows = flow_path_decomp(topo, arcflow)
         @fact length(paths) --> 2
         @fact length(pathflows) --> 2
-        @fact paths[1] --> [topo.arcs[11], topo.arcs[13]]
+        @fact paths[1] --> [topo.arcs[1], topo.arcs[6]]
         @fact pathflows[1] --> roughly(2.0)
-        @fact paths[2] --> [topo.arcs[11], topo.arcs[4]]
+        @fact paths[2] --> [topo.arcs[1], topo.arcs[7]]
         @fact pathflows[2] --> roughly(1.0)
     end
 end

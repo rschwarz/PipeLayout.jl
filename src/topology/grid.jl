@@ -1,34 +1,51 @@
-export squaregrid
+export RegGrid, gridtopology
 
-"Create a grid of square cells with m by n nodes and given edge width."
-function squaregrid{T<:Real}(m::Int, n::Int, width::T; antiparallel=false)
-    nodes = Node[]
-    sizehint!(nodes, m*n)
-    for j in 1:n
-        x = width * (j - 1)
-        for i in 1:m
-            push!(nodes, Node(x, width * (m - i)))
-        end
-    end
-    nodeidx = reshape(1:m*n, (m,n))
+"Specification for M by N grid with node degree D"
+immutable RegGrid{M,N,D}
+    width::Float64
+end
 
+"Generate nodes of a regular grid"
+function gridnodes{M,N,D}(grid::RegGrid{M,N,D})
+    w = grid.width
+    [Node(w*(j - 1), w*(M - i)) for j=1:N for i=1:M]
+end
+
+"2d array filled with indices to corresponding 1d array"
+nodeidx(m,n) = reshape(1:m*n, m,n)
+
+"generate coordinates for grid neighbors"
+function candneighbors{M,N}(i::Int, j::Int, grid::RegGrid{M,N,4})
+    [          (i-1, j),
+     (i, j-1),           (i, j+1),
+               (i+1, j)          ]
+end
+function candneighbors{M,N}(i::Int, j::Int, grid::RegGrid{M,N,8})
+    [(i-1, j-1), (i-1, j), (i-1, j+1),
+     (i, j-1),             (i, j+1),
+     (i+1, j-1), (i+1, j), (i+1, j+1)]
+end
+
+"valid grid neighbors"
+function gridneighbors{M,N,D}(i::Int, j::Int, grid::RegGrid{M,N,D})
+    filter(t -> t[1] in 1:M && t[2] in 1:N,
+           candneighbors(i, j, grid))
+end
+
+"Generate (anti-parallel) arcs of a regular grid"
+function gridarcs{M,N,D}(grid::RegGrid{M,N,D})
     arcs = Arc[]
-    narcs = (m-1)*n + m*(n-1)
-    sizehint!(arcs, antiparallel ? 2*narcs : narcs)
-    # columns top-down
-    for j in 1:n
-        for i in 1:m-1
-            push!(arcs, Arc(nodeidx[i,j], nodeidx[i+1,j]))
-            antiparallel && push!(arcs, Arc(nodeidx[i+1,j], nodeidx[i,j]))
+    idx = nodeidx(M,N)
+    for j=1:N
+        for i=1:M
+            for n in gridneighbors(i, j, grid)
+                push!(arcs, Arc(idx[i,j], idx[n...]))
+            end
         end
     end
-    # rows left-right
-    for i in 1:m
-        for j in 1:n-1
-            push!(arcs, Arc(nodeidx[i,j], nodeidx[i,j+1]))
-            antiparallel && push!(arcs, Arc(nodeidx[i,j+1], nodeidx[i,j]))
-        end
-    end
+    arcs
+end
 
-    Topology(nodes, arcs)
+function gridtopology{M,N,D}(grid::RegGrid{M,N,D})
+    Topology(gridnodes(grid), gridarcs(grid))
 end
