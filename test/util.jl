@@ -1,4 +1,4 @@
-import PipeLayout: nonzero
+import PipeLayout: nonzero, select_subset
 
 facts("numerical comparisons") do
     @fact nonzero(0.0) --> false
