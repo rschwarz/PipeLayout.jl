@@ -366,9 +366,14 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         if status == :Infeasible
             debug && println("  relaxed master is infeasible :-(")
             return Result(:Infeasible, nothing, Inf, iter)
-        elseif status != :Optimal
-            error("Unexpected status: $(:status)")
+        elseif status == :UserLimit
+            return Result(:UserLimit, nothing, dual, iter)
+        elseif status == :Optimal
+            # good, we continue below
+        else
+            error("Unexpected status: $(status)")
         end
+
         zsol = getvalue(master.z)
         cand = CandSol(zsol .>= 0.5, getvalue(master.q), getvalue(master.ϕ))
 

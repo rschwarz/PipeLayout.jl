@@ -158,8 +158,12 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
                 @assert bestsol ≠ nothing
                 return Result(:Optimal, bestsol, dual, iter)
             end
-        elseif status != :Optimal
-            error("Unexpected status: $(:status)")
+        elseif status == :UserLimit
+            return Result(:UserLimit, bestsol, dual, iter)
+        elseif status == :Optimal
+            # good, we continue below
+        else
+            error("Unexpected status: $(status)")
         end
 
         ysol, qsol = getvalue(y), getvalue(q)
