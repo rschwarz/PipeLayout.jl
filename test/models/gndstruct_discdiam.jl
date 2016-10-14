@@ -279,7 +279,7 @@ facts("run GBD iterations") do
     end
 
     context("difficult instance with disconnected candidates") do
-        inst = Instance([Node(0,0), Node(100,0), Node(200, 100)],
+        inst = Instance([Node(0,0), Node(100,0), Node(200,100)],
                         [800, -900, 100],
                         fill(Bounds(40,80), 3),
                         [Diameter(t...) for t in [(1.0, 1.0), (2.0, 3.2)]],
@@ -292,10 +292,6 @@ facts("run GBD iterations") do
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
-        @show zsol
-        @fact sum(zsol[ 6,:]) --> 1
-        @fact sum(zsol[12,:]) --> 1
-        @fact sum(zsol[13,:]) --> 1
         @fact sum(zsol) --> 3
 
         @fact result.dualbound --> roughly(520.0)
