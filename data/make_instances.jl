@@ -1,6 +1,6 @@
 using JSON
 using PipeLayout
-import PipeLayout: ploss_coeff_nice, randdemand
+import PipeLayout: ploss_coeff_nice, randdemand, select_covering_subset
 
 # set random seed for reproducible results
 srand(23)
@@ -26,7 +26,7 @@ terminals = Dict{String, Vector{Node}}()
 for (gskey, topo) in ground_structures
     for nterminals in [3, 5, 7]
         key = @sprintf "%s.t%02d" gskey nterminals
-        terminals[key] = select_subset(topo.nodes, nterminals)
+        terminals[key] = select_covering_subset(topo.nodes, nterminals)
     end
 end
 
