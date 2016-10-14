@@ -9,10 +9,12 @@ immutable IterTopo <: GroundStructureSolver
     debug::Bool
     mastersolver
     subsolver
+    writemodels::Bool
 
     function IterTopo(mastersolver, subsolver;
-                      maxiter::Int=100, timelimit=Inf, debug=false)
-        new(maxiter, timelimit, debug, mastersolver, subsolver)
+                      maxiter::Int=100, timelimit=Inf, debug=false,
+                      writemodels=false)
+        new(maxiter, timelimit, debug, mastersolver, subsolver, writemodels)
     end
 end
 
@@ -126,11 +128,12 @@ end
 function optimize(inst::Instance, topo::Topology, solver::IterTopo)
     run_semi(inst, topo, solver.mastersolver, solver.subsolver,
              maxiter=solver.maxiter, timelimit=solver.timelimit,
-             debug=solver.debug)
+             debug=solver.debug, writemodels=solver.writemodels)
 end
 
 function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
-                  maxiter::Int=100, timelimit=timelimit, debug=false)
+                  maxiter::Int=100, timelimit=timelimit, debug=false,
+                  writemodels=false)
     finaltime = time() + timelimit
     narcs = length(topo.arcs)
     ndiams = length(inst.diameters)
@@ -147,6 +150,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) semimaster problem, build candidate solution
+        writemodels && writeLP(mastermodel, "master_iter$(iter).lp")
         settimelimit!(mastermodel, mastersolver, finaltime - time())
         status = solve(mastermodel, suppress_warnings=true)
         if status == :Infeasible
@@ -202,6 +206,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         cand = CandSol(zcand, qsol, qsol.^2)
 
         submodel, candarcs, z = make_semisub(inst, topo, cand, subsolver)
+        writemodels && writeLP(submodel, "sub_iter$(iter).lp")
         settimelimit!(submodel, subsolver, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         if substatus == :Optimal
