@@ -292,9 +292,10 @@ facts("run GBD iterations") do
         @fact result.status --> :Optimal
 
         zsol = result.solution.zsol
-        @fact zsol[6,1] --> true
-        @fact zsol[12,2] --> true
-        @fact zsol[13,1] --> true
+        @show zsol
+        @fact sum(zsol[ 6,:]) --> 1
+        @fact sum(zsol[12,:]) --> 1
+        @fact sum(zsol[13,:]) --> 1
         @fact sum(zsol) --> 3
 
         @fact result.dualbound --> roughly(520.0)
