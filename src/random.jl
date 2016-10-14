@@ -43,3 +43,30 @@ function randgridinstance(num::Int, xmax::Int64, ymax::Int64, flow::Float64,
              fill(Bounds(lb, ub), num),
              diameters)
 end
+
+"select random subset of a base array of desired size (non-repeating)"
+function select_subset{T}(base::Array{T}, size::Int)
+    @assert size <= length(unique(base))
+    candidates = T[]
+    while length(candidates) < size
+        candidates = unique(append!(candidates, rand(base, size)))
+    end
+    candidates[1:size]
+end
+
+"rejection sampling for good area coverage"
+function select_covering_subset(base::Array{Node}, size::Int)
+    function area(nodes::Array{Node})
+        xl, xu = extrema([n.x for n in nodes])
+        yl, yu = extrema([n.y for n in nodes])
+        (xu - xl)*(yu - yl)
+    end
+
+    whole = area(base)
+    fraction = size/(size+1)
+    sample = base[1:1]
+    while area(sample) < fraction * whole
+        sample = select_subset(base, size)
+    end
+    sample
+end
