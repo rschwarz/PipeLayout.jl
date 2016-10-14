@@ -223,6 +223,13 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
             error("Unexpected status: $(:substatus)")
         end
 
+        # stopping criterion
+        if dual > primal - ɛ
+            @assert bestsol ≠ nothing
+            debug && println("  proved optimality of best solution.")
+            return Result(:Optimal, bestsol, dual, iter)
+        end
+
         # generate nogood cut and add to master
         nogood(mastermodel, y, ysol)
     end
