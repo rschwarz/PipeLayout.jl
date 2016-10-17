@@ -365,9 +365,9 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         status = solve(master.model, suppress_warnings=true)
         if status == :Infeasible
             debug && println("  relaxed master is infeasible :-(")
-            return Result(:Infeasible, nothing, Inf, iter)
+            return Result(:Infeasible, nothing, Inf, Inf, iter)
         elseif status == :UserLimit
-            return Result(:UserLimit, nothing, dual, iter)
+            return Result(:UserLimit, nothing, Inf, dual, iter)
         elseif status == :Optimal
             # good, we continue below
         else
@@ -422,7 +422,8 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
 
             if totalslack2 ≈ 0.0
                 debug && println("  found feasible solution :-)")
-                return Result(:Optimal, cand, dual, iter)
+                primal = getobjectivevalue(master.model)
+                return Result(:Optimal, cand, primal, dual, iter)
             else
                 # cut off candidate with no-good on z
                 debug && println("  subproblem/relaxation gap!")
@@ -439,5 +440,5 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         debug && println("  added $(ncuts) cuts.")
     end
 
-    Result(:UserLimit, nothing, dual, maxiter)
+    Result(:UserLimit, nothing, Inf, dual, maxiter)
 end

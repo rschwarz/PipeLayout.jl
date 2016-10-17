@@ -26,6 +26,7 @@ end
 immutable Result
     status::Symbol
     solution
+    primalbound::Float64
     dualbound::Float64
     niter::Int
 end

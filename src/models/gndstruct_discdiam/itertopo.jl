@@ -157,13 +157,13 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
             debug && println("  master problem is infeasible.")
             if primal == Inf
                 # no solution was found
-                return Result(:Infeasible, nothing, Inf, iter)
+                return Result(:Infeasible, nothing, Inf, Inf, iter)
             else
                 @assert bestsol ≠ nothing
-                return Result(:Optimal, bestsol, dual, iter)
+                return Result(:Optimal, bestsol, primal, dual, iter)
             end
         elseif status == :UserLimit
-            return Result(:UserLimit, bestsol, dual, iter)
+            return Result(:UserLimit, bestsol, primal, dual, iter)
         elseif status == :Optimal
             # good, we continue below
         else
@@ -181,7 +181,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         if dual > primal - ɛ
             @assert bestsol ≠ nothing
             debug && println("  proved optimality of best solution.")
-            return Result(:Optimal, bestsol, dual, iter)
+            return Result(:Optimal, bestsol, primal, dual, iter)
         end
 
         # check whether candidate has tree topology
@@ -227,12 +227,12 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         if dual > primal - ɛ
             @assert bestsol ≠ nothing
             debug && println("  proved optimality of best solution.")
-            return Result(:Optimal, bestsol, dual, iter)
+            return Result(:Optimal, bestsol, primal, dual, iter)
         end
 
         # generate nogood cut and add to master
         nogood(mastermodel, y, ysol)
     end
 
-    Result(:UserLimit, bestsol, dual, maxiter)
+    Result(:UserLimit, bestsol, primal, dual, maxiter)
 end

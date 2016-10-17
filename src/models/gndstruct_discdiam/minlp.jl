@@ -103,7 +103,8 @@ function optimize(inst::Instance, topo::Topology, solver::MINLP)
     qsol = getvalue(q)
     bestsol = CandSol(zsol, qsol, qsol.^2)
 
+    primal = getobjectivevalue(model)
     dual = getobjbound(internalmodel(model))
 
-    Result(status, bestsol, dual, 0)
+    Result(status, bestsol, primal, dual, 0)
 end
