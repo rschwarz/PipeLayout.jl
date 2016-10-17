@@ -29,6 +29,8 @@ try
     println("Status: $(result.status)")
     if result.solution != nothing
         println("Solution: $(findn(result.solution.zsol))")
+        println("Primal bound: $(result.primalbound)")
+        println("Dual bound: $(result.dualbound)")
     else
         println("No solution")
     end
