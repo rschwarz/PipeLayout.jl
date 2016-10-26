@@ -24,6 +24,11 @@ using ..PipeLayout
 include("models/pipedimensioning.jl")
 end
 
+module JunctionLocation
+using ..PipeLayout
+include("models/junctionlocation/main.jl")
+end
+
 module GndStructDiscDiam
 using ..PipeLayout
 include("models/gndstruct_discdiam/main.jl")
