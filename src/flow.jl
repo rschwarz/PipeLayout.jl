@@ -11,7 +11,9 @@ function uniq_flow(topo::Topology, demand::Vector{Float64})
     sum(demand) ≈ 0.0 || throw(ArgumentError("Demand is not balanced!"))
 
     dg = digraph_from_topology(topo)
-    incidence_matrix(dg, Float64) \ demand
+    N = incidence_matrix(dg, Float64)
+    # TODO: figure out issues with CHOLMOD?
+    full(N) \ demand
 end
 
 uniq_flow(inst::Instance, topo::Topology) = uniq_flow(topo, inst.demand)
