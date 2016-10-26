@@ -13,7 +13,11 @@ include("topology/util.jl")
 
 include("flow.jl")
 
-include("models/gndstruct_discdiam.jl")
 include("models/pipedimensioning.jl")
+include("models/gndstruct_discdiam.jl")
+
+if Pkg.installed("SCIP") != nothing
+    include("models/junctionlocation.jl")
+end
 
 FactCheck.exitstatus()
