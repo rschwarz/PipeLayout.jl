@@ -28,6 +28,23 @@ immutable SubDualSol
     λu::Array{Float64}
 end
 
+"""
+Data type for master problem.
+
+Variable meanings:
+  y: select arc
+  z: select diameter for arc
+  q: flow through arc
+  ϕ: squared flow through arc (ϕ = q²)
+"""
+immutable Master
+    model::Model
+    y::Vector{Variable}
+    z::Array{Variable,2}
+    q::Vector{Variable}
+    ϕ::Vector{Variable}
+end
+
 "Build model for master problem (ground structure with discrete diameters)."
 function make_master(inst::Instance, topo::Topology, solver)
     nodes, nnodes = topo.nodes, length(topo.nodes)
