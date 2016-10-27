@@ -23,7 +23,7 @@ facts("solve junction location for three terminals") do
     context("little flow, smallest diameter, Steiner node in center") do
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
         model, x, y, L, l, π = make_nlp(inst, topo, solver)
-        status = solve(model)
+        status = solve(model, suppress_warnings=true)
 
         @fact status --> anyof(:Optimal, :UserLimit)
 
@@ -48,7 +48,7 @@ facts("solve junction location for three terminals") do
     context("more flow, mixed diameter, Steiner node towards source") do
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
         model, x, y, L, l, π = make_nlp(inst, topo, solver)
-        status = solve(model)
+        status = solve(model, suppress_warnings=true)
 
         @fact status --> anyof(:Optimal, :UserLimit)
 
@@ -68,8 +68,6 @@ facts("solve junction location for three terminals") do
         lsol = getvalue(l)
         D = [d.value for d in diams]
         equiv = (lsol * D.^(-5)).^(-1/5)
-        @show lsol
-        @show equiv
 
         @fact equiv[2] --> roughly(equiv[3], 0.1) # symmetry
         @fact equiv[1] --> greater_than(equiv[2]) # more flow -> larger diam?

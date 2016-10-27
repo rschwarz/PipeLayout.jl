@@ -31,10 +31,7 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
     πlb[termidx] = [b.lb^2 for b in inst.pressure]
     πub[termidx] = [b.ub^2 for b in inst.pressure]
 
-    # uniq for tree topology
-    demand = fill(0.0, nnodes)
-    demand[termidx] = inst.demand
-    q = uniq_flow(topo, demand)
+    q = uniq_flow(inst, topo)
 
     c = [diam.cost for diam in inst.diameters]
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
