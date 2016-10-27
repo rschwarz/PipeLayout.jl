@@ -5,6 +5,7 @@ include("helpers.jl")
 
 include("gasphysics.jl")
 include("util.jl")
+include("pwl.jl")
 
 include("topology/geosteiner.jl")
 include("topology/grid.jl")
