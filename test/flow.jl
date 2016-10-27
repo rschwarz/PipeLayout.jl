@@ -1,4 +1,4 @@
-import PipeLayout: uniq_flow, flow_path_decomp
+import PipeLayout: uniq_flow, flow_path_decomp, reorient_fwdflow
 
 facts("compute unique flow on trees") do
     nodes = [Node(i,i) for i in 1:6]
@@ -41,6 +41,28 @@ facts("compute unique flow on trees") do
         arcs = [Arc(1,2), Arc(2,3), Arc(3,4), Arc(4,5), Arc(5,6)]
         d = [-2.0, -4.0, 0.0, 0.0, 3.0, 3.0, 1.0]
         @fact_throws ArgumentError uniq_flow(Topology(nodes, arcs), d)
+    end
+end
+
+facts("reorient arcs for forward flow") do
+    # star with arcs going to center
+    nodes = [Node(i,i) for i=1:4]
+    arcs = [Arc(i,4) for i=1:3]
+    topo = Topology(nodes, arcs)
+
+    context("nothing changes for zero flow") do
+        rotopo = reorient_fwdflow(topo, fill(0.0, 4))
+        @fact rotopo.nodes --> topo.nodes
+        @fact rotopo.arcs --> topo.arcs
+    end
+
+    context("change arcs leading to sink") do
+        rotopo = reorient_fwdflow(topo, [-1.0, 1.0, 0.0, 0.0])
+        @fact rotopo.nodes --> topo.nodes
+        @fact rotopo.arcs[1] --> topo.arcs[1] # source
+        @fact rotopo.arcs[2].tail --> topo.arcs[2].head # sink
+        @fact rotopo.arcs[2].head --> topo.arcs[2].tail # sink
+        @fact rotopo.arcs[3] --> topo.arcs[3] # innode
     end
 end
 

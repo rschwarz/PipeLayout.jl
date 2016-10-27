@@ -3,6 +3,15 @@ using LightGraphs: is_connected, incidence_matrix, fadj, badj
 
 export uniq_flow, flow_path_decomp
 
+"Create dense demand vector for a topology"
+function dense_demand(inst::Instance, topo::Topology)
+    # allow for additional steiner nodes (demand = 0)
+    termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
+    demand = fill(0.0, length(topo.nodes))
+    demand[termidx] = inst.demand
+    demand
+end
+
 "Compute unique flow on arcs for given topology and demand vector."
 function uniq_flow(topo::Topology, demand::Vector{Float64})
     length(topo.nodes) == length(demand) ||
@@ -17,11 +26,25 @@ function uniq_flow(topo::Topology, demand::Vector{Float64})
 end
 
 function uniq_flow(inst::Instance, topo::Topology)
-    # allow for additional steiner nodes (demand = 0)
-    termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
-    demand = fill(0.0, length(topo.nodes))
-    demand[termidx] = inst.demand
-    uniq_flow(topo, demand)
+    uniq_flow(topo, dense_demand(inst, topo))
+end
+
+"Reorient the arcs of a tree so that flow goes forward (positive)"
+function reorient_fwdflow(topo::Topology, demand::Vector{Float64})
+    arcflow = uniq_flow(topo, demand)
+    arcs = Arc[]
+    for (arc, flow) in zip(topo.arcs, arcflow)
+        if flow ≥ 0
+            push!(arcs, arc)
+        else
+            push!(arcs, Arc(arc.head, arc.tail))
+        end
+    end
+    Topology(topo.nodes, arcs)
+end
+
+function reorient_fwdflow(inst::Instance, topo::Topology)
+    reorient_fwdflow(topo, dense_demand(inst, topo))
 end
 
 "Decompose arc flow into paths from sources to sinks."
