@@ -6,11 +6,23 @@ facts("compute unique flow on trees") do
 
     context("everything fine (H net)") do
         arcs = [Arc(1,3), Arc(2,3), Arc(3,4), Arc(4,5), Arc(4,6)]
-        m = length(arcs)
         d = [-2.0, -4.0, 0.0, 0.0, 3.0, 3.0]
         q = uniq_flow(Topology(nodes, arcs), d)
-        @fact length(q) --> m
+        @fact length(q) --> length(arcs)
         @fact q --> roughly([-d[1], -d[2], d[5] + d[6], d[5], d[6]])
+    end
+
+    context("everything fine (H net with Steiner nodes)") do
+        arcs = [Arc(1,3), Arc(2,3), Arc(3,4), Arc(4,5), Arc(4,6)]
+        topo = Topology(nodes, arcs)
+
+        d = [-2.0, -4.0, 3.0, 3.0]
+        terms = nodes[[1, 2, 5, 6]]
+        inst = Instance(terms, d, fill(Bounds(1, 2), 4), [Diameter(1, 1)])
+
+        q = uniq_flow(inst, topo)
+        @fact length(q) --> length(arcs)
+        @fact q --> roughly([-d[1], -d[2], d[3] + d[4], d[3], d[4]])
     end
 
     context("wrong topology") do

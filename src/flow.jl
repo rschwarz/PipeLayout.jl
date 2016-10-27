@@ -16,7 +16,13 @@ function uniq_flow(topo::Topology, demand::Vector{Float64})
     full(N) \ demand
 end
 
-uniq_flow(inst::Instance, topo::Topology) = uniq_flow(topo, inst.demand)
+function uniq_flow(inst::Instance, topo::Topology)
+    # allow for additional steiner nodes (demand = 0)
+    termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
+    demand = fill(0.0, length(topo.nodes))
+    demand[termidx] = inst.demand
+    uniq_flow(topo, demand)
+end
 
 "Decompose arc flow into paths from sources to sinks."
 function flow_path_decomp(topo::Topology, arcflow::Vector{Float64})
