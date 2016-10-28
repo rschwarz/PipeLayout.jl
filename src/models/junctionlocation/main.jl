@@ -1,7 +1,7 @@
 using JuMP
 using MathProgBase
 
-export NLP
+export NLP, SOC
 
 include("nlp.jl")
-# include("soc.jl")
+include("soc.jl")

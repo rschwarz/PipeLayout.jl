@@ -1,13 +1,5 @@
-using PipeLayout.JunctionLocation
-import PipeLayout.JunctionLocation: make_soc
-import PipeLayout: ploss_coeff_nice
-
-using JuMP
-using SCS
-
-if Pkg.installed("SCIP") != nothing
-#    include("junctionlocation_nlp.jl")
-end
+import PipeLayout.JunctionLocation: make_nlp
+using SCIP # need solver for nonconvex problems :-\
 
 facts("solve junction location for three terminals") do
     # equilateral triangle
@@ -20,11 +12,13 @@ facts("solve junction location for three terminals") do
     topo = Topology(vcat(nodes, [Node(20, 20)]),
                     [Arc(3,4), Arc(4,1), Arc(4,2)])
 
-    solver = SOC(SCSSolver(eps=1e-8, verbose=0))
+    # don't solve nonconvex NLP to optimality
+    solver = NLP(SCIPSolver("display/verblevel", 0,
+                            "limits/gap", 1e-3))
 
     context("little flow, smallest diameter, Steiner node in center") do
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
-        model, x, y, t, π = make_soc(inst, topo, solver)
+        model, x, y, L, l, π = make_nlp(inst, topo, solver)
         status = solve(model, suppress_warnings=true)
 
         @fact status --> anyof(:Optimal, :UserLimit)
@@ -37,17 +31,22 @@ facts("solve junction location for three terminals") do
         @fact xsol[4] --> roughly(20, 0.01)
         @fact ysol[4] --> roughly(sqrt(3)/6*40, 0.01)
 
-        tsol = getvalue(t)
-        @fact sum(tsol[1]) --> roughly(sum(tsol[2]), 0.01)
-        @fact sum(tsol[1]) --> roughly(sum(tsol[3]), 0.01)
+        Lsol = getvalue(L)
+        for i=1:3
+            @fact Lsol[i] --> roughly(sqrt(3)/3*40, 0.01)
+        end
+
+        lsol = getvalue(l)
+        @fact sum(lsol[:,1]) --> roughly(3, 0.01) # smallest diameter
+        @fact sum(lsol[:, 2:end]) --> roughly(0, 0.01) # no other
     end
 
     context("more flow, mixed diameter, Steiner node towards source") do
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
-        model, x, y, t, π = make_soc(inst, topo, solver)
+        model, x, y, L, l, π = make_nlp(inst, topo, solver)
         status = solve(model, suppress_warnings=true)
 
-        @fact status --> :Optimal
+        @fact status --> anyof(:Optimal, :UserLimit)
 
         xsol, ysol = getvalue(x), getvalue(y)
         for i=1:3 # fixed terminals
@@ -57,8 +56,16 @@ facts("solve junction location for three terminals") do
         @fact xsol[4] --> roughly(20, 0.1)
         @fact ysol[4] --> greater_than(sqrt(3)/6*40) # move near source
 
+        Lsol = getvalue(L)
+        @fact Lsol[1] --> less_than(sqrt(3)/3*40)
+        @fact Lsol[2] --> greater_than(sqrt(3)/3*40)
+        @fact Lsol[3] --> greater_than(sqrt(3)/3*40)
 
-        tsol = getvalue(t)
-        @fact tsol[2] --> roughly(tsol[3], 0.01)
+        lsol = getvalue(l)
+        D = [d.value for d in diams]
+        equiv = (lsol * D.^(-5)).^(-1/5)
+
+        @fact equiv[2] --> roughly(equiv[3], 0.1) # symmetry
+        @fact equiv[1] --> greater_than(equiv[2]) # more flow -> larger diam?
     end
 end

@@ -1,3 +1,5 @@
+import PipeLayout: pwl_ineqs, reorient_fwdflow
+
 immutable SOC <: JunctionLocationSolver
     solver             # for underlying NLP model
     timelimit::Float64 # seconds
@@ -47,29 +49,46 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     @variable(model, xmin ≤ x[1:nnodes] ≤ xmax)
     @variable(model, ymin ≤ y[1:nnodes] ≤ ymax)
 
+    # differences
+    @variable(model, xmin - xmax ≤ dx[1:narcs] ≤ xmax - xmin)
+    @variable(model, ymin - ymax ≤ dy[1:narcs] ≤ ymax - ymin)
+
     # squared pressure on nodes
     @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])
 
     # auxiliary variable for pipe cost
     @variable(model, t[1:narcs] ≥ 0)
 
+    # auxiliary variable for second-order cones
+    @variable(model, L[1:narcs] ≥ 0)
 
     # fix terminal positions
     @constraint(model, fix[t=1:nterms], x[termidx[t]] == terms[t].x)
     @constraint(model, fiy[t=1:nterms], y[termidx[t]] == terms[t].y)
 
+    # compute differences
+    @constraint(model, diffx[a=1:narcs], dx[a] == x[T[a]] - x[H[a]])
+    @constraint(model, diffy[a=1:narcs], dy[a] == y[T[a]] - y[H[a]])
+
+    # second order cone for length
+    @constraint(model, soc[a=1:narcs], dx[a]^2 + dy[a]^2 ≤ L[a]^2)
+
     # inequalities for PWL function
-    ineqs = pwl_ineqs(Dm5, c)
+    ie = pwl_ineqs(Dm5, c)
+    @assert size(ie) == (ndiams - 1, 3)
     @constraint(model, pwl[a=1:narcs, s=1:ndiams-1],
-                (x[T[a]] - x[H[a]])^2 + (y[T[a]] - y[H[a]])^2
-                ≤ TODO*(π[T[a]] - π[H[a]]) + TODO*t[a])
+                ie[s,1]/C[a]*(π[T[a]] - π[H[a]]) + ie[s,2]*t[a] ≥ ie[s,3]*L[a])
 
     # lower bound for diameter impact (y)
-    TODO
+    Dmax = inst.diameters[end].value
+    @constraint(model, ylb[a=1:narcs], Dmax^5/C[a]*(π[T[a]] - π[H[a]]) ≥ L[a])
 
     # lower bound for cost factor (instead of upper bound on y)
-    TODO
+    cmin = inst.diameters[1].cost
+    @constraint(model, yub[a=1:narcs], t[a] ≥ cmin * L[a])
 
     # minimize total pipe cost
-    @objective(model, sum{t[a], a=1:narcs})
+    @objective(model, :Min, sum{t[a], a=1:narcs})
+
+    model, x, y, t, π
 end
