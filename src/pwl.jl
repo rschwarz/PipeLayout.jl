@@ -28,3 +28,31 @@ function pwl_ineqs(xs, ys)
     end
     ineqs
 end
+
+"Compute the inverse of a monotone PWL function at a point"
+function pwl_inverse(xs, ys, y)
+    @assert length(xs) == length(ys)
+    @assert issorted(xs)
+    increasing, decreasing = issorted(ys), issorted(ys, rev=true)
+    @assert increasing || decreasing
+    if decreasing # make it increasing
+        y, ys = -y, -ys
+    end
+    @assert ys[1] ≤ y ≤ ys[end]
+
+    right = findfirst(yi -> y ≤ yi, ys)
+    if right == 1 # on the left boundary
+        return xs[1]
+    end
+
+    left = right - 1
+    @assert ys[left] ≤ y ≤ ys[right]
+    if ys[left] ≈ ys[right]
+        return xs[left]
+    end
+    # y = (1-λ)*ys[left] + λ*ys[right]
+    λ = (y - ys[left])/(ys[right] - ys[left])
+    x = (1-λ)*xs[left] + λ*xs[right]
+    @assert xs[left] ≤ x ≤ xs[right]
+    x
+end
