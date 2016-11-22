@@ -11,6 +11,7 @@ include("topology/geosteiner.jl")
 include("topology/grid.jl")
 include("topology/mst.jl")
 include("topology/util.jl")
+include("topology/isomorph.jl")
 
 include("flow.jl")
 
