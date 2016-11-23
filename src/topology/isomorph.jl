@@ -1,6 +1,6 @@
 using LightGraphs: Graph, neighbors, degree, nv, ne
 
-export are_isomorphic
+export are_isomorphic, enumerate_steiner
 
 "find unlabeled nodes with at most one unlabeled neighbor"
 function find_next_nodes_to_label(graph::Graph, labels::Vector{Int})
@@ -26,8 +26,8 @@ end
 """
 Are two given (undirected) trees isomorphic?
 
-Implemented by uncritical copy from Fampa et al.: A specialized branch-and-bound
-algorithm for the Euclidean Steiner tree problem in n-space", algorithm 2.
+Reference: algorithm 2 from Fampa et al.: A specialized branch-and-bound
+algorithm for the Euclidean Steiner tree problem in n-space.
 """
 function are_isomorphic(tree1::Topology, tree2::Topology)
     @assert is_tree(tree1) && is_tree(tree2)
@@ -77,3 +77,51 @@ function are_isomorphic(tree1::Topology, tree2::Topology)
     end
 end
 
+"""
+Enumerate all representative trees.
+
+This considers only the trees interconnecting the Steiner nodes for full Steiner
+trees of n terminals.
+
+Following algorithm 1 in Fampa et al.: A specialized branch-and-bound algorithm
+for the Euclidean Steiner tree problem in n-space.
+"""
+function enumerate_steiner(n::Int)
+    nodes = [Node(i,i) for i=1:n-2]
+    nclass = fill(0, n - 2) # by number of steiner nodes
+    repr = Dict()
+
+    # start with single node
+    nclass[1] = 1
+    repr[(1, 1)] = Topology(nodes[1:1], Arc[])
+
+    # add more steiner nodes
+    for j in 2:(n - 2)
+        # look at trees of one size smaller
+        for k in 1:nclass[j-1]
+            t_base = repr_tree[(j, k)]
+            g_base = Graph(digraph_from_topology(t_base))
+
+            # and all potential neighbors
+            for i in 1:(j-1)
+                # maximum degree
+                if degree(g_base, i) == 3
+                    continue
+                end
+
+                # connect new node here then for new tree
+                t_new = Topology(nodes[1:j], vcat(t_base.arcs, [Arc(i,j)]))
+
+                # avoid isomorphies
+                if any(are_isomorphic(t_new, repr[(j,l)]) for l in 1:nclass[j])
+                    continue
+                end
+
+                # add to collection
+                nclass[j] += 1
+                repr[(j, nclass[j])] = t_new
+            end
+        end
+    end
+    nclass, repr
+end
