@@ -48,3 +48,15 @@ facts("test steiner tree enumeration") do
     @fact nclass6 --> [1,1,1,2]
     @fact length(repr6) --> sum(nclass6)
 end
+
+facts("test FST labeling") do
+    nodes = [Node(i,i) for i in 1:6]
+
+    # single steiner node
+    Y = Topology(nodes[1:4], [Arc(1,4), Arc(2,4), Arc(3,4)])
+    @fact label_fst(Y) --> (2, 3)
+
+    # two steiner nodes
+    H = Topology(nodes, [Arc(1,5), Arc(2,5), Arc(3,6),Arc(4,6), Arc(5,6)])
+    @fact label_fst(H) --> (2, (3, 4))
+end

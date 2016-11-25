@@ -1,6 +1,7 @@
+import Base:isless
 using LightGraphs: Graph, neighbors, degree, nv, ne
 
-export are_isomorphic, enumerate_steiner
+export are_isomorphic, enumerate_steiner, label_fst
 
 "find unlabeled nodes with at most one unlabeled neighbor"
 function find_next_nodes_to_label(graph::Graph, labels::Vector{Int})
@@ -124,4 +125,66 @@ function enumerate_steiner(n::Int)
         end
     end
     nclass, repr
+end
+
+# needed below
+isless{T<:Int}(x::T, y::Tuple{T,T}) = true
+isless{T<:Int}(x::Tuple{T,T}, y::T) = false
+
+"""
+Computes a labeling of a Full Steiner Tree.
+
+This can be used to check for isomorphic trees (having same label).
+
+Following algorithm 4 in Fampa et al.: A specialized branch-and-bound algorithm
+for the Euclidean Steiner tree problem in n-space.
+"""
+function label_fst(fst::Topology)
+    n = length(fst.nodes)
+    g = Graph(digraph_from_topology(fst))
+    terms = [v for v in 1:n if degree(g, v) == 1]
+    stein = [v for v in 1:n if degree(g, v) == 3]
+    @assert length(terms) + length(stein) == n
+
+    label = Any[-1 for i = 1:n]
+    label[terms] = terms
+
+    # rooted binary tree with lexicographical ordering
+    root = minimum(terms)
+    current_level, next_level = [root], []
+    bfs_edges = []
+    visited = fill(false, n)
+    # BFS
+    while length(current_level) > 0
+        visited[current_level] = true
+        empty!(next_level)
+        for v in current_level
+            for w in neighbors(g, v)
+                if !visited[w]
+                    push!(next_level, w)
+                    push!(bfs_edges, (v,w))
+                end
+            end
+        end
+        current_level = next_level[:] # copy!
+    end
+
+    # work up from the leaves
+    reverse!(bfs_edges)
+    for depth in 1:2:length(bfs_edges)-1
+        t1, h1 = bfs_edges[depth]
+        t2, h2 = bfs_edges[depth + 1]
+        @assert t1 == t2
+        @assert label[t1] == -1
+        l1, l2 = label[h1], label[h2]
+        label[t1] = l1 < l2 ? (l1, l2) : (l2, l1)
+    end
+
+    # all labeled
+    @assert all(label .!= -1)
+
+    # label of root's adjacent Steiner node is label for tree
+    t, h = bfs_edges[end]
+    @assert t == root
+    label[h]
 end
