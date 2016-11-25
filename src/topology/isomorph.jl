@@ -99,7 +99,7 @@ function enumerate_steiner(n::Int)
     for j in 2:(n - 2)
         # look at trees of one size smaller
         for k in 1:nclass[j-1]
-            t_base = repr_tree[(j, k)]
+            t_base = repr[(j-1, k)]
             g_base = Graph(digraph_from_topology(t_base))
 
             # and all potential neighbors

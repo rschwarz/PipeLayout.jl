@@ -26,3 +26,25 @@ facts("check tree isomorphy") do
         @fact are_isomorphic(star1, path2) --> false
     end
 end
+
+facts("test steiner tree enumeration") do
+    nclass3, repr3 = enumerate_steiner(3)
+    @fact length(nclass3) --> 1
+    @fact nclass3[1] --> 1
+    @fact length(repr3) --> sum(nclass3)
+
+    nclass4, repr4 = enumerate_steiner(4)
+    @fact length(nclass4) --> 2
+    @fact nclass4 --> [1,1]
+    @fact length(repr4) --> sum(nclass4)
+
+    nclass5, repr5 = enumerate_steiner(5)
+    @fact length(nclass5) --> 3
+    @fact nclass5 --> [1,1,1]
+    @fact length(repr5) --> sum(nclass5)
+
+    nclass6, repr6 = enumerate_steiner(6)
+    @fact length(nclass6) --> 4
+    @fact nclass6 --> [1,1,1,2]
+    @fact length(repr6) --> sum(nclass6)
+end
