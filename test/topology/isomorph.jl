@@ -60,3 +60,17 @@ facts("test FST labeling") do
     H = Topology(nodes, [Arc(1,5), Arc(2,5), Arc(3,6),Arc(4,6), Arc(5,6)])
     @fact label_fst(H) --> (2, (3, 4))
 end
+
+facts("test FST enumeration") do
+    terminals = [Node(2,3), Node(4,5), Node(6,7), Node(8,9)]
+
+    @fact_throws enumerate_fst([])
+    @fact_throws enumerate_fst(terminals[1:1])
+    @fact_throws enumerate_fst(terminals[1:2])
+
+    trees3 = enumerate_fst(terminals[1:3])
+    @fact length(trees3) --> 1
+
+    trees4 = enumerate_fst(terminals[1:4])
+    @fact length(trees4) --> 1 + 2
+end

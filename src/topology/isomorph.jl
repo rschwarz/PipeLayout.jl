@@ -1,7 +1,8 @@
 import Base:isless
 using LightGraphs: Graph, neighbors, degree, nv, ne
+using Combinatorics: permutations
 
-export are_isomorphic, enumerate_steiner, label_fst
+export are_isomorphic, enumerate_steiner, label_fst, enumerate_fst
 
 "find unlabeled nodes with at most one unlabeled neighbor"
 function find_next_nodes_to_label(graph::Graph, labels::Vector{Int})
@@ -187,4 +188,75 @@ function label_fst(fst::Topology)
     t, h = bfs_edges[end]
     @assert t == root
     label[h]
+end
+
+
+"""
+Enumerate all representative full steiner trees.
+
+Following algorithm 3 in Fampa et al.: A specialized branch-and-bound algorithm
+for the Euclidean Steiner tree problem in n-space.
+"""
+function enumerate_fst(terminals)
+    nterms = length(terminals)
+    @assert nterms ≥ 3
+    nstein = nterms - 2
+
+    stein = [Node(-1,i) for i=1:nstein]
+    nodes = vcat(stein, terminals)
+
+    # get all classes for trees of Steiner nodes
+    ncls, repr = enumerate_steiner(nterms)
+    nclasses = ncls[nstein] # only "full" trees
+
+    # topologies indexed by label
+    trees = Dict()
+
+    # early exit for special case of 3 terminals
+    if nterms == 3
+        tree = Topology(nodes, [Arc(1,2), Arc(1,3), Arc(1,4)])
+        trees[label_fst(tree)] = tree
+        return trees
+    end
+
+    # iterate over all "inner" trees on Steiner nodes
+    for c in nclasses
+        inner = repr[nstein, c]
+        graph = Graph(digraph_from_topology(inner))
+        deg1 = [s for s in 1:nstein if degree(graph, s) == 1]
+        deg2 = [s for s in 1:nstein if degree(graph, s) == 2]
+        deg3 = [s for s in 1:nstein if degree(graph, s) == 3]
+        @assert sum(map(length, [deg1, deg2, deg3])) == nstein
+        @assert 2 * length(deg1) + length(deg2) == nterms
+        K = length(deg1)
+
+        # iterate over permutations of terminals
+        termidx = collect((nstein+1):(nstein+nterms))
+        for perm in permutations(termidx)
+            # TODO: skip those permutations that yield the same tree,
+            # i.e. where two terminals are swapped that are connected to
+            # the same degree-1 Steiner node
+
+            # connect terminals to Steiner nodes in order
+            arcs = inner.arcs[:]
+            for k in 1:K
+                push!(arcs, Arc(perm[2k - 1], deg1[k]))
+                push!(arcs, Arc(perm[2k],     deg1[k]))
+            end
+            for l in 1:length(deg2)
+                push!(arcs, Arc(perm[2K + l], deg2[l]))
+            end
+            tree = Topology(nodes, arcs)
+
+            # check if new tree is isomorphic to old one
+            label = label_fst(tree)
+            if haskey(trees, label)
+                # TODO: select lexicographically smaller tree
+                continue
+            end
+
+            trees[label] = tree
+        end
+    end
+    trees
 end
