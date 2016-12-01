@@ -1,4 +1,4 @@
-__precompile__()
+__precompile__(false) # can't because of Combinatorics :-(
 
 module PipeLayout
 
