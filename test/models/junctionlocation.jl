@@ -6,10 +6,10 @@ using JuMP
 using SCS
 
 if Pkg.installed("SCIP") != nothing
-#    include("junctionlocation_nlp.jl")
+   include("junctionlocation_nlp.jl")
 end
 
-facts("solve junction location for three terminals") do
+facts("solve junction location for three terminals (SOC)") do
     # equilateral triangle
     nodes = [Node(0,0), Node(40,0), Node(20, sqrt(3)/2*40)]
     demand = [10, 10, -20]

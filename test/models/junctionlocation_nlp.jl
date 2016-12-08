@@ -1,7 +1,7 @@
 import PipeLayout.JunctionLocation: make_nlp
 using SCIP # need solver for nonconvex problems :-\
 
-facts("solve junction location for three terminals") do
+facts("solve junction location for three terminals (NLP)") do
     # equilateral triangle
     nodes = [Node(0,0), Node(40,0), Node(20, sqrt(3)/2*40)]
     demand = [10, 10, -20]
