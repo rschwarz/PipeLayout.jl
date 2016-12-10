@@ -1,5 +1,5 @@
+using Base.Test
 using PipeLayout
-using FactCheck
 
 include("helpers.jl")
 
@@ -19,5 +19,3 @@ include("models/pipedimensioning.jl")
 include("models/gndstruct_discdiam.jl")
 
 include("models/junctionlocation.jl")
-
-FactCheck.exitstatus()

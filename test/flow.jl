@@ -1,18 +1,18 @@
 import PipeLayout: uniq_flow, flow_path_decomp, reorient_fwdflow
 
-facts("compute unique flow on trees") do
+@testset "compute unique flow on trees" begin
     nodes = [Node(i,i) for i in 1:6]
     n = length(nodes)
 
-    context("everything fine (H net)") do
+    @testset "everything fine (H net)" begin
         arcs = [Arc(1,3), Arc(2,3), Arc(3,4), Arc(4,5), Arc(4,6)]
         d = [-2.0, -4.0, 0.0, 0.0, 3.0, 3.0]
         q = uniq_flow(Topology(nodes, arcs), d)
-        @fact length(q) --> length(arcs)
-        @fact q --> roughly([-d[1], -d[2], d[5] + d[6], d[5], d[6]])
+        @test length(q) == length(arcs)
+        @test q ≈ [-d[1], -d[2], d[5] + d[6], d[5], d[6]]
     end
 
-    context("everything fine (H net with Steiner nodes)") do
+    @testset "everything fine (H net with Steiner nodes)" begin
         arcs = [Arc(1,3), Arc(2,3), Arc(3,4), Arc(4,5), Arc(4,6)]
         topo = Topology(nodes, arcs)
 
@@ -21,67 +21,67 @@ facts("compute unique flow on trees") do
         inst = Instance(terms, d, fill(Bounds(1, 2), 4), [Diameter(1, 1)])
 
         q = uniq_flow(inst, topo)
-        @fact length(q) --> length(arcs)
-        @fact q --> roughly([-d[1], -d[2], d[3] + d[4], d[3], d[4]])
+        @test length(q) == length(arcs)
+        @test q ≈ [-d[1], -d[2], d[3] + d[4], d[3], d[4]]
     end
 
-    context("wrong topology") do
+    @testset "wrong topology" begin
         arcs = [Arc(1,2), Arc(2,3), Arc(3,4), Arc(4,5), Arc(5,6), Arc(1,6)]
         d = [-2.0, -4.0, 0.0, 0.0, 3.0, 3.0]
-        @fact_throws ArgumentError uniq_flow(Topology(nodes, arcs), d)
+        @test_throws ArgumentError uniq_flow(Topology(nodes, arcs), d)
     end
 
-    context("unbalanced demand") do
+    @testset "unbalanced demand" begin
         arcs = [Arc(1,3), Arc(2,3), Arc(3,4), Arc(4,5), Arc(4,6)]
         d = fill(1.0, 6)
-        @fact_throws ArgumentError uniq_flow(Topology(nodes, arcs), d)
+        @test_throws ArgumentError uniq_flow(Topology(nodes, arcs), d)
     end
 
-    context("dimension mismatch") do
+    @testset "dimension mismatch" begin
         arcs = [Arc(1,2), Arc(2,3), Arc(3,4), Arc(4,5), Arc(5,6)]
         d = [-2.0, -4.0, 0.0, 0.0, 3.0, 3.0, 1.0]
-        @fact_throws ArgumentError uniq_flow(Topology(nodes, arcs), d)
+        @test_throws ArgumentError uniq_flow(Topology(nodes, arcs), d)
     end
 end
 
-facts("reorient arcs for forward flow") do
+@testset "reorient arcs for forward flow" begin
     # star with arcs going to center
     nodes = [Node(i,i) for i=1:4]
     arcs = [Arc(i,4) for i=1:3]
     topo = Topology(nodes, arcs)
 
-    context("nothing changes for zero flow") do
+    @testset "nothing changes for zero flow" begin
         rotopo = reorient_fwdflow(topo, fill(0.0, 4))
-        @fact rotopo.nodes --> topo.nodes
-        @fact rotopo.arcs --> topo.arcs
+        @test rotopo.nodes == topo.nodes
+        @test rotopo.arcs == topo.arcs
     end
 
-    context("change arcs leading to sink") do
+    @testset "change arcs leading to sink" begin
         rotopo = reorient_fwdflow(topo, [-1.0, 1.0, 0.0, 0.0])
-        @fact rotopo.nodes --> topo.nodes
-        @fact rotopo.arcs[1] --> topo.arcs[1] # source
-        @fact rotopo.arcs[2].tail --> topo.arcs[2].head # sink
-        @fact rotopo.arcs[2].head --> topo.arcs[2].tail # sink
-        @fact rotopo.arcs[3] --> topo.arcs[3] # innode
+        @test rotopo.nodes == topo.nodes
+        @test rotopo.arcs[1] == topo.arcs[1] # source
+        @test rotopo.arcs[2].tail == topo.arcs[2].head # sink
+        @test rotopo.arcs[2].head == topo.arcs[2].tail # sink
+        @test rotopo.arcs[3] == topo.arcs[3] # innode
     end
 end
 
-facts("decompose positive arc flow in paths") do
-    context("on a simple tree") do
+@testset "decompose positive arc flow in paths" begin
+    @testset "on a simple tree" begin
         topo = Topology([Node(0,0), Node(1,0), Node(2,0), Node(1,1)],
                         [Arc(1,2), Arc(2,3), Arc(2,4)])
         arcflow = [3.0, 2.0, 1.0]
 
         paths, pathflows = flow_path_decomp(topo, arcflow)
-        @fact length(paths) --> 2
-        @fact length(pathflows) --> 2
-        @fact paths[1] --> [Arc(1,2), Arc(2,3)]
-        @fact pathflows[1] --> roughly(2.0)
-        @fact paths[2] --> [Arc(1,2), Arc(2,4)]
-        @fact pathflows[2] --> roughly(1.0)
+        @test length(paths) == 2
+        @test length(pathflows) == 2
+        @test paths[1] == [Arc(1,2), Arc(2,3)]
+        @test pathflows[1] ≈ 2.0
+        @test paths[2] == [Arc(1,2), Arc(2,4)]
+        @test pathflows[2] ≈ 1.0
     end
 
-    context("on a grid with flow on subtree") do
+    @testset "on a grid with flow on subtree" begin
         # ()-1-()-6-
         # 2    7
         # ()-4-()-10-
@@ -94,11 +94,11 @@ facts("decompose positive arc flow in paths") do
         arcflow[7] = 1.0
 
         paths, pathflows = flow_path_decomp(topo, arcflow)
-        @fact length(paths) --> 2
-        @fact length(pathflows) --> 2
-        @fact paths[1] --> [topo.arcs[1], topo.arcs[6]]
-        @fact pathflows[1] --> roughly(2.0)
-        @fact paths[2] --> [topo.arcs[1], topo.arcs[7]]
-        @fact pathflows[2] --> roughly(1.0)
+        @test length(paths) == 2
+        @test length(pathflows) == 2
+        @test paths[1] == [topo.arcs[1], topo.arcs[6]]
+        @test pathflows[1] ≈ 2.0
+        @test paths[2] == [topo.arcs[1], topo.arcs[7]]
+        @test pathflows[2] ≈ 1.0
     end
 end

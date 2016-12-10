@@ -1,50 +1,50 @@
 import PipeLayout: dist
 
-facts("check tree topology") do
+@testset "check tree topology" begin
     nodes = [Node(i,i) for i in 1:3]
     arcs = [Arc(1,2), Arc(1, 3), Arc(2, 3)]
 
-    context("disconnected forest") do
-        @fact Topology(nodes, arcs[1:1]) --> not(is_tree)
+    @testset "disconnected forest" begin
+        @test !is_tree(Topology(nodes, arcs[1:1]))
     end
 
-    context("path") do
-        @fact Topology(nodes, arcs[1:2]) --> is_tree
+    @testset "path" begin
+        @test is_tree(Topology(nodes, arcs[1:2]))
     end
 
-    context("triangle") do
-        @fact Topology(nodes, arcs[1:3]) --> not(is_tree)
+    @testset "triangle" begin
+        @test !is_tree(Topology(nodes, arcs[1:3]))
     end
 end
 
-facts("check cycle finding") do
+@testset "check cycle finding" begin
     nodes = [Node(i,i^2) for i in 1:4]
     arcs = [Arc(1,2), Arc(2,3), Arc(3,4), Arc(2,4)]
 
-    @fact find_cycle(Topology(nodes, arcs[1:3])) --> []
+    @test find_cycle(Topology(nodes, arcs[1:3])) == []
 
     result = find_cycle(Topology(nodes, arcs))
-    @fact length(result) --> 3
-    @fact result[1].head --> result[2].tail
-    @fact result[2].head --> result[3].tail
-    @fact result[3].head --> result[1].tail
+    @test length(result) == 3
+    @test result[1].head == result[2].tail
+    @test result[2].head == result[3].tail
+    @test result[3].head == result[1].tail
 end
 
-facts("check node distance and pipe lengths") do
+@testset "check node distance and pipe lengths" begin
     u, v, w = Node(0,0), Node(0,3), Node(4,0)
 
-    @fact dist(u, u) --> roughly(0)
-    @fact dist(u, v) --> roughly(3)
-    @fact dist(u, w) --> roughly(4)
-    @fact dist(v, w) --> roughly(5)
+    @test dist(u, u) ≈ 0
+    @test dist(u, v) ≈ 3
+    @test dist(u, w) ≈ 4
+    @test dist(v, w) ≈ 5
 
     arcs = [Arc(1,2), Arc(1, 3), Arc(2, 3)]
     topo = Topology([u, v, w], arcs)
 
-    @fact pipelengths(topo) --> roughly([3, 4, 5])
+    @test pipelengths(topo) ≈ [3, 4, 5]
 end
 
-facts("check arcindex and antiparallelindex") do
+@testset "check arcindex and antiparallelindex" begin
     nodes = [Node(0,0), Node(0,1), Node(1,0)]
     arcs = [Arc(1,2), Arc(1,3), Arc(2,1)]
     topo = Topology(nodes, arcs)
@@ -52,15 +52,15 @@ facts("check arcindex and antiparallelindex") do
     n, m = 3, 3
 
     arcidx = arcindex(topo)
-    @fact length(arcidx) --> m
-    @fact arcidx[Arc(1,2)] --> 1
-    @fact arcidx[Arc(2,1)] --> 3
-    @fact haskey(arcidx, Arc(1,3)) --> true
-    @fact haskey(arcidx, Arc(3,1)) --> false
+    @test length(arcidx) == m
+    @test arcidx[Arc(1,2)] == 1
+    @test arcidx[Arc(2,1)] == 3
+    @test haskey(arcidx, Arc(1,3)) == true
+    @test haskey(arcidx, Arc(3,1)) == false
 
     antiidx = antiparallelindex(topo)
-    @fact length(antiidx) --> m
-    @fact antiidx[1] --> 3
-    @fact antiidx[2] --> 0
-    @fact antiidx[3] --> 1
+    @test length(antiidx) == m
+    @test antiidx[1] == 3
+    @test antiidx[2] == 0
+    @test antiidx[3] == 1
 end

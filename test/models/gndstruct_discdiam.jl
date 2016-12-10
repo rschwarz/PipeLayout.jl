@@ -38,7 +38,7 @@ function squaregrid{T<:Real}(m::Int, n::Int, width::T; antiparallel=false)
     Topology(nodes, arcs)
 end
 
-facts("solve master problem (ground structure, discrete diameters)") do
+@testset "solve master problem: ground structure, discrete diameters" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
     #   /1   /3   /5
@@ -52,32 +52,32 @@ facts("solve master problem (ground structure, discrete diameters)") do
     model, y, z, q = make_master(inst, topo, CbcSolver())
 
     status = solve(model)
-    @fact status --> :Optimal
+    @test status == :Optimal
 
     ysol = getvalue(y)
     zsol = getvalue(z)
     qsol = getvalue(q)
 
     # shortest tree is obvious:
-    @fact ysol[11] --> roughly(1.0)
-    @fact ysol[13] --> roughly(1.0)
-    @fact ysol[4] --> roughly(1.0)
-    @fact sum(ysol) --> roughly(3.0) # all others 0
+    @test ysol[11] ≈ 1.0
+    @test ysol[13] ≈ 1.0
+    @test ysol[4] ≈ 1.0
+    @test sum(ysol) ≈ 3.0    # all others 0
 
     # only the smallest diameter is chosen
-    @fact zsol[11,1] --> roughly(1.0)
-    @fact zsol[13,1] --> roughly(1.0)
-    @fact zsol[4,1] --> roughly(1.0)
-    @fact sum(zsol) --> roughly(3.0) # all others 0
+    @test zsol[11,1] ≈ 1.0
+    @test zsol[13,1] ≈ 1.0
+    @test zsol[4,1] ≈ 1.0
+    @test sum(zsol) ≈ 3.0    # all others 0
 
     # uniq flow solution
-    @fact qsol[11] --> roughly(50.0)
-    @fact qsol[13] --> roughly(20.0)
-    @fact qsol[4] --> roughly(30.0)
-    @fact sum(qsol) --> roughly(100.0) # all others 0
+    @test qsol[11] ≈ 50.0
+    @test qsol[13] ≈ 20.0
+    @test qsol[4] ≈ 30.0
+    @test sum(qsol) ≈ 100.0  # all others 0
 end
 
-facts("solve subproblem (ground structure, discrete diameters)") do
+@testset "solve subproblem: ground structure, discrete diameters" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
     #   /1   /3   /5
@@ -106,35 +106,35 @@ facts("solve subproblem (ground structure, discrete diameters)") do
     qsol[13] = 20.0
     qsol[4] = 30.0
 
-    context("feasible subproblem") do
+    @testset "feasible subproblem" begin
         cand = CandSol(zsol, qsol, fill(0.0, narcs))
         model, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand, solver)
         status = solve(model)
-        @fact status --> :Optimal
+        @test status == :Optimal
 
         # primal solution
         πsol = getvalue(π)
         Δlsol = getvalue(Δl)
         Δusol = getvalue(Δu)
 
-        @fact Δlsol --> roughly(zeros(nnodes))
-        @fact Δusol --> roughly(zeros(nnodes))
+        @test Δlsol ≈ zeros(nnodes)
+        @test Δusol ≈ zeros(nnodes)
 
         # dual solution
         μsol = getdual(ploss)
         λlsol = getdual(plb)
         λusol = getdual(pub)
 
-        @fact μsol --> roughly(zeros(length(ploss)))
-        @fact λlsol --> roughly(zeros(nnodes))
-        @fact λusol --> roughly(zeros(nnodes))
+        @test μsol ≈ zeros(length(ploss))
+        @test λlsol ≈ zeros(nnodes)
+        @test λusol ≈ zeros(nnodes)
     end
 
-    context("infeasible subproblem") do
+    @testset "infeasible subproblem" begin
         cand = CandSol(zsol, 10 * qsol, fill(0.0, narcs)) # scaled
         model, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand, solver)
         status = solve(model)
-        @fact status --> :Optimal
+        @test status == :Optimal
 
         # primal solution
         πsol = getvalue(π)
@@ -142,18 +142,17 @@ facts("solve subproblem (ground structure, discrete diameters)") do
         Δusol = getvalue(Δu)
 
         # complementarity
-        @fact Δlsol .* Δusol --> roughly(zeros(nnodes))
+        @test Δlsol .* Δusol ≈ zeros(nnodes)
 
         # innodes should not have slack
         terms = [2, 3, 6]
-        isterm(v) = v in terms
-        innodes = filter(not(isterm) , 1:nnodes)
-        @fact Δlsol[innodes] --> roughly(zeros(length(innodes)))
-        @fact Δusol[innodes] --> roughly(zeros(length(innodes)))
+        innodes = filter(v -> !(v in terms),  1:nnodes)
+        @test Δlsol[innodes] ≈ zeros(length(innodes))
+        @test Δusol[innodes] ≈ zeros(length(innodes))
 
         # at least two vertices have slack
         slack = Δlsol + Δusol
-        @fact sum(slack[terms] .> 0) --> greater_than_or_equal(2)
+        @test sum(slack[terms] .> 0) >= 2
 
         # dual solution, TODO: fix sign of dual multipliers
         μsol = abs(getdual(ploss))
@@ -161,18 +160,18 @@ facts("solve subproblem (ground structure, discrete diameters)") do
         λusol = abs(getdual(pub))
 
         # at least two bounds active
-        @fact sum(λlsol[terms] .> 0) --> greater_than_or_equal(1)
-        @fact sum(λusol[terms] .> 0) --> greater_than_or_equal(1)
+        @test sum(λlsol[terms] .> 0) >= 1
+        @test sum(λusol[terms] .> 0) >= 1
 
         # at least one path active
-        @fact sum(μsol .> 0) --> greater_than_or_equal(2)
+        @test sum(μsol .> 0) >= 2
 
-        @fact λlsol[innodes] --> roughly(zeros(length(innodes)))
-        @fact λusol[innodes] --> roughly(zeros(length(innodes)))
+        @test λlsol[innodes] ≈ zeros(length(innodes))
+        @test λusol[innodes] ≈ zeros(length(innodes))
     end
 end
 
-facts("compare relaxation and exact for subproblem") do
+@testset "compare relaxation and exact for subproblem" begin
     #     __s1__  __s2
     #   t3      t4
     solver = ClpSolver()
@@ -190,24 +189,24 @@ facts("compare relaxation and exact for subproblem") do
     qsol = [400, 200, 400]
     cand = CandSol(zsol, qsol, qsol.^2)
 
-    context("solving the exact subproblem") do
+    @testset "solving the exact subproblem" begin
         model, π, Δl, Δu, ploss, plb, pub =
             make_sub(inst, topo, cand, solver, relaxed=false)
         status = solve(model)
-        @fact status --> :Optimal
-        @fact getobjectivevalue(model) --> roughly(3600)
+        @test status == :Optimal
+        @test getobjectivevalue(model) ≈ 3600
     end
 
-    context("solving the relaxation") do
+    @testset "solving the relaxation" begin
         model, π, Δl, Δu, ploss, plb, pub =
             make_sub(inst, topo, cand, solver, relaxed=true)
         status = solve(model)
-        @fact status --> :Optimal
-        @fact getobjectivevalue(model) --> roughly(0)
+        @test status == :Optimal
+        @test getobjectivevalue(model) ≈ 0
     end
 end
 
-facts("run GBD iterations") do
+@testset "run GBD iterations" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
     #   /1   /3   /5
@@ -225,57 +224,57 @@ facts("run GBD iterations") do
                                          (1,3), (3,1), (3,5), (5,3),
                                          (2,4), (4,2), (4,6), (6,4)]])
 
-    context("low flow: very easy instance") do
+    @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1*demand, bounds, diams)
 
         result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver()))
-        @fact result.status --> :Optimal
+        @test result.status == :Optimal
 
         zsol = result.solution.zsol
-        @fact zsol[4,1] --> true
-        @fact zsol[11,1] --> true
-        @fact zsol[13,1] --> true
-        @fact sum(zsol) --> 3
+        @test zsol[4,1] == true
+        @test zsol[11,1] == true
+        @test zsol[13,1] == true
+        @test sum(zsol) == 3
 
-        @fact result.dualbound --> roughly(67.0)
-        @fact result.niter --> 1
+        @test result.dualbound ≈ 67.0
+        @test result.niter == 1
     end
 
-    context("medium flow: difficult instance") do
+    @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 5*demand, bounds, diams)
 
         result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver()))
-        @fact result.status --> :Optimal
+        @test result.status == :Optimal
 
         zsol = result.solution.zsol
-        @fact zsol[4,1] --> true
-        @fact zsol[11,2] --> true
-        @fact zsol[13,1] --> true
-        @fact sum(zsol) --> 3
+        @test zsol[4,1] == true
+        @test zsol[11,2] == true
+        @test zsol[13,1] == true
+        @test sum(zsol) == 3
 
-        @fact result.dualbound --> roughly(72.0)
-        @fact result.niter --> 3
+        @test result.dualbound ≈ 72.0
+        @test result.niter == 3
     end
 
-    context("high flow: iteration limit instance") do
+    @testset "high flow: iteration limit instance" begin
         inst = Instance(nodes, 30*demand, bounds, diams)
 
         result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver(), maxiter=3))
-        @fact result.status --> :UserLimit
-        @fact result.solution --> nothing
-        @fact result.dualbound --> roughly(156.0)
-        @fact result.niter --> 3
+        @test result.status == :UserLimit
+        @test result.solution == nothing
+        @test result.dualbound ≈ 156.0
+        @test result.niter == 3
     end
 
-    context("high flow: time limit instance") do
+    @testset "high flow: time limit instance" begin
         inst = Instance(nodes, 30*demand, bounds, diams)
 
         result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver(), timelimit=5.0))
-        @fact result.status --> :UserLimit
-        @fact result.solution --> nothing
+        @test result.status == :UserLimit
+        @test result.solution == nothing
     end
 
-    context("high flow on triangle: infeasible") do
+    @testset "high flow on triangle: infeasible" begin
         inst3 = Instance([Node(0,0), Node(50,0)],
                          20*[-50, 50],
                          [Bounds(60,80), Bounds(60,80)],
@@ -284,13 +283,13 @@ facts("run GBD iterations") do
                          [Arc(1,3), Arc(1,2), Arc(2,3)])
 
         result = optimize(inst3, topo3, IterGBD(CbcSolver(), ClpSolver()))
-        @fact result.status --> :Infeasible
-        @fact result.solution --> nothing
-        @fact result.dualbound --> Inf
-        @fact result.niter --> 2
+        @test result.status == :Infeasible
+        @test result.solution == nothing
+        @test result.dualbound == Inf
+        @test result.niter == 2
     end
 
-    facts("on the example with subproblem/relaxation gap") do
+@testset "on the example with subproblem/relaxation gap" begin
         #     __s1__  __s2
         #   t3      t4
         nodes = [Node(100,0), Node(300,0), Node(0,0), Node(200,0)]
@@ -303,15 +302,15 @@ facts("run GBD iterations") do
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
         result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver()))
-        @fact result.status --> :Optimal
+        @test result.status == :Optimal
         zsol = result.solution.zsol
-        @fact sum(zsol[:,2]) --> 1
-        @fact sum(zsol[:,1]) --> 2 # solution not quite uniqe
-        @fact result.dualbound --> roughly(400.0)
-        @fact result.niter --> 2
+        @test sum(zsol[:,2]) == 1
+        @test sum(zsol[:,1]) == 2 # solution not quite uniqe
+        @test result.dualbound ≈ 400.0
+        @test result.niter == 2
     end
 
-    context("difficult instance with disconnected candidates") do
+    @testset "difficult instance with disconnected candidates" begin
         inst = Instance([Node(0,0), Node(100,0), Node(200,100)],
                         [800, -900, 100],
                         fill(Bounds(40,80), 3),
@@ -322,30 +321,30 @@ facts("run GBD iterations") do
         # trigger the cuts for disconnected candidate
         result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver(),
                                               addnogoods=true, addcritpath=false))
-        @fact result.status --> :Optimal
+        @test result.status == :Optimal
 
         zsol = result.solution.zsol
-        @fact sum(zsol) --> 3
+        @test sum(zsol) == 3
 
-        @fact result.dualbound --> roughly(520.0)
+        @test result.dualbound ≈ 520.0
     end
 
 end
 
-facts("Linear overestimation of supremum terms") do
+@testset "Linear overestimation of supremum terms" begin
     values = Float64[i*j - 1 for i=1:4, j=1:4]
     values = 2*tril(values) - triu(values)
 
     cand_i, cand_j = 3, 2
     a, b, c = linear_overest(values, cand_i, cand_j, ClpSolver())
-    @fact size(a) --> (4,)
-    @fact size(b) --> (4,)
-    @fact size(c) --> ()
+    @test size(a) == (4,)
+    @test size(b) == (4,)
+    @test size(c) == ()
 
-    @fact a[cand_i] + b[cand_j] + c --> values[cand_i, cand_j]
+    @test a[cand_i] + b[cand_j] + c == values[cand_i, cand_j]
 end
 
-facts("Solve semimaster without z vars") do
+@testset "Solve semimaster without z vars" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
     #   /1   /3   /5
@@ -359,25 +358,25 @@ facts("Solve semimaster without z vars") do
     model, y, q = make_semimaster(inst, topo, CbcSolver())
 
     status = solve(model)
-    @fact status --> :Optimal
+    @test status == :Optimal
 
     ysol = getvalue(y)
     qsol = getvalue(q)
 
     # shortest tree is obvious:
-    @fact ysol[11] --> roughly(1.0)
-    @fact ysol[13] --> roughly(1.0)
-    @fact ysol[4] --> roughly(1.0)
-    @fact sum(ysol) --> roughly(3.0) # all others 0
+    @test ysol[11] ≈ 1.0
+    @test ysol[13] ≈ 1.0
+    @test ysol[4] ≈ 1.0
+    @test sum(ysol) ≈ 3.0 # all others 0
 
     # uniq flow solution
-    @fact qsol[11] --> roughly(50.0)
-    @fact qsol[13] --> roughly(20.0)
-    @fact qsol[4] --> roughly(30.0)
-    @fact sum(qsol) --> roughly(100.0) # all others 0
+    @test qsol[11] ≈ 50.0
+    @test qsol[13] ≈ 20.0
+    @test qsol[4] ≈ 30.0
+    @test sum(qsol) ≈ 100.0 # all others 0
 end
 
-facts("Solve semisubproblem with free z vars") do
+@testset "Solve semisubproblem with free z vars" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
     #   /1   /3   /5
@@ -402,48 +401,48 @@ facts("Solve semisubproblem with free z vars") do
     qsol = fill(0.0, length(topo.arcs))
     qsol[[4, 11, 13]] = [30.0, 50.0, 20.0]
 
-    context("low flow: very easy instance") do
+    @testset "low flow: very easy instance" begin
         factor = 1.0
         inst = Instance(nodes, factor*demand, bounds, diams)
 
         sol = CandSol(zsol, factor*qsol, qsol.^2)
         model, candarcs, z = make_semisub(inst, topo, sol, CbcSolver())
-        @fact length(candarcs) --> 3
-        @fact size(z) --> (3, 2)
+        @test length(candarcs) == 3
+        @test size(z) == (3, 2)
 
         status = solve(model)
-        @fact status --> :Optimal
+        @test status == :Optimal
 
         znew = fill(false, length(topo.arcs), length(diams))
         znew[candarcs,:] = (getvalue(z) .> 0.5)
-        @fact znew[4,1] --> true
-        @fact znew[11,1] --> true
-        @fact znew[13,1] --> true
-        @fact sum(znew) --> 3
+        @test znew[4,1] == true
+        @test znew[11,1] == true
+        @test znew[13,1] == true
+        @test sum(znew) == 3
     end
 
-    context("medium flow: difficult instance") do
+    @testset "medium flow: difficult instance" begin
         factor = 5.0
         inst = Instance(nodes, factor*demand, bounds, diams)
 
         sol = CandSol(zsol, factor*qsol, qsol.^2)
         model, candarcs, z = make_semisub(inst, topo, sol, CbcSolver())
-        @fact length(candarcs) --> 3
-        @fact size(z) --> (3, 2)
+        @test length(candarcs) == 3
+        @test size(z) == (3, 2)
 
         status = solve(model)
-        @fact status --> :Optimal
+        @test status == :Optimal
 
         znew = fill(false, length(topo.arcs), length(diams))
         znew[candarcs,:] = (getvalue(z) .> 0.5)
-        @fact znew[4,1] --> true
-        @fact znew[11,2] --> true
-        @fact znew[13,1] --> true
-        @fact sum(znew) --> 3
+        @test znew[4,1] == true
+        @test znew[11,2] == true
+        @test znew[13,1] == true
+        @test sum(znew) == 3
 
     end
 
-    context("high flow on triangle: infeasible") do
+    @testset "high flow on triangle: infeasible" begin
         inst = Instance([Node(0,0), Node(50,0)],
                         [-1000, 1000],
                         [Bounds(60,80), Bounds(60,80)],
@@ -456,16 +455,16 @@ facts("Solve semisubproblem with free z vars") do
         qsol = 1000*[1.0, 0.0, 0.0]
         sol = CandSol(zsol, qsol, qsol.^2)
         model, candarcs, z = make_semisub(inst, topo, sol, CbcSolver())
-        @fact length(candarcs) --> 1
-        @fact size(z) --> (1, 2)
+        @test length(candarcs) == 1
+        @test size(z) == (1, 2)
 
         status = solve(model, suppress_warnings=true)
-        @fact status --> :Infeasible
+        @test status == :Infeasible
     end
 
 end
 
-facts("Solve semi decomposition with nogoods on y") do
+@testset "Solve semi decomposition with nogoods on y" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
     #   /1   /3   /5
@@ -483,46 +482,46 @@ facts("Solve semi decomposition with nogoods on y") do
                                          (1,3), (3,1), (3,5), (5,3),
                                          (2,4), (4,2), (4,6), (6,4)]])
 
-    context("low flow: very easy instance") do
+    @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1 * demand, bounds, diams)
         result = optimize(inst, topo, IterTopo(CbcSolver(), CbcSolver()))
-        @fact result.status --> :Optimal
+        @test result.status == :Optimal
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
 
         # shortest tree is obvious, smallest diameter enough:
-        @fact zsol[11, 1] --> roughly(1.0)
-        @fact zsol[13, 1] --> roughly(1.0)
-        @fact zsol[4, 1] --> roughly(1.0)
-        @fact sum(zsol) --> roughly(3.0) # all others 0
+        @test zsol[11, 1] ≈ 1.0
+        @test zsol[13, 1] ≈ 1.0
+        @test zsol[4, 1] ≈ 1.0
+        @test sum(zsol) ≈ 3.0 # all others 0
 
         # uniq flow solution
-        @fact qsol[11] --> roughly(50.0)
-        @fact qsol[13] --> roughly(20.0)
-        @fact qsol[4] --> roughly(30.0)
-        @fact sum(qsol) --> roughly(100.0) # all others 0
+        @test qsol[11] ≈ 50.0
+        @test qsol[13] ≈ 20.0
+        @test qsol[4] ≈ 30.0
+        @test sum(qsol) ≈ 100.0 # all others 0
     end
 
-    context("medium flow: difficult instance") do
+    @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 10 * demand, bounds, diams)
         result = optimize(inst, topo, IterTopo(CbcSolver(), CbcSolver()))
-        @fact result.status --> :Optimal
+        @test result.status == :Optimal
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
 
         # shortest tree is obvious, need one large diameter
-        @fact sum(zsol[2, :]) --> 1
-        @fact sum(zsol[7, :]) --> 1
-        @fact sum(zsol[11, :]) --> 1
-        @fact sum(zsol[13, :]) --> 1
-        @fact sum(zsol[:, 1]) --> 1
-        @fact sum(zsol[:, 2]) --> 3
-        @fact sum(zsol) --> roughly(4.0) # all others 0
+        @test sum(zsol[2, :]) == 1
+        @test sum(zsol[7, :]) == 1
+        @test sum(zsol[11, :]) == 1
+        @test sum(zsol[13, :]) == 1
+        @test sum(zsol[:, 1]) == 1
+        @test sum(zsol[:, 2]) == 3
+        @test sum(zsol) ≈ 4.0 # all others 0
     end
 
-    context("high flow on triangle: infeasible instance") do
+    @testset "high flow on triangle: infeasible instance" begin
         inst = Instance([Node(0,0), Node(50,0)],
                         [-1000, 1000],
                         [Bounds(60,80), Bounds(60,80)],
@@ -532,6 +531,6 @@ facts("Solve semi decomposition with nogoods on y") do
                          Arc(3,1), Arc(2,1), Arc(3,2)])
 
         result = optimize(inst, topo, IterTopo(CbcSolver(), CbcSolver()))
-        @fact result.status --> :Infeasible
+        @test result.status == :Infeasible
     end
 end

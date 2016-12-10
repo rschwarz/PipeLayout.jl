@@ -2,34 +2,34 @@ import PipeLayout: sorted_edges, min_spanning_tree, topology_from_mst, digraph_f
 using PipeLayout
 using LightGraphs
 
-facts("compute MST from nodes") do
+@testset "compute MST from nodes" begin
     coords = [0 1 0; 0 0 2]
     nodes = Node[Node(coords[:,j]...) for j in 1:size(coords, 2)]
     const n = length(nodes)
-    @fact n --> 3
+    @test n == 3
 
-    context("test sorted edges") do
+    @testset "test sorted edges" begin
         edges = sorted_edges(nodes)
         m = n*(n-1)/2
-        @fact m --> 3
-        @fact size(edges, 1) --> 2
-        @fact size(edges, 2) --> m
-        @fact edges[:, 1] --> Node[nodes[1], nodes[2]]
-        @fact edges[:, 2] --> Node[nodes[1], nodes[3]]
-        @fact edges[:, 3] --> Node[nodes[2], nodes[3]]
+        @test m == 3
+        @test size(edges, 1) == 2
+        @test size(edges, 2) == m
+        @test edges[:, 1] == Node[nodes[1], nodes[2]]
+        @test edges[:, 2] == Node[nodes[1], nodes[3]]
+        @test edges[:, 3] == Node[nodes[2], nodes[3]]
     end
 
-    context("look at resulting MST") do
+    @testset "look at resulting MST" begin
         const n = length(nodes)
         const m = n - 1 # tree
 
         tree = nodes |> topology_from_mst |> digraph_from_topology
-        @fact tree --> is_instance(DiGraph)
-        @fact tree --> is_directed
-        @fact nv(tree) --> n
-        @fact ne(tree) --> m
-        @fact tree --> is_connected
-        @fact has_edge(tree, 1, 2) --> true
-        @fact has_edge(tree, 1, 3) --> true
+        @test isa(tree, DiGraph)
+        @test is_directed(tree)
+        @test nv(tree) == n
+        @test ne(tree) == m
+        @test is_connected(tree)
+        @test has_edge(tree, 1, 2)
+        @test has_edge(tree, 1, 3)
     end
 end
