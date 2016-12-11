@@ -1,4 +1,22 @@
+import PipeLayout: optimize
 using JuMP
+
+export PipeDimLP, Solution, Result
+
+immutable Solution
+    lsol::Array{Float64,2}
+    πsol::Vector{Float64}
+end
+
+immutable Result
+    status::Symbol
+    sol::Solution
+    value::Float64
+end
+
+immutable PipeDimLP <: PipeDimensioningSolver
+    lpsolver
+end
 
 function make_model(inst::Instance, topo::Topology, solver)
     nnodes = length(inst.nodes)
@@ -34,4 +52,12 @@ function make_model(inst::Instance, topo::Topology, solver)
     @objective(model, :Min, sum{cost[i] * L[a] * l[a,i], a=1:narcs, i=1:ndiams})
 
     model, π, l
+end
+
+function optimize(inst::Instance, topo::Topology, solver::PipeDimLP)
+    model, π, l = make_model(inst, topo, solver.lpsolver)
+    status = solve(model)
+    objval = status == :Optimal ? getobjectivevalue(model) : Inf
+    sol = Solution(getvalue(l), getvalue(π))
+    Result(status, sol, objval)
 end
