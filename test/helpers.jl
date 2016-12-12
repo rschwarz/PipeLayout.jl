@@ -1,7 +1,3 @@
-#
-# curried methods for the right-hand side of facts
-#
-
 "numerically less than"
 approx_less(x, y) = x ≈ y || x < y
 
