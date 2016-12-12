@@ -10,6 +10,7 @@ include("types.jl")
 include("util.jl")
 include("gasphysics.jl")
 include("pwl.jl")
+include("diameter.jl")
 
 # graph methods and topologies
 include("topology/util.jl")
