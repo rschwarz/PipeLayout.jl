@@ -61,4 +61,17 @@ end
         tsol = getvalue(t)
         @test_approx_eq_eps tsol[2] tsol[3] 0.01
     end
+
+    @testset "using the optimize function to solve" begin
+        inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
+        result = optimize(inst, topo, solver)
+        @test result.status == :Optimal
+
+        sol = result.sol
+        toposol = Topology(sol.nodes, topo.arcs)
+        L = pipelengths(toposol)
+        c = [d.cost for d in diams]
+        obj = L' * sol.lsol * c
+        @test_approx_eq_eps result.value obj[1] 1e-4
+    end
 end

@@ -1,4 +1,4 @@
-import PipeLayout: pwl_ineqs, reorient_fwdflow
+import PipeLayout: pwl_ineqs, reorient_fwdflow, pwl_inverse, pipesplit
 
 immutable SOC <: JunctionLocationSolver
     solver             # for underlying NLP model
@@ -91,4 +91,24 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     @objective(model, :Min, sum{t[a], a=1:narcs})
 
     model, x, y, t, π
+end
+
+function optimize(inst::Instance, topo::Topology, solver::SOC)
+    model, x, y, t, π = make_soc(inst, topo, solver)
+    status = solve(model)
+    objval = getobjectivevalue(model)
+    nodes = map(Node, zip(getvalue(x), getvalue(y)))
+
+    # compute l from t
+    tsol = getvalue(t)
+    L = pipelengths(Topology(nodes, topo.arcs))
+    D, c = [d.value for d in inst.diameters], [d.cost for d in inst.diameters]
+    zsol = tsol ./ L
+    pwl_xs, pwl_ys = reverse(D.^(-5)), reverse(c) # must be sorted
+    ysol = [pwl_inverse(pwl_xs, pwl_ys, z) for z in zsol]
+    lsol = vcat([pipesplit(inst.diameters, y^(-1/5))' for y in ysol]...)
+    @assert size(lsol) == (length(L), length(D))
+
+    sol = Solution(nodes, lsol, getvalue(π))
+    Result(status, sol, objval)
 end

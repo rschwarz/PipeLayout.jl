@@ -77,3 +77,12 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
 
     model, x, y, L, l, π
 end
+
+function optimize(inst::Instance, topo::Topology, solver::NLP)
+    model, x, y, L, l, π = make_nlp(inst, topo, solver)
+    status = solve(model)
+    objval = getobjectivevalue(model)
+    nodes = map(Node, zip(getvalue(x), getvalue(y)))
+    sol = Solution(nodes, getvalue(l), getvalue(π))
+    Result(status, sol, objval)
+end

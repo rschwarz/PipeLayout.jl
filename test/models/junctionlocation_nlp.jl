@@ -72,4 +72,18 @@ using SCIP # need solver for nonconvex problems :-\
         # more flow -> larger diam?
         @test equiv[1] >= equiv[2]
     end
+
+    @testset "using the optimize function to solve" begin
+        inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
+        result = optimize(inst, topo, solver)
+        @test result.status in [:Optimal, :UserLimit]
+
+        sol = result.sol
+        toposol = Topology(sol.nodes, topo.arcs)
+        L = pipelengths(toposol)
+        c = [d.cost for d in diams]
+        obj = L' * sol.lsol * c
+        @assert length(obj) == 1
+        @test result.value ≈ obj[1]
+    end
 end
