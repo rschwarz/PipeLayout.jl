@@ -43,7 +43,7 @@ function nogood{T<:Real}(model::Model, vars::Array{Variable}, sol::Array{T})
     active = (sol .> 0.5)
     nactive = sum(active)
     coef = 2.0*active - 1.0
-    @constraint(model, sum{coef[i]*vars[i], i=1:nvars} <= nactive - 1)
+    @constraint(model, sum(coef[i]*vars[i] for i=1:nvars) <= nactive - 1)
     return 1
 end
 
@@ -55,5 +55,5 @@ function avoid_topo_cut(model, y, topo::Topology, edges::Vector{Arc})
     fwd = [arcidx[e] for e in edges]
     bwd = [antidx[a] for a in fwd]
     arcs = vcat(fwd, bwd)
-    @constraint(model, sum{y[a], a in arcs} ≤ length(edges) - 1)
+    @constraint(model, sum(y[a] for a in arcs) ≤ length(edges) - 1)
 end

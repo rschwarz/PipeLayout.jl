@@ -66,14 +66,14 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
                 L[a]^2 == (x[arcs[a].head] - x[arcs[a].tail])^2 + (y[arcs[a].head] - y[arcs[a].tail])^2)
 
     # convex combination of diameters
-    @constraint(model, convexcomb[a=1:narcs], sum{l[a,i], i=1:ndiams} == 1.0)
+    @constraint(model, convexcomb[a=1:narcs], sum(l[a,i] for i=1:ndiams) == 1.0)
 
     # pressure loss
     @constraint(model, ploss[a=1:narcs], π[arcs[a].tail] - π[arcs[a].head] ==
-                C[a] * L[a] * sum{Dm5[i]*l[a,i], i=1:ndiams})
+                C[a] * L[a] * sum(Dm5[i]*l[a,i] for i=1:ndiams))
 
     # minimize total construction cost
-    @objective(model, :Min, sum{c[i] * L[a] * l[a,i], a=1:narcs, i=1:ndiams})
+    @objective(model, :Min, sum(c[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
 
     model, x, y, L, l, π
 end

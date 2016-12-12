@@ -15,10 +15,10 @@ function make_model(nonlin=false)::Problem
 
     @constraint(m, c1[i=1:9], x[i] <= 3y[i])
     if nonlin
-        @NLconstraint(m, sum{y[i], i=1:9}^2 == prod{y[i], i=1:9})
+        @NLconstraint(m, sum(y[i] for i=1:9)^2 == prod(y[i] for i=1:9))
     end
 
-    @objective(m, :Max, sum{y[i] - i*x[i], i=1:9})
+    @objective(m, :Max, sum(y[i] - i*x[i] for i=1:9))
 
     Problem(m, x, y)
 end

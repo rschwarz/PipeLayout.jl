@@ -88,13 +88,13 @@ function make_master(inst::Instance, topo::Topology, solver)
 
     # mass flow balance at nodes
     @constraint(model, flowbalance[v=1:nnodes],
-                sum{q[a], a=inarcs[v]} - sum{q[a], a=outarcs[v]} == dem[v])
+                sum(q[a] for a=inarcs[v]) - sum(q[a] for a=outarcs[v]) == dem[v])
 
     # allow flow only for active arcs
     @constraint(model, active[a=1:narcs], q[a] <= maxflow*y[a])
 
     # choose diameter for active arcs
-    @constraint(model, choice[a=1:narcs], sum{z[a,d], d=1:ndiams} == y[a])
+    @constraint(model, choice[a=1:narcs], sum(z[a,d] for d=1:ndiams) == y[a])
 
     # exclude antiparallel arcs.
     antiidx = antiparallelindex(topo)
@@ -106,7 +106,7 @@ function make_master(inst::Instance, topo::Topology, solver)
 
     L = pipelengths(topo)
     c = [diam.cost for diam in inst.diameters]
-    @objective(model, :Min, sum{c[i] * L[a] * z[a,i], a=1:narcs, i=1:ndiams})
+    @objective(model, :Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
 
     model, y, z, q, ϕ
 end
@@ -163,7 +163,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
     @constraint(model, pres_lb[v=1:nnodes], π[v] + Δl[v] ≥ lb[v])
     @constraint(model, pres_ub[v=1:nnodes], π[v] - Δu[v] ≤ ub[v])
 
-    @objective(model, :Min, sum{Δl[v] + Δu[v], v=1:nnodes})
+    @objective(model, :Min, sum(Δl[v] + Δu[v] for v=1:nnodes))
 
     model, π, Δl, Δu, ploss, pres_lb, pres_ub
 end
@@ -212,7 +212,7 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, solve
     @constraint(model, t[cand_i, cand_j] == 0)
 
     # be as tight as possible everywhere else
-    @objective(model, :Min, sum{t[i,j], i=1:m, j=1:n})
+    @objective(model, :Min, sum(t[i,j] for i=1:m for j=1:n))
 
     # solve it
     status = solve(model, suppress_warnings=true)
@@ -305,8 +305,8 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     z = master.z[pathidx,:]
     ϕ = master.ϕ[pathidx]
     @constraint(master.model,
-                sum{coeffs[a,i]*z[a,i], a=1:npath, i=1:ndiam} + offset ≥
-                sum{α[a]*ϕ[a], a=1:npath})
+                sum(coeffs[a,i]*z[a,i] for a=1:npath for i=1:ndiam) + offset ≥
+                sum(α[a]*ϕ[a] for a=1:npath))
 
     return 1
 end

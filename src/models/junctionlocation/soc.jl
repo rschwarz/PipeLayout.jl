@@ -88,7 +88,7 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     @constraint(model, yub[a=1:narcs], t[a] ≥ cmin * L[a])
 
     # minimize total pipe cost
-    @objective(model, :Min, sum{t[a], a=1:narcs})
+    @objective(model, :Min, sum(t[a] for a=1:narcs))
 
     model, x, y, t, π
 end
