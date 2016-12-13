@@ -97,9 +97,9 @@ end
 end
 
 # a recipe to display a pipe dimensioning solution: diameter choices
-@recipe function f(
-    topo::PipeLayout.Topology,
-    sol::PipeLayout.PipeDimensioning.Solution)
+@recipe function f(inst::PipeLayout.Instance,
+                   topo::PipeLayout.Topology,
+                   sol::PipeLayout.PipeDimensioning.Solution)
     narcs, ndiams = size(sol.lsol)
     equiv = [serialmerge(inst.diameters, sol.lsol[a,:]) for a=1:narcs]
 
@@ -113,9 +113,9 @@ end
 end
 
 # a recipe to display a junction location solution: nodes & diameter choices
-@recipe function f(
-    topo::PipeLayout.Topology,
-    sol::PipeLayout.JunctionLocation.Solution)
+@recipe function f(inst::PipeLayout.Instance,
+                   topo::PipeLayout.Topology,
+                   sol::PipeLayout.JunctionLocation.Solution)
     nodes = sol.nodes
     narcs, ndiams = size(sol.lsol)
     equiv = [serialmerge(inst.diameters, sol.lsol[a,:]) for a=1:narcs]
