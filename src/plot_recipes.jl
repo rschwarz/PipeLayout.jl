@@ -111,3 +111,21 @@ end
 
     topo.nodes, topo.arcs
 end
+
+# a recipe to display a junction location solution: nodes & diameter choices
+@recipe function f(
+    topo::PipeLayout.Topology,
+    sol::PipeLayout.JunctionLocation.Solution)
+    nodes = sol.nodes
+    narcs, ndiams = size(sol.lsol)
+    equiv = [serialmerge(inst.diameters, sol.lsol[a,:]) for a=1:narcs]
+
+    linewidth --> 8 * equiv'
+    linecolor --> map2color(equiv', ncolors=ndiams, cmap="Greens")
+
+    # need to redraw nodes, because arcs reference them.
+    # also: show junction nodes (not in Instance)
+    markersize --> 8
+
+    sol.nodes, topo.arcs
+end
