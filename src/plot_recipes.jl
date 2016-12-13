@@ -1,8 +1,8 @@
 using Colors: colormap
 using RecipesBase
 
-"scale and shift numbers to interval [lb=0, ub=1]"
-function normalize{T<:Real}(data::Array{T}; lb=zero(T), ub=one(T))
+"shift and scale numbers to interval [lb=0, ub=1]"
+function shiftnscale{T<:Real}(data::Array{T}; lb=zero(T), ub=one(T))
     @assert ub > lb
     mi, ma = extrema(data)
     range = ma == mi ? 1.0 : ma - mi
@@ -11,7 +11,7 @@ end
 
 "map numbers to colors"
 function map2color{T<:Real}(data::Array{T}; ncolors::Int=20, cmap="Blues")
-    data = normalize(data)
+    data = shiftnscale(data)
 
     # take two extra colors, one to leave out at each extremity, and another one
     # because the normalized data is in [0, 1] inclusive
