@@ -80,7 +80,7 @@ end
     nodes, Arc[]
 end
 
-# a recipe to display an instance: nodes with demand
+# a recipe to display a candidate solution: active arcs with diameter choices
 @recipe function f(topo::PipeLayout.Topology,
                    cand::PipeLayout.GndStructDiscDiam.CandSol)
     narcs, ndiams = size(cand.zsol)
@@ -94,4 +94,20 @@ end
     markersize --> 0
 
     topo.nodes, arcs
+end
+
+# a recipe to display a pipe dimensioning solution: diameter choices
+@recipe function f(
+    topo::PipeLayout.Topology,
+    sol::PipeLayout.PipeDimensioning.Solution)
+    narcs, ndiams = size(sol.lsol)
+    equiv = [serialmerge(inst.diameters, sol.lsol[a,:]) for a=1:narcs]
+
+    linewidth --> 8 * equiv'
+    linecolor --> map2color(equiv', ncolors=ndiams, cmap="Greens")
+
+    # need to redraw nodes, because arcs reference them
+    markersize --> 0
+
+    topo.nodes, topo.arcs
 end
