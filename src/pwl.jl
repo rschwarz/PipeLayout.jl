@@ -38,8 +38,7 @@ function pwl_inverse(xs, ys, y)
     if decreasing # make it increasing
         y, ys = -y, -ys
     end
-    @assert (isapprox(ys[1], y, atol=1e-5) || isapprox(y, ys[end], atol=1e-5)
-             || ys[1] < y < ys[end])
+    @assert isapproxin(y, ys[1], ys[end], atol=1e-5)
 
     right = findfirst(yi -> y ≤ yi, ys)
     if right == 1 # on the left boundary
@@ -47,13 +46,13 @@ function pwl_inverse(xs, ys, y)
     end
 
     left = right - 1
-    @assert ys[left] ≤ y ≤ ys[right]
+    @assert isapproxin(y, ys[left], ys[right])
     if ys[left] ≈ ys[right]
         return xs[left]
     end
     # y = (1-λ)*ys[left] + λ*ys[right]
     λ = (y - ys[left])/(ys[right] - ys[left])
     x = (1-λ)*xs[left] + λ*xs[right]
-    @assert xs[left] ≤ x ≤ xs[right]
+    @assert isapproxin(x, xs[left], xs[right])
     x
 end

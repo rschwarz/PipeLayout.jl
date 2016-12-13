@@ -12,8 +12,7 @@ end
 function pipesplit(diams::Vector, equiv::Float64)
     ds = [d.value for d in diams]
     dmin, dmax = extrema(ds)
-    @assert (isapprox(dmin, equiv, atol=1e-8) || dmin < equiv < dmax
-             || isapprox(equiv, dmax, atol=1e-8))
+    @assert isapproxin(equiv, dmin, dmax, atol=1e-8)
     y, ys = equiv^(-5), ds.^(-5)
     @assert issorted(ys, rev=true) # decreasing
 
