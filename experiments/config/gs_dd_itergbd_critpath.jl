@@ -1,9 +1,10 @@
 using Gurobi: GurobiSolver
 
-solver = IterGBD(GurobiSolver(OutputFlag=0),
-                 GurobiSolver(OutputFlag=0),
-                 addnogoods=false,
-                 addcritpath=true,
-                 maxiter=Int(1e9),
-                 timelimit=3600.0,
-                 debug=true)
+solver = GndStr.IterGBD(
+    GurobiSolver(OutputFlag=0),
+    GurobiSolver(OutputFlag=0),
+    addnogoods=false,
+    addcritpath=true,
+    maxiter=Int(1e9),
+    timelimit=3600.0,
+    debug=true)

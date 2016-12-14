@@ -4,7 +4,7 @@
 ccall(:jl_exit_on_sigint, Void, (Cint,), 0)
 
 using PipeLayout
-using PipeLayout.GndStructDiscDiam
+using PipeLayout.GndStr
 
 function solve_with(instance::AbstractString, solver::GroundStructureSolver)
     inst = PipeLayout.read_instance(instance)

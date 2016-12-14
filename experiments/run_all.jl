@@ -1,6 +1,6 @@
 #! /usr/bin/env julia
 using PipeLayout
-using PipeLayout.GndStructDiscDiam
+using PipeLayout.GndStr
 
 const ACCOUNT = "gas"
 
