@@ -1,7 +1,9 @@
 using PipeLayout
+using PipeLayout.GndStr
 import PipeLayout: ploss_coeff_nice
-import PipeLayout.GndStructDiscDiam: run
+
 using JuMP
+using Cbc
 
 nodes = [Node(0,0), Node(45,0), Node(25, 22)]
 demand = 10*[-50, 20, 30]
@@ -15,7 +17,9 @@ topo = Topology([Node(t...) for t in [(0,22), (0,0), (25,22), (25,0), (45,22), (
 
 inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-result = run(inst, topo, debug=true, addnogoods=false, maxiter=10);
+solver = GndStr.IterGBD(CbcSolver(), CbcSolver(),
+                        debug=true, addnogoods=false, maxiter=10)
+result = optimize(inst, topo, solver);
 
 @show result.status
 @show result.dualbound
