@@ -1,5 +1,4 @@
 using PipeLayout.JuncLoc
-import PipeLayout: ploss_coeff_nice
 
 using JuMP
 using SCS

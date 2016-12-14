@@ -1,5 +1,4 @@
 using PipeLayout.GndStr
-import PipeLayout: ploss_coeff_nice
 
 using JuMP
 using Cbc
