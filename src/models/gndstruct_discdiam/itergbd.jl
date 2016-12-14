@@ -352,7 +352,7 @@ function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
 end
 
 "Iteration based implementation of GBD."
-function optimize(inst::Instance, topo::Topology, solver::IterGBD)
+function PipeLayout.optimize(inst::Instance, topo::Topology, solver::IterGBD)
     run_gbd(inst, topo, solver.mastersolver, solver.subsolver,
             maxiter=solver.maxiter, timelimit=solver.timelimit,
             debug=solver.debug, addnogoods=solver.addnogoods,

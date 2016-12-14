@@ -1,11 +1,11 @@
+using PipeLayout.PipeDim
 import PipeLayout: isapproxin, isSOS2
-using PipeLayout.PipeDimensioning
 using JuMP
 using Clp
 
 @testset "check dimensioning on single pipe" begin
     inst, topo = single_pipe()
-    solver = PipeDimLP(ClpSolver())
+    solver = PipeDim.LP(ClpSolver())
 
     result = optimize(inst, topo, solver)
     @test result.status == :Optimal

@@ -94,7 +94,7 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
     return model, y, z, q, π
 end
 
-function optimize(inst::Instance, topo::Topology, solver::MINLP)
+function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     MathProgBase.setparameters!(solver.solver, TimeLimit=solver.timelimit)
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
     status = solve(model)

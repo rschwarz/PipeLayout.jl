@@ -1,4 +1,3 @@
-import PipeLayout.JunctionLocation: make_nlp
 using SCIP # need solver for nonconvex problems :-\
 
 @testset "solve junction location for three terminals (NLP)" begin
@@ -13,12 +12,12 @@ using SCIP # need solver for nonconvex problems :-\
                     [Arc(3,4), Arc(4,1), Arc(4,2)])
 
     # don't solve nonconvex NLP to optimality
-    solver = NLP(SCIPSolver("display/verblevel", 0,
-                            "limits/gap", 1e-3))
+    solver = JuncLoc.NLP(SCIPSolver("display/verblevel", 0,
+                                    "limits/gap", 1e-3))
 
     @testset "little flow, smallest diameter, Steiner node in center" begin
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
-        model, x, y, L, l, π = make_nlp(inst, topo, solver)
+        model, x, y, L, l, π = JuncLoc.make_nlp(inst, topo, solver)
         status = solve(model, suppress_warnings=true)
 
         @test status in [:Optimal, :UserLimit]
@@ -45,7 +44,7 @@ using SCIP # need solver for nonconvex problems :-\
 
     @testset "more flow, mixed diameter, Steiner node towards source" begin
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
-        model, x, y, L, l, π = make_nlp(inst, topo, solver)
+        model, x, y, L, l, π = JuncLoc.make_nlp(inst, topo, solver)
         status = solve(model, suppress_warnings=true)
 
         @test status in [:Optimal, :UserLimit]

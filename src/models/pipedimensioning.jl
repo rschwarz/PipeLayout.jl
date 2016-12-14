@@ -1,7 +1,4 @@
-import PipeLayout: optimize
 using JuMP
-
-export PipeDimLP, Solution, Result
 
 immutable Solution
     lsol::Array{Float64,2}
@@ -14,7 +11,7 @@ immutable Result
     value::Float64
 end
 
-immutable PipeDimLP <: PipeDimensioningSolver
+immutable LP <: PipeDimensioningSolver
     lpsolver
 end
 
@@ -54,7 +51,7 @@ function make_model(inst::Instance, topo::Topology, solver)
     model, π, l
 end
 
-function optimize(inst::Instance, topo::Topology, solver::PipeDimLP)
+function PipeLayout.optimize(inst::Instance, topo::Topology, solver::LP)
     model, π, l = make_model(inst, topo, solver.lpsolver)
     status = solve(model)
     objval = status == :Optimal ? getobjectivevalue(model) : Inf

@@ -1,8 +1,5 @@
-import PipeLayout: optimize
 using JuMP
 using MathProgBase
-
-export NLP, SOC, Solution, Result
 
 immutable Solution
     nodes::Vector{Node}

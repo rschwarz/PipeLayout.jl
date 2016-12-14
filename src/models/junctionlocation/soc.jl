@@ -93,7 +93,7 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     model, x, y, t, π
 end
 
-function optimize(inst::Instance, topo::Topology, solver::SOC)
+function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
     model, x, y, t, π = make_soc(inst, topo, solver)
     status = solve(model)
     objval = getobjectivevalue(model)

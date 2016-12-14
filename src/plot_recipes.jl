@@ -82,7 +82,7 @@ end
 
 # a recipe to display a candidate solution: active arcs with diameter choices
 @recipe function f(topo::PipeLayout.Topology,
-                   cand::PipeLayout.GndStructDiscDiam.CandSol)
+                   cand::PipeLayout.GndStr.CandSol)
     narcs, ndiams = size(cand.zsol)
     arcidx, diamidx = findn(cand.zsol)
     arcs = topo.arcs[arcidx]
@@ -99,7 +99,7 @@ end
 # a recipe to display a pipe dimensioning solution: diameter choices
 @recipe function f(inst::PipeLayout.Instance,
                    topo::PipeLayout.Topology,
-                   sol::PipeLayout.PipeDimensioning.Solution)
+                   sol::PipeLayout.PipeDim.Solution)
     narcs, ndiams = size(sol.lsol)
     equiv = [serialmerge(inst.diameters, sol.lsol[a,:]) for a=1:narcs]
 
@@ -115,7 +115,7 @@ end
 # a recipe to display a junction location solution: nodes & diameter choices
 @recipe function f(inst::PipeLayout.Instance,
                    topo::PipeLayout.Topology,
-                   sol::PipeLayout.JunctionLocation.Solution)
+                   sol::PipeLayout.JuncLoc.Solution)
     nodes = sol.nodes
     narcs, ndiams = size(sol.lsol)
     equiv = [serialmerge(inst.diameters, sol.lsol[a,:]) for a=1:narcs]

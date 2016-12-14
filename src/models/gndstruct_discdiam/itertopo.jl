@@ -125,7 +125,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
 end
 
 "Iteration based decomposition with semimaster and ~subproblem."
-function optimize(inst::Instance, topo::Topology, solver::IterTopo)
+function PipeLayout.optimize(inst::Instance, topo::Topology, solver::IterTopo)
     run_semi(inst, topo, solver.mastersolver, solver.subsolver,
              maxiter=solver.maxiter, timelimit=solver.timelimit,
              debug=solver.debug, writemodels=solver.writemodels)

@@ -22,17 +22,17 @@ include("topology/isomorph.jl")
 include("flow.jl") # needs topology
 
 # optimization models and approaches
-module PipeDimensioning
+module PipeDim
 using ..PipeLayout
 include("models/pipedimensioning.jl")
 end
 
-module JunctionLocation
+module JuncLoc
 using ..PipeLayout
 include("models/junctionlocation/main.jl")
 end
 
-module GndStructDiscDiam
+module GndStr
 using ..PipeLayout
 include("models/gndstruct_discdiam/main.jl")
 end

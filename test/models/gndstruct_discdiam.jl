@@ -1,6 +1,6 @@
-using PipeLayout.GndStructDiscDiam
+using PipeLayout.GndStr
 import PipeLayout: ploss_coeff_nice
-import PipeLayout.GndStructDiscDiam: CandSol, make_master, make_sub, linear_overest, make_semimaster, make_semisub
+
 using JuMP
 using Cbc
 using Clp
@@ -49,7 +49,7 @@ end
                     fill(Bounds(60,80), 3),
                     [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]])
     topo = squaregrid(2, 3, 20.0, antiparallel=true)
-    model, y, z, q = make_master(inst, topo, CbcSolver())
+    model, y, z, q = GndStr.make_master(inst, topo, CbcSolver())
 
     status = solve(model)
     @test status == :Optimal
@@ -107,8 +107,8 @@ end
     qsol[4] = 30.0
 
     @testset "feasible subproblem" begin
-        cand = CandSol(zsol, qsol, fill(0.0, narcs))
-        model, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand, solver)
+        cand = GndStr.CandSol(zsol, qsol, fill(0.0, narcs))
+        model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(inst, topo, cand, solver)
         status = solve(model)
         @test status == :Optimal
 
@@ -131,8 +131,8 @@ end
     end
 
     @testset "infeasible subproblem" begin
-        cand = CandSol(zsol, 10 * qsol, fill(0.0, narcs)) # scaled
-        model, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand, solver)
+        cand = GndStr.CandSol(zsol, 10 * qsol, fill(0.0, narcs)) # scaled
+        model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(inst, topo, cand, solver)
         status = solve(model)
         @test status == :Optimal
 
@@ -187,11 +187,11 @@ end
 
     zsol = [true false; true false; true false]
     qsol = [400, 200, 400]
-    cand = CandSol(zsol, qsol, qsol.^2)
+    cand = GndStr.CandSol(zsol, qsol, qsol.^2)
 
     @testset "solving the exact subproblem" begin
         model, π, Δl, Δu, ploss, plb, pub =
-            make_sub(inst, topo, cand, solver, relaxed=false)
+            GndStr.make_sub(inst, topo, cand, solver, relaxed=false)
         status = solve(model)
         @test status == :Optimal
         @test getobjectivevalue(model) ≈ 3600
@@ -199,7 +199,7 @@ end
 
     @testset "solving the relaxation" begin
         model, π, Δl, Δu, ploss, plb, pub =
-            make_sub(inst, topo, cand, solver, relaxed=true)
+            GndStr.make_sub(inst, topo, cand, solver, relaxed=true)
         status = solve(model)
         @test status == :Optimal
         @test getobjectivevalue(model) ≈ 0
@@ -227,7 +227,7 @@ end
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1*demand, bounds, diams)
 
-        result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver()))
+        result = optimize(inst, topo, GndStr.IterGBD(CbcSolver(), ClpSolver()))
         @test result.status == :Optimal
 
         zsol = result.solution.zsol
@@ -243,7 +243,7 @@ end
     @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 5*demand, bounds, diams)
 
-        result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver()))
+        result = optimize(inst, topo, GndStr.IterGBD(CbcSolver(), ClpSolver()))
         @test result.status == :Optimal
 
         zsol = result.solution.zsol
@@ -259,7 +259,7 @@ end
     @testset "high flow: iteration limit instance" begin
         inst = Instance(nodes, 30*demand, bounds, diams)
 
-        result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver(), maxiter=3))
+        result = optimize(inst, topo, GndStr.IterGBD(CbcSolver(), ClpSolver(), maxiter=3))
         @test result.status == :UserLimit
         @test result.solution == nothing
         @test result.dualbound ≈ 156.0
@@ -269,7 +269,7 @@ end
     @testset "high flow: time limit instance" begin
         inst = Instance(nodes, 30*demand, bounds, diams)
 
-        result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver(), timelimit=5.0))
+        result = optimize(inst, topo, GndStr.IterGBD(CbcSolver(), ClpSolver(), timelimit=5.0))
         @test result.status == :UserLimit
         @test result.solution == nothing
     end
@@ -282,7 +282,7 @@ end
         topo3 = Topology([Node(0,0), Node(50,0), Node(30, 40)],
                          [Arc(1,3), Arc(1,2), Arc(2,3)])
 
-        result = optimize(inst3, topo3, IterGBD(CbcSolver(), ClpSolver()))
+        result = optimize(inst3, topo3, GndStr.IterGBD(CbcSolver(), ClpSolver()))
         @test result.status == :Infeasible
         @test result.solution == nothing
         @test result.dualbound == Inf
@@ -301,7 +301,7 @@ end
         diams = [Diameter(1.0, 1.0), Diameter(2.0, 2.0)]
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-        result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver()))
+        result = optimize(inst, topo, GndStr.IterGBD(CbcSolver(), ClpSolver()))
         @test result.status == :Optimal
         zsol = result.solution.zsol
         @test sum(zsol[:,2]) == 1
@@ -319,8 +319,8 @@ end
         topo = squaregrid(2, 3, 100.0, antiparallel=true)
 
         # trigger the cuts for disconnected candidate
-        result = optimize(inst, topo, IterGBD(CbcSolver(), ClpSolver(),
-                                              addnogoods=true, addcritpath=false))
+        result = optimize(inst, topo, GndStr.IterGBD(CbcSolver(), ClpSolver(),
+                                                     addnogoods=true, addcritpath=false))
         @test result.status == :Optimal
 
         zsol = result.solution.zsol
@@ -336,7 +336,7 @@ end
     values = 2*tril(values) - triu(values)
 
     cand_i, cand_j = 3, 2
-    a, b, c = linear_overest(values, cand_i, cand_j, ClpSolver())
+    a, b, c = GndStr.linear_overest(values, cand_i, cand_j, ClpSolver())
     @test size(a) == (4,)
     @test size(b) == (4,)
     @test size(c) == ()
@@ -355,7 +355,7 @@ end
                     fill(Bounds(60,80), 3),
                     [Diameter(t...) for t in [(0.8, 1.0),(1.0, 1.2)]])
     topo = squaregrid(2, 3, 20.0, antiparallel=true)
-    model, y, q = make_semimaster(inst, topo, CbcSolver())
+    model, y, q = GndStr.make_semimaster(inst, topo, CbcSolver())
 
     status = solve(model)
     @test status == :Optimal
@@ -405,8 +405,8 @@ end
         factor = 1.0
         inst = Instance(nodes, factor*demand, bounds, diams)
 
-        sol = CandSol(zsol, factor*qsol, qsol.^2)
-        model, candarcs, z = make_semisub(inst, topo, sol, CbcSolver())
+        sol = GndStr.CandSol(zsol, factor*qsol, qsol.^2)
+        model, candarcs, z = GndStr.make_semisub(inst, topo, sol, CbcSolver())
         @test length(candarcs) == 3
         @test size(z) == (3, 2)
 
@@ -425,8 +425,8 @@ end
         factor = 5.0
         inst = Instance(nodes, factor*demand, bounds, diams)
 
-        sol = CandSol(zsol, factor*qsol, qsol.^2)
-        model, candarcs, z = make_semisub(inst, topo, sol, CbcSolver())
+        sol = GndStr.CandSol(zsol, factor*qsol, qsol.^2)
+        model, candarcs, z = GndStr.make_semisub(inst, topo, sol, CbcSolver())
         @test length(candarcs) == 3
         @test size(z) == (3, 2)
 
@@ -453,8 +453,8 @@ end
         zsol = fill(false, 3, 2)
         zsol[1,1] = true
         qsol = 1000*[1.0, 0.0, 0.0]
-        sol = CandSol(zsol, qsol, qsol.^2)
-        model, candarcs, z = make_semisub(inst, topo, sol, CbcSolver())
+        sol = GndStr.CandSol(zsol, qsol, qsol.^2)
+        model, candarcs, z = GndStr.make_semisub(inst, topo, sol, CbcSolver())
         @test length(candarcs) == 1
         @test size(z) == (1, 2)
 
@@ -484,7 +484,7 @@ end
 
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1 * demand, bounds, diams)
-        result = optimize(inst, topo, IterTopo(CbcSolver(), CbcSolver()))
+        result = optimize(inst, topo, GndStr.IterTopo(CbcSolver(), CbcSolver()))
         @test result.status == :Optimal
 
         zsol = result.solution.zsol
@@ -505,7 +505,7 @@ end
 
     @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 10 * demand, bounds, diams)
-        result = optimize(inst, topo, IterTopo(CbcSolver(), CbcSolver()))
+        result = optimize(inst, topo, GndStr.IterTopo(CbcSolver(), CbcSolver()))
         @test result.status == :Optimal
 
         zsol = result.solution.zsol
@@ -530,7 +530,7 @@ end
                         [Arc(1,3), Arc(1,2), Arc(2,3),
                          Arc(3,1), Arc(2,1), Arc(3,2)])
 
-        result = optimize(inst, topo, IterTopo(CbcSolver(), CbcSolver()))
+        result = optimize(inst, topo, GndStr.IterTopo(CbcSolver(), CbcSolver()))
         @test result.status == :Infeasible
     end
 end
