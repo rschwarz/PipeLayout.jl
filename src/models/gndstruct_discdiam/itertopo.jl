@@ -58,7 +58,7 @@ function make_semimaster(inst::Instance, topo::Topology, solver)
 
     # mass flow balance at nodes
     @constraint(model, flowbalance[v=1:nnodes],
-                sum{q[a], a=inarcs[v]} - sum{q[a], a=outarcs[v]} == dem[v])
+                sum(q[a] for a=inarcs[v]) - sum(q[a] for a=outarcs[v]) == dem[v])
 
     # allow flow only for active arcs
     @constraint(model, active[a=1:narcs], q[a] <= maxflow*y[a])
@@ -74,7 +74,7 @@ function make_semimaster(inst::Instance, topo::Topology, solver)
     # use cost of smallest diameter as topology-based relaxation
     L = pipelengths(topo)
     cmin = inst.diameters[1].cost
-    @objective(model, :Min, sum{cmin * L[a] * y[a], a=1:narcs})
+    @objective(model, :Min, sum(cmin * L[a] * y[a] for a=1:narcs))
 
     model, y, q
 end
@@ -116,10 +116,10 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
     @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])
 
     @constraint(model, ploss[a=1:ncandarcs],
-                π[tail[a]] - π[head[a]] ≥ C[a] * sum{Dm5[i]*z[a,i], i=1:ndiams})
-    @constraint(model, choice[a=1:ncandarcs], sum{z[a,i], i=1:ndiams} == 1)
+                π[tail[a]] - π[head[a]] ≥ C[a] * sum(Dm5[i]*z[a,i] for i=1:ndiams))
+    @constraint(model, choice[a=1:ncandarcs], sum(z[a,i] for i=1:ndiams) == 1)
 
-    @objective(model, :Min, sum{c[i] * L[candarcs[a]] * z[a,i], a=1:ncandarcs, i=1:ndiams})
+    @objective(model, :Min, sum(c[i] * L[candarcs[a]] * z[a,i] for a=1:ncandarcs for i=1:ndiams))
 
     model, candarcs, z
 end

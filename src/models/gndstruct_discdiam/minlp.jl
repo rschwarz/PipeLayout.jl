@@ -75,7 +75,7 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
 
     # mass flow balance at nodes
     @constraint(model, flowbalance[v=1:nnodes],
-                sum{q[a], a=inarcs[v]} - sum{q[a], a=outarcs[v]} == dem[v])
+                sum(q[a] for a=inarcs[v]) - sum(q[a] for a=outarcs[v]) == dem[v])
 
     # allow flow only for active arcs
     @constraint(model, active[a=1:narcs], q[a] <= qmax*y[a])
@@ -83,13 +83,13 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
     # (conditional) pressure loss constraint (awkward nonlinear formulation)
     @NLconstraint(model, ploss[a=1:narcs],
                   y[a]*(π[tail[a]] - π[head[a]]) ==
-                  C[a]*sum{Dm5[i]*z[a,i], i=1:ndiams}*q[a]^2 )
+                  C[a]*sum(Dm5[i]*z[a,i] for i=1:ndiams)*q[a]^2 )
 
     # choose diameter on active arcs
-    @constraint(model, choice[a=1:narcs], sum{z[a,i], i=1:ndiams} == y[a])
+    @constraint(model, choice[a=1:narcs], sum(z[a,i] for i=1:ndiams) == y[a])
 
     # minimize total construction cost
-    @objective(model, :Min, sum{c[i] * L[a] * z[a,i], a=1:narcs, i=1:ndiams})
+    @objective(model, :Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
 
     return model, y, z, q, π
 end
