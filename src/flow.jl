@@ -5,6 +5,15 @@ export uniq_flow, flow_path_decomp
 
 "Create dense demand vector for a topology"
 function dense_demand(inst::Instance, topo::Topology)
+    if length(inst.nodes) == length(topo.nodes)
+        # just stop if there are no extra Steiner nodes
+        return inst.demand
+    end
+    if sum(topo.nodes .== topo.nodes') > length(topo.nodes)
+        # there must be duplicate nodes, leading to ambiguity!
+        throw(ArgumentError("Duplicate nodes in topology!"))
+    end
+
     # allow for additional steiner nodes (demand = 0)
     termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
     demand = fill(0.0, length(topo.nodes))
