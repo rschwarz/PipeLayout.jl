@@ -1,4 +1,5 @@
 # custom types
+import Base.transpose
 using FixedSizeArrays
 
 export Node, Bounds, Diameter, Instance, Arc, Topology
@@ -8,6 +9,9 @@ immutable Node <: FixedVectorNoTuple{2, Float64}
     x::Float64 # [km]
     y::Float64 # [km]
 end
+
+"Add no-op transpose to suppress warning."
+Base.transpose(n::Node) = n
 
 "Variable bounds as interval, used for node pressure."
 immutable Bounds <: FixedVectorNoTuple{2, Float64}
