@@ -83,6 +83,6 @@ using SCIP # need solver for nonconvex problems :-\
         c = [d.cost for d in diams]
         obj = L' * sol.lsol * c
         @assert length(obj) == 1
-        @test result.value ≈ obj[1]
+        @test_approx_eq_eps result.value obj[1] 0.001
     end
 end
