@@ -81,6 +81,9 @@ end
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::NLP)
     model, x, y, L, l, π = make_nlp(inst, topo, solver)
     status = solve(model)
+    if status in [:Infeasible, :InfeasibleOrUnbounded]
+        return Result(status, Solution([], zeros(0,0), []), Inf)
+    end
     objval = getobjectivevalue(model)
     nodes = map(Node, zip(getvalue(x), getvalue(y)))
     sol = Solution(nodes, getvalue(l), getvalue(π))
