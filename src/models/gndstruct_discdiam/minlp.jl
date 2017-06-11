@@ -97,7 +97,7 @@ end
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     MathProgBase.setparameters!(solver.solver, TimeLimit=solver.timelimit)
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
-    status = solve(model)
+    status = solve(model, suppress_warnings=true)
 
     zsol = round(Bool, getvalue(z) .>= 0.5)
     qsol = getvalue(q)

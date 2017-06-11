@@ -80,7 +80,7 @@ end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::NLP)
     model, x, y, L, l, π = make_nlp(inst, topo, solver)
-    status = solve(model)
+    status = solve(model, suppress_warnings=true)
     if status in [:Infeasible, :InfeasibleOrUnbounded]
         return Result(status, Solution([], zeros(0,0), []), Inf)
     end

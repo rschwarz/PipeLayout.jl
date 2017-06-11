@@ -95,7 +95,7 @@ end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
     model, x, y, t, π = make_soc(inst, topo, solver)
-    status = solve(model)
+    status = solve(model, suppress_warnings=true)
     objval = getobjectivevalue(model)
     nodes = map(Node, zip(getvalue(x), getvalue(y)))
 

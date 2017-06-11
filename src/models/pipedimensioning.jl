@@ -53,7 +53,7 @@ end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::LP)
     model, π, l = make_model(inst, topo, solver.lpsolver)
-    status = solve(model)
+    status = solve(model, suppress_warnings=true)
     objval = status == :Optimal ? getobjectivevalue(model) : Inf
     sol = Solution(getvalue(l), getvalue(π))
     Result(status, sol, objval)
