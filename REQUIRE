@@ -2,10 +2,10 @@ julia 0.5
 Colors 0.6.8
 Combinatorics 0.3.2
 DataStructures 0.4.6
-FixedSizeArrays 0.2.3
 JSON 0.7.0
 JuMP 0.14.0
 Lazy 0.11.2
 LightGraphs 0.7.0
 RecipesBase 0.0.6
 SIUnits 0.0.6
+StaticArrays 0.5.1

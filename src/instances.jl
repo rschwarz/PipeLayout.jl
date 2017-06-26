@@ -1,11 +1,11 @@
 # custom types
 import Base.transpose
-using FixedSizeArrays
+using StaticArrays
 
 export Node, Bounds, Diameter, Instance, Arc, Topology
 
 "Node type with location on plane."
-immutable Node <: FixedVectorNoTuple{2, Float64}
+immutable Node <: FieldVector{2, Float64}
     x::Float64 # [km]
     y::Float64 # [km]
 end
@@ -14,13 +14,13 @@ end
 Base.transpose(n::Node) = n
 
 "Variable bounds as interval, used for node pressure."
-immutable Bounds <: FixedVectorNoTuple{2, Float64}
+immutable Bounds <: FieldVector{2, Float64}
     lb::Float64 # [bar]
     ub::Float64 # [bar]
 end
 
 "Diameter has value and cost factor (per length)."
-immutable Diameter <: FixedVectorNoTuple{2, Float64}
+immutable Diameter <: FieldVector{2, Float64}
     value::Float64 # [m]
     cost::Float64  # [Mio EUR/km]
 end
@@ -52,7 +52,7 @@ Instance(nodes, demand, pressure, diameters) =
     Instance(nodes, demand, pressure, diameters, ploss_coeff)
 
 "An arc is specified by integer indices to the node array"
-immutable Arc <: FixedVectorNoTuple{2, Int}
+immutable Arc <: FieldVector{2, Int}
     tail::Int
     head::Int
 end
