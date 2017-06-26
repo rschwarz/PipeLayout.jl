@@ -72,7 +72,7 @@ end
     colors[demand .> 0] = :red
     colors[demand .< 0] = :blue
 
-    sizes = sqrt(abs(demand))
+    sizes = sqrt(abs.(demand))
     sizes = 10 * sizes / maximum(sizes) + 4
 
     markercolor --> colors

@@ -154,9 +154,9 @@ end
         @test sum(slack[terms] .> 0) >= 2
 
         # dual solution, TODO: fix sign of dual multipliers
-        μsol = abs(getdual(ploss))
-        λlsol = abs(getdual(plb))
-        λusol = abs(getdual(pub))
+        μsol = abs.(getdual(ploss))
+        λlsol = abs.(getdual(plb))
+        λusol = abs.(getdual(pub))
 
         # at least two bounds active
         @test sum(λlsol[terms] .> 0) >= 1

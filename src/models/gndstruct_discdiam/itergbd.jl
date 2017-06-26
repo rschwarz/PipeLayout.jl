@@ -69,7 +69,7 @@ function make_master(inst::Instance, topo::Topology, solver)
     end
 
     # "big-M" bound for flow on arcs
-    const maxflow = 0.5 * sum(abs(inst.demand))
+    const maxflow = 0.5 * sum(abs.(inst.demand))
 
     model = Model(solver=solver)
 

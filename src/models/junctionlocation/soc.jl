@@ -41,7 +41,7 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
 
     c = [diam.cost for diam in inst.diameters]
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
-    C = inst.ploss_coeff .* q .* abs(q)
+    C = inst.ploss_coeff .* q .* abs.(q)
 
     model = Model(solver=solver.solver)
 

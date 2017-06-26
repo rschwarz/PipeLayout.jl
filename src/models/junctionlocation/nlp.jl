@@ -35,7 +35,7 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
 
     c = [diam.cost for diam in inst.diameters]
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
-    C = inst.ploss_coeff .* q .* abs(q)
+    C = inst.ploss_coeff .* q .* abs.(q)
 
     model = Model(solver=solver.solver)
 

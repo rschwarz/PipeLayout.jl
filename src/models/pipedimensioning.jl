@@ -40,7 +40,7 @@ function make_model(inst::Instance, topo::Topology, solver)
     # pressure loss constraint, with variable factor from diameter choice
     L = pipelengths(topo)
     D5 = [diam.value^5 for diam in inst.diameters]
-    C = inst.ploss_coeff * L .* q .* abs(q)
+    C = inst.ploss_coeff * L .* q .* abs.(q)
     @constraint(model, ploss[a=1:narcs], π[arcs[a].tail] - π[arcs[a].head]
                 == sum(C[a] / D5[i] * l[a,i] for i=1:ndiams))
 
