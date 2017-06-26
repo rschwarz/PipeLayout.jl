@@ -276,7 +276,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         @assert size(β1st) == (ndiam, 1)
         @assert size(β2nd) == (1, ndiam)
         βdiff = - repmat(β1st, 1, ndiam) + repmat(β2nd, ndiam, 1)
-        supvalues[2:end, 2:end] = max(βdiff * πub[node], βdiff * πlb[node])
+        supvalues[2:end, 2:end] = max.(βdiff * πub[node], βdiff * πlb[node])
 
         # the current values should be met exactly
         cand_i = findfirst(zsol[v-1,:], true)
