@@ -319,7 +319,7 @@ function critpathcuts(inst::Instance, topo::Topology, master::Master,
     # compute dense dual flow
     narcs = length(topo.arcs)
     dualflow = fill(0.0, narcs)
-    actarcs = collect(sum(cand.zsol, 2) .> 0)
+    actarcs = vec(sum(cand.zsol, 2) .> 0)
     dualflow[actarcs] = sub.μ
 
     paths, pathflow = flow_path_decomp(topo, dualflow)
