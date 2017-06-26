@@ -1,4 +1,4 @@
-using LightGraphs: Graph, DiGraph, add_edge!, neighbors
+using LightGraphs: Graph, DiGraph, add_edge!, neighbors, is_weakly_connected
 
 export arcindex, antiparallelindex, is_tree, find_cycle, pipelengths
 
@@ -42,7 +42,7 @@ end
 function is_tree(topology::Topology)
     n = length(topology.nodes)
     m = length(topology.arcs)
-    m == n-1 && is_connected(digraph_from_topology(topology))
+    m == n-1 && is_weakly_connected(digraph_from_topology(topology))
 end
 
 "Finds (undirected) cycle."

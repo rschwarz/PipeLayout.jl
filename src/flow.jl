@@ -1,5 +1,5 @@
 # utilities for network flow
-using LightGraphs: is_connected, incidence_matrix, in_neighbors, out_neighbors
+using LightGraphs: incidence_matrix, in_neighbors, out_neighbors
 
 export uniq_flow, flow_path_decomp
 
