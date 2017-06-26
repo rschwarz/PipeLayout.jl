@@ -10,7 +10,7 @@ if has_geosteiner()
         @test topo.nodes[2] == nodes[2]
         @test topo.nodes[3] == nodes[3]
         @test topo.nodes[4].x ≈ 1.0
-        @test_approx_eq_eps topo.nodes[4].y 0.57735 1e-5
+        @test topo.nodes[4].y ≈ 0.57735 atol=1e-5
 
         @test length(topo.arcs) == 3
         for arc in topo.arcs

@@ -11,5 +11,5 @@ import PipeLayout: weymouth
     const C = L/D^5*weymouth
 
     # pi^2 - po^2 = C*q|q|,  pressure should drop
-    @test p_i^2 - C*q*abs(q) <= p_i^2
+    @test p_i^2 - C*q*abs.(q) <= p_i^2
 end

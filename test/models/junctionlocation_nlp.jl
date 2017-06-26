@@ -24,22 +24,22 @@ using SCIP # need solver for nonconvex problems :-\
 
         xsol, ysol = getvalue(x), getvalue(y)
         for i=1:3 # fixed terminals
-            @test_approx_eq_eps xsol[i] nodes[i].x 0.001
-            @test_approx_eq_eps ysol[i] nodes[i].y 0.001
+            @test xsol[i] ≈ nodes[i].x atol=0.001
+            @test ysol[i] ≈ nodes[i].y atol=0.001
         end
-        @test_approx_eq_eps xsol[4] 20 0.01
-        @test_approx_eq_eps ysol[4] sqrt(3)/6*40 0.01
+        @test xsol[4] ≈ 20 atol=0.01
+        @test ysol[4] ≈ sqrt(3)/6*40 atol=0.01
 
         Lsol = getvalue(L)
         for i=1:3
-            @test_approx_eq_eps Lsol[i] sqrt(3)/3*40 0.01
+            @test Lsol[i] ≈ sqrt(3)/3*40 atol=0.01
         end
 
         lsol = getvalue(l)
         # smallest diameter
-        @test_approx_eq_eps sum(lsol[:,1]) 3 0.01
+        @test sum(lsol[:,1]) ≈ 3 atol=0.01
         # no other
-        @test_approx_eq_eps sum(lsol[:, 2:end]) 0 0.01
+        @test sum(lsol[:, 2:end]) ≈ 0 atol=0.01
     end
 
     @testset "more flow, mixed diameter, Steiner node towards source" begin
@@ -51,10 +51,10 @@ using SCIP # need solver for nonconvex problems :-\
 
         xsol, ysol = getvalue(x), getvalue(y)
         for i=1:3 # fixed terminals
-            @test_approx_eq_eps xsol[i] nodes[i].x 0.001
-            @test_approx_eq_eps ysol[i] nodes[i].y 0.001
+            @test xsol[i] ≈ nodes[i].x atol=0.001
+            @test ysol[i] ≈ nodes[i].y atol=0.001
         end
-        @test_approx_eq_eps xsol[4] 20 0.1
+        @test xsol[4] ≈ 20 atol=0.1
         @test ysol[4] >= sqrt(3)/6*40 # move near source
 
         Lsol = getvalue(L)
@@ -67,7 +67,7 @@ using SCIP # need solver for nonconvex problems :-\
         equiv = (lsol * D.^(-5)).^(-1/5)
 
         # symmetry
-        @test_approx_eq_eps equiv[2] equiv[3] 0.1
+        @test equiv[2] ≈ equiv[3] atol=0.1
         # more flow -> larger diam?
         @test equiv[1] >= equiv[2]
     end
@@ -83,6 +83,6 @@ using SCIP # need solver for nonconvex problems :-\
         c = [d.cost for d in diams]
         obj = L' * sol.lsol * c
         @assert length(obj) == 1
-        @test_approx_eq_eps result.value obj[1] 0.001
+        @test result.value ≈ obj[1] atol=0.001
     end
 end

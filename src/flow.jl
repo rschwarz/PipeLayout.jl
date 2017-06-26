@@ -1,5 +1,5 @@
 # utilities for network flow
-using LightGraphs: is_connected, incidence_matrix, fadj, badj
+using LightGraphs: incidence_matrix, in_neighbors, out_neighbors
 
 export uniq_flow, flow_path_decomp
 
@@ -64,8 +64,8 @@ function flow_path_decomp(topo::Topology, arcflow::Vector{Float64})
     @assert all(arcflow .≥ 0.0)
 
     arcidx = arcindex(topo)
-    inarcs = [[arcidx[Arc(u,v)] for u in badj(dg,v)] for v in 1:nnodes]
-    outarcs = [[arcidx[Arc(v,w)] for w in fadj(dg,v)] for v in 1:nnodes]
+    inarcs = [[arcidx[Arc(u,v)] for u in in_neighbors(dg,v)] for v in 1:nnodes]
+    outarcs = [[arcidx[Arc(v,w)] for w in out_neighbors(dg,v)] for v in 1:nnodes]
 
     # initialize residual flow
     resflow = copy(arcflow)

@@ -28,7 +28,7 @@ using LightGraphs
         @test is_directed(tree)
         @test nv(tree) == n
         @test ne(tree) == m
-        @test is_connected(tree)
+        @test is_weakly_connected(tree)
         @test has_edge(tree, 1, 2)
         @test has_edge(tree, 1, 3)
     end
