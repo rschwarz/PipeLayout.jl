@@ -31,7 +31,7 @@ function isSOS2(xs; atol=ɛ)
     all([isapproxgt(x, 0.0, atol=atol) for x in xs]) || return false
     nonzeros = xs .>= atol
     sum(nonzeros) <= 1 || sum(nonzeros) == 2 &&
-        (sum(nonzeros[1:end-1] & nonzeros[2:end]) == 1)
+        (sum(nonzeros[1:end-1] .& nonzeros[2:end]) == 1)
 end
 
 
