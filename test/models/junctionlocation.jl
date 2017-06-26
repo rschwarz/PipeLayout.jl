@@ -29,15 +29,15 @@ end
 
         xsol, ysol = getvalue(x), getvalue(y)
         for i=1:3 # fixed terminals
-            @test_approx_eq_eps xsol[i] nodes[i].x 0.001
-            @test_approx_eq_eps ysol[i] nodes[i].y 0.001
+            @test xsol[i] ≈ nodes[i].x atol=0.001
+            @test ysol[i] ≈ nodes[i].y atol=0.001
         end
-        @test_approx_eq_eps xsol[4] 20 0.01
-        @test_approx_eq_eps ysol[4] sqrt(3)/6*40 0.01
+        @test xsol[4] ≈ 20 atol=0.01
+        @test ysol[4] ≈ sqrt(3)/6*40 atol=0.01
 
         tsol = getvalue(t)
-        @test_approx_eq_eps sum(tsol[1]) sum(tsol[2]) 0.01
-        @test_approx_eq_eps sum(tsol[1]) sum(tsol[3]) 0.01
+        @test sum(tsol[1]) ≈ sum(tsol[2]) atol=0.01
+        @test sum(tsol[1]) ≈ sum(tsol[3]) atol=0.01
     end
 
     @testset "more flow, mixed diameter, Steiner node towards source" begin
@@ -49,15 +49,15 @@ end
 
         xsol, ysol = getvalue(x), getvalue(y)
         for i=1:3 # fixed terminals
-            @test_approx_eq_eps xsol[i] nodes[i].x 0.001
-            @test_approx_eq_eps ysol[i] nodes[i].y 0.001
+            @test xsol[i] ≈ nodes[i].x atol=0.001
+            @test ysol[i] ≈ nodes[i].y atol=0.001
         end
-        @test_approx_eq_eps xsol[4] 20 0.1
+        @test xsol[4] ≈ 20 atol=0.1
         @test ysol[4] >= sqrt(3)/6*40 # move near source
 
 
         tsol = getvalue(t)
-        @test_approx_eq_eps tsol[2] tsol[3] 0.01
+        @test tsol[2] ≈ tsol[3] atol=0.01
     end
 
     @testset "using the optimize function to solve" begin
@@ -70,6 +70,6 @@ end
         L = pipelengths(toposol)
         c = [d.cost for d in diams]
         obj = L' * sol.lsol * c
-        @test_approx_eq_eps result.value obj[1] 1e-4
+        @test result.value ≈ obj[1] atol=1e-4
     end
 end
