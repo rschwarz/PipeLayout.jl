@@ -2,7 +2,7 @@ using Colors: colormap
 using RecipesBase
 
 "shift and scale numbers to interval [lb=0, ub=1]"
-function shiftnscale{T<:Real}(data::Array{T}; lb=zero(T), ub=one(T))
+function shiftnscale{T<:Real}(data::AbstractArray{T}; lb=zero(T), ub=one(T))
     @assert ub > lb
     mi, ma = extrema(data)
     range = ma == mi ? 1.0 : ma - mi
@@ -10,7 +10,7 @@ function shiftnscale{T<:Real}(data::Array{T}; lb=zero(T), ub=one(T))
 end
 
 "map numbers to colors"
-function map2color{T<:Real}(data::Array{T}; ncolors::Int=20, cmap="Blues")
+function map2color{T<:Real}(data::AbstractArray{T}; ncolors::Int=20, cmap="Blues")
     data = shiftnscale(data)
 
     # take two extra colors, one to leave out at each extremity, and another one
@@ -21,7 +21,8 @@ function map2color{T<:Real}(data::Array{T}; ncolors::Int=20, cmap="Blues")
 end
 
 # a recipe to display topologies with arcs and nodes
-@recipe function f(nodes::Array{PipeLayout.Node}, arcs::Array{PipeLayout.Arc})
+@recipe function f(nodes::AbstractArray{PipeLayout.Node},
+                   arcs::AbstractArray{PipeLayout.Arc})
     # prepare node data
     nodepos = reshape(reinterpret(Float64, nodes), (2, length(nodes)))'
     x = nodepos[:, 1]
@@ -51,7 +52,7 @@ end
 end
 
 # a recipe to display only nodes
-@recipe function f(nodes::Array{PipeLayout.Node})
+@recipe function f(nodes::AbstractArray{PipeLayout.Node})
     markeralpha --> 0.5
     markercolor --> :red
     markersize --> 6

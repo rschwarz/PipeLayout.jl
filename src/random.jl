@@ -45,7 +45,7 @@ function randgridinstance(num::Int, xmax::Int64, ymax::Int64, flow::Float64,
 end
 
 "select random subset of a base array of desired size (non-repeating)"
-function select_subset{T}(base::Array{T}, size::Int)
+function select_subset{T}(base::AbstractArray{T}, size::Int)
     @assert size <= length(unique(base))
     candidates = T[]
     while length(candidates) < size
@@ -55,8 +55,8 @@ function select_subset{T}(base::Array{T}, size::Int)
 end
 
 "rejection sampling for good area coverage"
-function select_covering_subset(base::Array{Node}, size::Int)
-    function area(nodes::Array{Node})
+function select_covering_subset(base::AbstractArray{Node}, size::Int)
+    function area(nodes::AbstractArray{Node})
         xl, xu = extrema([n.x for n in nodes])
         yl, yu = extrema([n.y for n in nodes])
         (xu - xl)*(yu - yl)
