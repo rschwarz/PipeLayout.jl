@@ -16,7 +16,7 @@ function map2color{T<:Real}(data::AbstractArray{T}; ncolors::Int=20, cmap="Blues
     # take two extra colors, one to leave out at each extremity, and another one
     # because the normalized data is in [0, 1] inclusive
     colors = colormap(cmap, ncolors + 3)
-    indices = round(Int, ncolors*data + 2, RoundDown)
+    indices = round.(Int, ncolors*data + 2, RoundDown)
     colors[indices]
 end
 
@@ -73,7 +73,7 @@ end
     colors[demand .> 0] = :red
     colors[demand .< 0] = :blue
 
-    sizes = sqrt(abs.(demand))
+    sizes = sqrt.(abs.(demand))
     sizes = 10 * sizes / maximum(sizes) + 4
 
     markercolor --> colors
