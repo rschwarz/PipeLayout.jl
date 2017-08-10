@@ -1,0 +1,98 @@
+### Pipe Dimensioning LP model, path topology ###
+q = [400.0, 200.0, 400.0]
+presolving:
+(round 1, fast)       3 del vars, 3 del conss, 0 add conss, 2 chg bounds, 0 chg sides, 0 chg coeffs, 0 upgd conss, 0 impls, 0 clqs
+presolving (2 rounds: 2 fast, 1 medium, 1 exhaustive):
+ 3 deleted vars, 3 deleted constraints, 0 added constraints, 2 tightened bounds, 0 added holes, 0 changed sides, 0 changed coefficients
+ 0 implications, 0 cliques
+presolved problem has 7 variables (0 bin, 0 int, 0 impl, 7 cont) and 3 constraints
+      3 constraints of type <linear>
+Presolving Time: 0.00
+
+  node  | left  |LP iter|LP it/n| mem |  dualbound   | primalbound  |  gap   
+*     1 |     0 |     4 |     - | 579k| 3.774194e+02 | 3.774194e+02 |   0.00%
+      1 |     0 |     4 |     - | 579k| 3.774194e+02 | 3.774194e+02 |   0.00%
+
+SCIP Status        : problem is solved [optimal solution found]
+Solving Time (sec) : 0.00
+Solving Nodes      : 1
+Primal Bound       : +3.77419354838709e+02 (1 solutions)
+Dual Bound         : +3.77419354838709e+02
+Gap                : 0.00 %
+Min 99.99999999999999 l[1,1] + 199.99999999999997 l[1,2] + 99.99999999999999 l[2,1] + 199.99999999999997 l[2,2] + 99.99999999999997 l[3,1] + 199.99999999999994 l[3,2]
+Subject to
+ l[1,1] + l[1,2] = 1
+ l[2,1] + l[2,2] = 1
+ l[3,1] + l[3,2] = 1
+ π[2] - π[1] - 4799.999999999992 l[1,1] - 149.99999999999974 l[1,2] = 0
+ π[2] - π[3] - 1200.0000000000018 l[2,1] - 37.50000000000006 l[2,2] = 0
+ π[4] - π[3] - 4799.999999999992 l[3,1] - 149.99999999999974 l[3,2] = 0
+ 1600 ≤ π[v] ≤ 6400 ∀ v ∈ {1,2,3,4}
+ 0 ≤ l[i,j] ≤ 1 ∀ i ∈ {1,2,3}, j ∈ {1,2}
+
+getvalue(l) = [1.0 0.0; 1.0 0.0; 0.225806 0.774194]
+getvalue(π) = [1600.0, 6400.0, 5200.0, 6400.0]
+
+### Junction Location NLP model, FST with fixed locations ###
+q = [600.0, -600.0, 400.0, 200.0, -400.0]
+presolving:
+(round 1, fast)       17 del vars, 17 del conss, 0 add conss, 44 chg bounds, 0 chg sides, 0 chg coeffs, 4 upgd conss, 0 impls, 0 clqs
+(round 2, fast)       20 del vars, 20 del conss, 0 add conss, 48 chg bounds, 0 chg sides, 0 chg coeffs, 4 upgd conss, 0 impls, 0 clqs
+presolving (3 rounds: 3 fast, 1 medium, 1 exhaustive):
+ 20 deleted vars, 20 deleted constraints, 0 added constraints, 48 tightened bounds, 0 added holes, 0 changed sides, 0 changed coefficients
+ 0 implications, 0 cliques
+presolved problem has 14 variables (0 bin, 0 int, 0 impl, 14 cont) and 8 constraints
+      3 constraints of type <linear>
+      5 constraints of type <quadratic>
+Presolving Time: 0.00
+Quadratic constraint handler does not have LAPACK for eigenvalue computation. Will assume that matrices (with size > 2x2) are indefinite.
+
+  node  | left  |LP iter|LP it/n| mem |  dualbound   | primalbound  |  gap   
+      1 |     0 |     3 |     - | 725k| 4.605734e+02 |      --      |    Inf 
+U     1 |     0 |     3 |     - | 725k| 4.605734e+02 | 4.605735e+02 |   0.00%
+      1 |     0 |     3 |     - | 725k| 4.605734e+02 | 4.605735e+02 |   0.00%
+
+SCIP Status        : solving was interrupted [gap limit reached]
+Solving Time (sec) : 0.02
+Solving Nodes      : 1
+Primal Bound       : +4.60573476702509e+02 (1 solutions)
+Dual Bound         : +4.60573445079732e+02
+Gap                : 0.00 %
+Min L[1]*l[1,1] + 2 L[1]*l[1,2] + L[2]*l[2,1] + 2 L[2]*l[2,2] + L[3]*l[3,1] + 2 L[3]*l[3,2] + L[4]*l[4,1] + 2 L[4]*l[4,2] + L[5]*l[5,1] + 2 L[5]*l[5,2]
+Subject to
+ x[1] = 0
+ x[2] = 70.71067811865474
+ x[3] = 141.42135623730948
+ x[4] = 212.1320343559642
+ y[1] = 0
+ y[2] = 70.71067811865474
+ y[3] = 0
+ y[4] = 70.71067811865474
+ l[1,1] + l[1,2] = 1
+ l[2,1] + l[2,2] = 1
+ l[3,1] + l[3,2] = 1
+ l[4,1] + l[4,2] = 1
+ l[5,1] + l[5,2] = 1
+ x[5] = 70.71067811865474
+ y[5] = 70.71067811865474
+ x[6] = 141.42135623730948
+ y[6] = 0
+ -x[5]² + 2 x[5]*x[6] - x[6]² - y[5]² + 2 y[5]*y[6] - y[6]² + L[1]² = 0
+ -x[1]² + 2 x[1]*x[5] - x[5]² - y[1]² + 2 y[1]*y[5] - y[5]² + L[2]² = 0
+ -x[2]² + 2 x[2]*x[5] - x[5]² - y[2]² + 2 y[2]*y[5] - y[5]² + L[3]² = 0
+ -x[3]² + 2 x[3]*x[6] - x[6]² - y[3]² + 2 y[3]*y[6] - y[6]² + L[4]² = 0
+ -x[4]² + 2 x[4]*x[6] - x[6]² - y[4]² + 2 y[4]*y[6] - y[6]² + L[5]² = 0
+ -107.9999999999999 L[1]*l[1,1] - 3.374999999999997 L[1]*l[1,2] + π[5] - π[6] = 0
+ 107.9999999999999 L[2]*l[2,1] + 3.374999999999997 L[2]*l[2,2] + π[5] - π[1] = 0
+ -48 L[3]*l[3,1] - 1.5 L[3]*l[3,2] + π[2] - π[5] = 0
+ -11.999999999999979 L[4]*l[4,1] - 0.37499999999999933 L[4]*l[4,2] + π[3] - π[6] = 0
+ 48 L[5]*l[5,1] + 1.5 L[5]*l[5,2] + π[6] - π[4] = 0
+ 0 ≤ x[i] ≤ 212.1320343559642 ∀ i ∈ {1,2,…,5,6}
+ 0 ≤ y[i] ≤ 70.71067811865474 ∀ i ∈ {1,2,…,5,6}
+ L[i] ≥ 0 ∀ i ∈ {1,2,3,4,5}
+ l[i,j] ≥ 0 ∀ i ∈ {1,2,3,4,5}, j ∈ {1,2}
+ 1600 ≤ π[v] ≤ 6400 ∀ v ∈ {1,2,…,5,6}
+
+getvalue(L) = [100.0, 100.0, 0.0, 0.0, 100.0]
+getvalue(l) = [0.394265 0.605735; -9.70335e-14 1.0; 1.0 0.0; 1.0 0.0; 1.0 0.0]
+getvalue(π) = [6400.0, 6062.5, 1600.0, 6400.0, 6062.5, 1600.0]
