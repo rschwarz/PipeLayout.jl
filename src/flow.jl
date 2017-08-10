@@ -1,5 +1,5 @@
 # utilities for network flow
-using LightGraphs: incidence_matrix, in_neighbors, out_neighbors
+using LightGraphs: in_neighbors, out_neighbors
 
 export uniq_flow, flow_path_decomp
 
@@ -28,10 +28,8 @@ function uniq_flow(topo::Topology, demand::Vector{Float64})
     is_tree(topo) || throw(ArgumentError("Topology is not a tree!"))
     sum(demand) ≈ 0.0 || throw(ArgumentError("Demand is not balanced!"))
 
-    dg = digraph_from_topology(topo)
-    N = incidence_matrix(dg, Float64)
-    # TODO: figure out issues with CHOLMOD?
-    full(N) \ demand
+    N = incidence(topo)
+    N \ demand
 end
 
 function uniq_flow(inst::Instance, topo::Topology)

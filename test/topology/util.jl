@@ -1,5 +1,26 @@
 import PipeLayout: dist
 
+@testset "digraph and incidence" begin
+    # FST example:
+    #  2      4
+    #   \    /
+    #    5--6
+    #   /    \
+    #  1      3
+    nodes = [Node(i,i) for i in 1:6]
+    arcs = [Arc(5, 6), Arc(5,1), Arc(2, 5), Arc(3, 6), Arc(6, 4)]
+    topo = Topology(nodes, arcs)
+
+    N = incidence(topo)
+    @test size(N) == (6, 5)
+    @test N == [ 0.0  1.0  0.0  0.0  0.0
+                 0.0  0.0 -1.0  0.0  0.0
+                 0.0  0.0  0.0 -1.0  0.0
+                 0.0  0.0  0.0  0.0  1.0
+                -1.0 -1.0  1.0  0.0  0.0
+                 1.0  0.0  0.0  1.0 -1.0]
+end
+
 @testset "check tree topology" begin
     nodes = [Node(i,i) for i in 1:3]
     arcs = [Arc(1,2), Arc(1, 3), Arc(2, 3)]
