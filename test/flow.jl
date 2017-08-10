@@ -32,7 +32,7 @@ import PipeLayout: uniq_flow, flow_path_decomp, reorient_fwdflow
 
         q = uniq_flow(topo, d)
         @test length(q) == length(arcs)
-        @test q ≈ [200, -400, 600, -600, 400]
+        @test q ≈ [200, 400, 600, -600, -400]
     end
 
     @testset "wrong topology" begin
