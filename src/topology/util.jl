@@ -1,6 +1,6 @@
 using LightGraphs: Graph, DiGraph, add_edge!, neighbors, is_weakly_connected
 
-export arcindex, antiparallelindex, is_tree, find_cycle, pipelengths
+export arcindex, antiparallelindex, is_tree, find_cycle, pipelengths, incidence
 
 "Build a LightGraphs.DiGraph from a Topology"
 function digraph_from_topology(topology::Topology)
@@ -98,4 +98,14 @@ function pipelengths(topo::Topology)
         push!(lengths, dist(tail, head))
     end
     lengths
+end
+
+"Incidence matrix of digraph"
+function incidence(topo::Topology)
+    N = zeros(length(topo.nodes), length(topo.arcs))
+    for (j, arc) in enumerate(topo.arcs)
+        N[arc.tail, j] = -1.0
+        N[arc.head, j] =  1.0
+    end
+    N
 end
