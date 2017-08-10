@@ -25,6 +25,16 @@ import PipeLayout: uniq_flow, flow_path_decomp, reorient_fwdflow
         @test q ≈ [-d[1], -d[2], d[3] + d[4], d[3], d[4]]
     end
 
+    @testset "everything fine (FST with 4 terms + 2 stein)" begin
+        arcs = [Arc(5,6), Arc(5,1), Arc(2,5), Arc(3,6), Arc(6,4)]
+        topo = Topology(nodes, arcs)
+        d = [400.0, -600.0, 600.0, -400.0, 0.0, 0.0]
+
+        q = uniq_flow(topo, d)
+        @test length(q) == length(arcs)
+        @test q ≈ [200, -400, 600, -600, 400]
+    end
+
     @testset "wrong topology" begin
         arcs = [Arc(1,2), Arc(2,3), Arc(3,4), Arc(4,5), Arc(5,6), Arc(1,6)]
         d = [-2.0, -4.0, 0.0, 0.0, 3.0, 3.0]
