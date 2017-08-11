@@ -271,11 +271,11 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         # similarly for no diameter on the second arc
         supvalues[2:end, 1] = - β[v-1, :] * πlb[node]
         # finally, when both arcs are active
-        # TODO: clean up this weird indexing (but with v0.4 and v0.5)
-        β1st, β2nd = β[[v-1], :]', β[[v], :]
-        @assert size(β1st) == (ndiam, 1)
-        @assert size(β2nd) == (1, ndiam)
-        βdiff = - repmat(β1st, 1, ndiam) + repmat(β2nd, ndiam, 1)
+        β1st, β2nd = β[v-1, :], β[v, :]
+        @assert size(β1st) == (ndiam,)
+        @assert size(β2nd) == (ndiam,)
+        βdiff = - repmat(β1st, 1, ndiam) + repmat(β2nd', ndiam, 1)
+        @assert size(βdiff) == (ndiam, ndiam)
         supvalues[2:end, 2:end] = max.(βdiff * πub[node], βdiff * πlb[node])
 
         # the current values should be met exactly
@@ -288,8 +288,8 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         cuv, cvw, c = linear_overest(supvalues, fix_i, fix_j, solver)
 
         # need to transform the coefficients to remove aux vars
-        coeffs[[v-1],:] += cuv[2:end]' - cuv[1]
-        coeffs[[v],:]   += cvw[2:end]' - cvw[1]
+        coeffs[v-1,:] += cuv[2:end] - cuv[1]
+        coeffs[v,:]   += cvw[2:end] - cvw[1]
         offset += c + cuv[1] + cvw[1]
     end
 
