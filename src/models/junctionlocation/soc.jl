@@ -11,9 +11,6 @@ end
 
 "Convex reformulation of NLP model with SOC"
 function make_soc(inst::Instance, topo::Topology, solver::SOC)
-    # TODO: move this to another function that calls this one
-    topo = reorient_fwdflow(inst, topo)
-
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -94,6 +91,8 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
 end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
+    rotopo = reorient_fwdflow(inst, topo)
+
     model, x, y, t, π = make_soc(inst, topo, solver)
     status = solve(model, suppress_warnings=true)
     objval = getobjectivevalue(model)
