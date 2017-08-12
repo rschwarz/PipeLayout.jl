@@ -2,7 +2,7 @@ using Colors: colormap
 using RecipesBase
 
 "shift and scale numbers to interval [lb=0, ub=1]"
-function shiftnscale{T<:Real}(data::AbstractArray{T}; lb=zero(T), ub=one(T))
+function shiftnscale(data::AbstractArray{T}; lb=zero(T), ub=one(T)) where T<:Real
     @assert ub > lb
     mi, ma = extrema(data)
     range = ma == mi ? 1.0 : ma - mi
@@ -10,7 +10,7 @@ function shiftnscale{T<:Real}(data::AbstractArray{T}; lb=zero(T), ub=one(T))
 end
 
 "map numbers to colors"
-function map2color{T<:Real}(data::AbstractArray{T}; ncolors::Int=20, cmap="Blues")
+function map2color(data::AbstractArray{T}; ncolors::Int=20, cmap="Blues") where T<:Real
     data = shiftnscale(data)
 
     # take two extra colors, one to leave out at each extremity, and another one

@@ -3,7 +3,7 @@ Topology enumeration for Ground Structure with Discrete Diameters.
 
 Solver object to store parameter values.
 """
-immutable IterTopo <: GroundStructureSolver
+struct IterTopo <: GroundStructureSolver
     maxiter::Int
     timelimit::Float64 # seconds
     debug::Bool

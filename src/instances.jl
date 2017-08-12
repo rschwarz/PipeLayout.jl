@@ -5,7 +5,7 @@ using StaticArrays
 export Node, Bounds, Diameter, Instance, Arc, Topology
 
 "Node type with location on plane."
-immutable Node <: FieldVector{2, Float64}
+struct Node <: FieldVector{2, Float64}
     x::Float64 # [km]
     y::Float64 # [km]
 end
@@ -14,13 +14,13 @@ end
 Base.transpose(n::Node) = n
 
 "Variable bounds as interval, used for node pressure."
-immutable Bounds <: FieldVector{2, Float64}
+struct Bounds <: FieldVector{2, Float64}
     lb::Float64 # [bar]
     ub::Float64 # [bar]
 end
 
 "Diameter has value and cost factor (per length)."
-immutable Diameter <: FieldVector{2, Float64}
+struct Diameter <: FieldVector{2, Float64}
     value::Float64 # [m]
     cost::Float64  # [Mio EUR/km]
 end
@@ -32,7 +32,7 @@ It is defined by boundary nodes, a fixed and balanced flow demand, pressure
 bounds and available diameters. The pressure loss coefficients is also
 specified, but is optional.
 """
-immutable Instance
+struct Instance
     nodes::Vector{Node}
     demand::Vector{Float64} # [kg/s]
     pressure::Vector{Bounds}
@@ -52,7 +52,7 @@ Instance(nodes, demand, pressure, diameters) =
     Instance(nodes, demand, pressure, diameters, ploss_coeff)
 
 "An arc is specified by integer indices to the node array"
-immutable Arc <: FieldVector{2, Int}
+struct Arc <: FieldVector{2, Int}
     tail::Int
     head::Int
 end
@@ -69,7 +69,7 @@ Contains arcs that are given as pairs of indices into the array of nodes.
 Can be used both as a candidate topology (in form of a spanning tree) or as the
 ground structure for the choice of topologies.
 """
-immutable Topology
+struct Topology
     nodes::Vector{Node}
     arcs::Vector{Arc}
 end

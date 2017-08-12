@@ -1,12 +1,12 @@
 "Data type for candidate solutions from master problem."
-immutable CandSol
+struct CandSol
     zsol::Array{Bool,2}
     qsol::Vector{Float64}
     ϕsol::Vector{Float64}
 end
 
 "Result data from GBD algorithm"
-immutable Result
+struct Result
     status::Symbol
     solution
     primalbound::Float64
@@ -37,8 +37,8 @@ function topology_from_candsol(topo::Topology, ysol::Vector{Float64},
 end
 
 "Generic no-good cut"
-function nogood{T<:Real}(model::Model, vars::AbstractArray{Variable},
-                         sol::AbstractArray{T})
+function nogood(model::Model, vars::AbstractArray{Variable},
+                sol::AbstractArray{T}) where T<:Real
     @assert size(vars) == size(sol)
     nvars = length(vars)
     active = (sol .> 0.5)

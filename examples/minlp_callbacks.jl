@@ -1,7 +1,7 @@
 using JuMP
 using SCIP
 
-type Problem
+mutable struct Problem
     model
     x
     y
