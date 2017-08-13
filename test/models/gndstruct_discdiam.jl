@@ -5,7 +5,7 @@ using Cbc
 using Clp
 
 "Create a grid of square cells with m by n nodes and given edge width."
-function squaregrid{T<:Real}(m::Int, n::Int, width::T; antiparallel=false)
+function squaregrid(m::Int, n::Int, width::T; antiparallel=false) where T<:Real
     nodes = Node[]
     sizehint!(nodes, m*n)
     for j in 1:n

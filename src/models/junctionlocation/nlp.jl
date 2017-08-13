@@ -1,4 +1,4 @@
-immutable NLP <: JunctionLocationSolver
+struct NLP <: JunctionLocationSolver
     solver             # for underlying NLP model
     timelimit::Float64 # seconds
 

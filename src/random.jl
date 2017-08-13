@@ -45,7 +45,7 @@ function randgridinstance(num::Int, xmax::Int64, ymax::Int64, flow::Float64,
 end
 
 "select random subset of a base array of desired size (non-repeating)"
-function select_subset{T}(base::AbstractArray{T}, size::Int)
+function select_subset(base::AbstractArray{T}, size::Int) where T
     @assert size <= length(unique(base))
     candidates = T[]
     while length(candidates) < size

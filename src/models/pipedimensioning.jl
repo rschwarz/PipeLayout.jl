@@ -1,17 +1,17 @@
 using JuMP
 
-immutable Solution
+struct Solution
     lsol::Array{Float64,2}
     πsol::Vector{Float64}
 end
 
-immutable Result
+struct Result
     status::Symbol
     sol::Solution
     value::Float64
 end
 
-immutable LP <: PipeDimensioningSolver
+struct LP <: PipeDimensioningSolver
     lpsolver
 end
 

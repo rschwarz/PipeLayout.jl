@@ -1,4 +1,4 @@
-immutable MINLP <: GroundStructureSolver
+struct MINLP <: GroundStructureSolver
     solver # to solve MINLP model
     debug::Bool
     contz::Bool

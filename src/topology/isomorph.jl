@@ -129,8 +129,8 @@ function enumerate_steiner(n::Int)
 end
 
 # needed below
-isless{T<:Int}(x::T, y::Tuple{T,T}) = true
-isless{T<:Int}(x::Tuple{T,T}, y::T) = false
+isless(x::T, y::Tuple{T,T}) where {T<:Int} = true
+isless(x::Tuple{T,T}, y::T) where {T<:Int} = false
 
 """
 Computes a labeling of a Full Steiner Tree.

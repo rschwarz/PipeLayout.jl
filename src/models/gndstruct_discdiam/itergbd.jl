@@ -3,7 +3,7 @@ GBD iterations for Ground Structure with Discrete Diameters.
 
 Solver object to store parameter values.
 """
-immutable IterGBD <: GroundStructureSolver
+struct IterGBD <: GroundStructureSolver
     addnogoods::Bool
     addcritpath::Bool
     maxiter::Int
@@ -22,7 +22,7 @@ immutable IterGBD <: GroundStructureSolver
 end
 
 "Data type for dual solution of subproblem"
-immutable SubDualSol
+struct SubDualSol
     μ::Array{Float64}
     λl::Array{Float64}
     λu::Array{Float64}
@@ -37,7 +37,7 @@ Variable meanings:
   q: flow through arc
   ϕ: squared flow through arc (ϕ = q²)
 """
-immutable Master
+struct Master
     model::Model
     y::Vector{Variable}
     z::Array{Variable,2}

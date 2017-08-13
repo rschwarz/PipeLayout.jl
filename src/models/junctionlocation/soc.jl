@@ -1,6 +1,6 @@
 import PipeLayout: pwl_ineqs, reorient_fwdflow, pwl_inverse, pipesplit
 
-immutable SOC <: JunctionLocationSolver
+struct SOC <: JunctionLocationSolver
     solver             # for underlying NLP model
     timelimit::Float64 # seconds
 
