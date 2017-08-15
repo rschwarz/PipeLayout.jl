@@ -4,6 +4,10 @@ using JuMP
 using Cbc
 using Clp
 
+if Pkg.installed("SCIP") != nothing
+   include("gndstruct_discdiam_cb.jl")
+end
+
 "Create a grid of square cells with m by n nodes and given edge width."
 function squaregrid(m::Int, n::Int, width::T; antiparallel=false) where T<:Real
     nodes = Node[]
