@@ -12,3 +12,4 @@ include("minlp.jl")
 
 # callback-based algorithms: keep one master problem
 include("cbtopo.jl")  # needs itertopo.jl
+include("cbgbd.jl")   # needs itergbd.jl
