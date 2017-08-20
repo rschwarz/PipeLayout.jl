@@ -23,14 +23,14 @@ end
 
 "GBD on ground structure with callbacks"
 function PipeLayout.optimize(inst::Instance, topo::Topology,
-                             solver::CallbackTopo)
+                             solver::CallbackGBD)
     # initialization
     finaltime = time() + solver.timelimit
     counter = 0
     bestsol = nothing
 
     # use master problem from IterGBD algorithm
-    master = make_master(inst, topo, solver.mastersolver)
+    master = Master(make_master(inst, topo, solver.mastersolver)...)
     solver.writemodels && writeLP(master.model, "master.lp")
 
     # TODO: rm code duplication with itergbd
@@ -40,7 +40,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
                        getvalue(master.q),
                        getvalue(master.ϕ))
         ysol = getvalue(master.y)
-        if debug
+        if solver.debug
             j,i,_ = findnz(cand.zsol')
             println("  cand. sol:$(collect(zip(i,j)))")
         end
@@ -65,30 +65,30 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
         end
 
         # solve subproblem (from scratch, no warmstart)
-        submodel, π, Δl, Δu, ploss, plb, pub = \
+        submodel, π, Δl, Δu, ploss, plb, pub =
             make_sub(inst, topo, cand, solver.subsolver)
         solver.writemodels && writeLP(submodel, "sub_$(counter).lp")
-        settimelimit!(submodel, subsolver, finaltime - time())
+        settimelimit!(submodel, solver.subsolver, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         @assert substatus == :Optimal "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
-            submodel2, _ = make_sub(inst, topo, cand, subsolver, relaxed=false)
+            submodel2, _ = make_sub(inst, topo, cand, solver.subsolver, relaxed=false)
             writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp")
-            settimelimit!(submodel2, subsolver, finaltime - time())
+            settimelimit!(submodel2, solver.subsolver, finaltime - time())
             substatus2 = solve(submodel2, suppress_warnings=true)
             @assert substatus2 == :Optimal "Slack model is always feasible"
             totalslack2 = getobjectivevalue(submodel2)
 
             if totalslack2 ≈ 0.0
-                debug && println("  found feasible solution :-)")
+                solver.debug && println("  found feasible solution :-)")
                 bestsol = cand
                 # don't need to do anything, solved the problem
             else
                 # cut off candidate with no-good on z
-                debug && println("  subproblem/relaxation gap!")
+                solver.debug && println("  subproblem/relaxation gap!")
                 nogood(master.model, master.z, cand.zsol)
             end
 
@@ -98,12 +98,13 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
         dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
 
         # generate cuts and add to master
-        ncuts = cuts(inst, topo, master, cand, dualsol, solversubsolver,
-                     addnogoods=addnogoods, addcritpath=addcritpath, cb=cb)
-        debug && println("  added $(ncuts) cuts.")
+        ncuts = cuts(inst, topo, master, cand, dualsol, solver.subsolver,
+                     addnogoods=solver.addnogoods,
+                     addcritpath=solver.addcritpath, cb=cb)
+        solver.debug && println("  added $(ncuts) cuts.")
 
     end
-    addlazycallback(model, cbgbd)
+    addlazycallback(master.model, cbgbd)
 
     # solve master problem (has callback)
     status = solve(master.model, suppress_warnings=true)
