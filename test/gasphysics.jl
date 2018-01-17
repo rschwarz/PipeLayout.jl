@@ -6,7 +6,7 @@ import PipeLayout: weymouth
     const L = 100.0u"km"
     const D = 1.0u"m"
     const q = 100.0u"kg/s"
-    const p_i = 80.0u"Bar"
+    const p_i = 80.0u"bar"
     const C = L/D^5*weymouth
 
     # pi^2 - po^2 = C*q|q|,  pressure should drop
