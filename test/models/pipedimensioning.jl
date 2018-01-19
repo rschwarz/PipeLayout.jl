@@ -1,11 +1,11 @@
 using PipeLayout.PipeDim
 import PipeLayout: isapproxin, isSOS2
 using JuMP
-using Clp
+using GLPKMathProgInterface
 
 @testset "check dimensioning on single pipe" begin
     inst, topo = single_pipe()
-    solver = PipeDim.LP(ClpSolver())
+    solver = PipeDim.LP(GLPKSolverLP())
 
     result = optimize(inst, topo, solver)
     @test result.status == :Optimal

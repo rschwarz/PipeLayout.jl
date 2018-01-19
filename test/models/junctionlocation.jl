@@ -3,9 +3,7 @@ using PipeLayout.JuncLoc
 using JuMP
 using SCS
 
-if Pkg.installed("SCIP") != nothing
-   include("junctionlocation_nlp.jl")
-end
+include("junctionlocation_nlp.jl")
 
 @testset "solve junction location for three terminals (SOC)" begin
     # equilateral triangle
