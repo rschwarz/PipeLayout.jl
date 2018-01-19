@@ -10,7 +10,9 @@ sudo: false # use a docker worker
 addons:
   apt_packages:
   - libgmp-dev
-# uncomment the following lines to override the default test script
-#script:
-#  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-#  - julia -e 'Pkg.clone(pwd()); Pkg.build("PipeLayout"); Pkg.test("PipeLayout"; coverage=true)'
+script:
+ - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+ - julia -e 'Pkg.clone(pwd()); Pkg.build("PipeLayout"); Pkg.test("PipeLayout"; coverage=true)'
+after_success:
+    - echo $TRAVIS_JULIA_VERSION
+    - julia -e 'Pkg.add("Coverage"); cd(Pkg.dir("PipeLayout")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
