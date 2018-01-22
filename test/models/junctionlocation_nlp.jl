@@ -1,4 +1,7 @@
-using SCIP # need solver for nonconvex problems :-\
+using PipeLayout.JuncLoc
+
+using JuMP
+using SCIP
 
 @testset "solve junction location for three terminals (NLP)" begin
     # equilateral triangle
@@ -54,7 +57,7 @@ using SCIP # need solver for nonconvex problems :-\
             @test xsol[i] ≈ nodes[i].x atol=0.001
             @test ysol[i] ≈ nodes[i].y atol=0.001
         end
-        @test xsol[4] ≈ 20 atol=0.1
+        @test xsol[4] ≈ 20 atol=0.2
         @test ysol[4] >= sqrt(3)/6*40 # move near source
 
         Lsol = getvalue(L)

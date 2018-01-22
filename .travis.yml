@@ -11,8 +11,17 @@ addons:
   apt_packages:
   - libgmp-dev
 script:
- - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
- - julia -e 'Pkg.clone(pwd()); Pkg.build("PipeLayout"); Pkg.test("PipeLayout"; coverage=true)'
+# first compile SCIP and add SCIP.jl
+  - wget http://scip.zib.de/download/release/scipoptsuite-4.0.0.tgz
+  - tar xzf scipoptsuite-4.0.0.tgz
+  - cd scipoptsuite-4.0.0/
+  - make SHARED=true GMP=false READLINE=false ZLIB=false scipoptlib
+  - export SCIPOPTDIR=`pwd`
+  - cd ..
+  - julia -e 'Pkg.add("SCIP")'
+# now fetch PipeLayout.jl and test it
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.clone(pwd()); Pkg.build("PipeLayout"); Pkg.test("PipeLayout"; coverage=true)'
 after_success:
     - echo $TRAVIS_JULIA_VERSION
     - julia -e 'Pkg.add("Coverage"); cd(Pkg.dir("PipeLayout")); using Coverage; Coveralls.submit(process_folder()); Codecov.submit(process_folder())'
