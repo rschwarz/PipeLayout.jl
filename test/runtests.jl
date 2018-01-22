@@ -20,3 +20,4 @@ include("models/pipedimensioning.jl")
 include("models/gndstruct_discdiam.jl")
 
 include("models/junctionlocation.jl")
+include("models/junctionlocation_nlp.jl")
