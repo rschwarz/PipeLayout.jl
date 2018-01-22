@@ -3,8 +3,6 @@ using PipeLayout.JuncLoc
 using JuMP
 using SCS
 
-include("junctionlocation_nlp.jl")
-
 @testset "solve junction location for three terminals (SOC)" begin
     # equilateral triangle
     nodes = [Node(0,0), Node(40,0), Node(20, sqrt(3)/2*40)]

@@ -1,4 +1,7 @@
-using SCIP # need solver for nonconvex problems :-\
+using PipeLayout.JuncLoc
+
+using JuMP
+using SCIP
 
 @testset "solve junction location for three terminals (NLP)" begin
     # equilateral triangle
@@ -44,12 +47,18 @@ using SCIP # need solver for nonconvex problems :-\
 
     @testset "more flow, mixed diameter, Steiner node towards source" begin
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
-        model, x, y, L, l, π = JuncLoc.make_nlp(inst, topo, solver)
+
+        solver2 = JuncLoc.NLP(SCIPSolver("display/verblevel", 4,
+                                         "limits/gap", 1e-3))
+
+        model, x, y, L, l, π = JuncLoc.make_nlp(inst, topo, solver2)
         status = solve(model, suppress_warnings=true)
 
         @test status in [:Optimal, :UserLimit]
+        @show status
 
         xsol, ysol = getvalue(x), getvalue(y)
+        @show xsol, ysol
         for i=1:3 # fixed terminals
             @test xsol[i] ≈ nodes[i].x atol=0.001
             @test ysol[i] ≈ nodes[i].y atol=0.001
@@ -58,6 +67,7 @@ using SCIP # need solver for nonconvex problems :-\
         @test ysol[4] >= sqrt(3)/6*40 # move near source
 
         Lsol = getvalue(L)
+        @show Lsol
         @test Lsol[1] <= sqrt(3)/3*40
         @test Lsol[2] >= sqrt(3)/3*40
         @test Lsol[3] >= sqrt(3)/3*40
@@ -65,6 +75,7 @@ using SCIP # need solver for nonconvex problems :-\
         lsol = getvalue(l)
         D = [d.value for d in diams]
         equiv = (lsol * D.^(-5)).^(-1/5)
+        @show equiv
 
         # symmetry
         @test equiv[2] ≈ equiv[3] atol=0.1
