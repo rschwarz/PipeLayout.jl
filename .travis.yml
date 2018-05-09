@@ -6,7 +6,6 @@ julia:
   - 0.6
 notifications:
   email: false
-sudo: false # use a docker worker
 addons:
   apt_packages:
   - libgmp-dev
@@ -15,7 +14,6 @@ script:
   - wget http://scip.zib.de/download/release/SCIPOptSuite-5.0.1-Linux.deb
   - sudo dpkg -i SCIPOptSuite-5.0.1-Linux.deb
   - export SCIPOPTDIR="/usr"
-  - cd ..
   - julia -e 'Pkg.add("SCIP")'
 # now fetch PipeLayout.jl and test it
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
