@@ -13,7 +13,7 @@ addons:
 script:
 # first compile SCIP and add SCIP.jl
   - wget http://scip.zib.de/download/release/SCIPOptSuite-5.0.1-Linux.deb
-  - dpkg -i SCIPOptSuite-5.0.1-Linux.deb
+  - sudo dpkg -i SCIPOptSuite-5.0.1-Linux.deb
   - export SCIPOPTDIR="/usr"
   - cd ..
   - julia -e 'Pkg.add("SCIP")'
