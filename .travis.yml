@@ -12,11 +12,15 @@ addons:
   - libgmp-dev
 script:
 # first compile SCIP and add SCIP.jl
-  - wget http://scip.zib.de/download/release/scipoptsuite-4.0.0.tgz
-  - tar xzf scipoptsuite-4.0.0.tgz
-  - cd scipoptsuite-4.0.0/
-  - make SHARED=true GMP=false READLINE=false ZLIB=false scipoptlib
-  - export SCIPOPTDIR=`pwd`
+  - wget http://scip.zib.de/download/release/scipoptsuite-5.0.1.tgz
+  - tar xzf scipoptsuite-5.0.1.tgz
+  - cd scipoptsuite-5.0.1/
+  - export SCIPOPTDIR=`pwd`/install
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_INSTALL_PREFIX=$SCIPOPTDIR ..
+  - make
+  - make install
   - cd ..
   - julia -e 'Pkg.add("SCIP")'
 # now fetch PipeLayout.jl and test it
