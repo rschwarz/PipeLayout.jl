@@ -21,7 +21,7 @@ script:
   - cmake -DCMAKE_INSTALL_PREFIX=$SCIPOPTDIR ..
   - make
   - make install
-  - cd ..
+  - cd ../..
   - julia -e 'Pkg.add("SCIP")'
 # now fetch PipeLayout.jl and test it
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
