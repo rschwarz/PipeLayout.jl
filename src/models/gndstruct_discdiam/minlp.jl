@@ -99,7 +99,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
     status = solve(model, suppress_warnings=true)
 
-    zsol = round(Bool, getvalue(z) .>= 0.5)
+    zsol = round.(Bool, getvalue(z) .>= 0.5)
     qsol = getvalue(q)
     bestsol = CandSol(zsol, qsol, qsol.^2)
 
