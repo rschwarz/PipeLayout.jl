@@ -15,7 +15,7 @@ notifications:
   email: false
 script:
   - echo "**** running Docker"
-  - docker run --env-file travis_docker_env.list -t -a STDOUT -a STDIN -a STDERR -v $PWD:/mnt leethargo/scip-julia /mnt/travis_docker_test_script.sh $TRAVIS_JULIA_VERSION
+  - docker run --env-file travis_docker_env.list -t -a STDOUT -a STDIN -a STDERR -v $PWD:/mnt leethargo/test-pipelayout /mnt/travis_docker_test_script.sh $TRAVIS_JULIA_VERSION
 after_success:
   # push coverage results to Coveralls, .cov files were copied back by script above
   - echo "**** submitting coverage information"
