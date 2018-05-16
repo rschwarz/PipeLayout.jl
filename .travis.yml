@@ -10,7 +10,7 @@ services:
   - docker
 before_install:
   - echo "**** pulling Docker image"
-  - docker pull leethargo/scip-julia
+  - docker pull leethargo/test-pipelayout
 notifications:
   email: false
 script:
