@@ -323,7 +323,7 @@ end
 
 "Linearized & reformulated cuts based on critical paths."
 function critpathcuts(inst::Instance, topo::Topology, master::Master,
-                      cand::CandSol, sub::SubDualSol, solver, cb=nothing)
+                      cand::CandSol, sub::SubDualSol, solver; cb=nothing)
     ncuts = 0
 
     # compute dense dual flow
@@ -354,10 +354,10 @@ function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     @assert any([addnogoods, addcritpath]) # must cut off!
     ncuts = 0
     if addnogoods
-        ncuts += nogood(master.model, master.z, cand.zsol, cb)
+        ncuts += nogood(master.model, master.z, cand.zsol, cb=cb)
     end
     if addcritpath
-        ncuts += critpathcuts(inst, topo, master, cand, sub, solver, cb)
+        ncuts += critpathcuts(inst, topo, master, cand, sub, solver, cb=cb)
     end
     ncuts
 end
