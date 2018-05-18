@@ -93,7 +93,7 @@ end
                                          (2,4), (4,2), (4,6), (6,4)]])
 
     mastersolver = SCIPSolver("display/verblevel", 0)
-    subsolver = SCIPSolver("display/verblevel", 0)
+    subsolver = GLPKSolverLP()
     cbgbdsolver = GndStr.CallbackGBD(mastersolver, subsolver)
 
     @testset "low flow: very easy instance" begin
