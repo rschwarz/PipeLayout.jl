@@ -90,7 +90,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
             submodel2, _ = make_sub(inst, topo, cand, solver.subsolver, relaxed=false)
-            writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp", genericnames=false)
+            solver.writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp", genericnames=false)
             settimelimit!(submodel2, solver.subsolver, finaltime - time())
             substatus2 = solve(submodel2, suppress_warnings=true)
             @assert substatus2 == :Optimal "Slack model is always feasible"
