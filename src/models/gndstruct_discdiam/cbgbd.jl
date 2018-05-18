@@ -36,10 +36,11 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     # TODO: rm code duplication with itergbd
     # add callback for subproblem & cuts
     function cbgbd(cb)
-        cand = CandSol(getvalue(master.z) .>= 0.5,
+        ysol = getvalue(master.y)
+        zsol = getvalue(master.z)
+        cand = CandSol(zsol .>= 0.5,
                        getvalue(master.q),
                        getvalue(master.ϕ))
-        ysol = getvalue(master.y)
         if solver.debug
             j,i,_ = findnz(cand.zsol')
             println("  cand. sol:$(collect(zip(i,j)))")
@@ -56,12 +57,25 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
                 # when adding some irrelevant pipe is cheaper than increasing
                 # the diameter. How to distinguish these cases?
                 nogood(master.model, master.y, ysol, cb=cb)
-                solver.debug && println("  nogood cut: discon topology.")
+                solver.debug && println("  cb: nogood cut: discon topology.")
             else
                 avoid_topo_cut(master.model, master.y, topo, cycle, cb=cb)
-                solver.debug && println("  cut topology w/ cycle: $(cycle)")
+                solver.debug && println("  cb: cut topology w/ cycle: $(cycle)")
             end
             return  # exit from callback
+        end
+
+        # check whether y and z are consistent
+        zsum = sum(zsol, 2)
+        yz_match = (zsum .> 0.5) .== (ysol .> 0.5)
+        if !all(yz_match)
+            if solver.debug
+                i, _, _ = findnz(.!yz_match)
+                println("  cb: mismatch between y and z values for arcs $(i)")
+                println("    ysol = $(ysol[i])")
+                println("    zsol = $(zsol[i,:])")
+            end
+            return
         end
 
         # solve subproblem (from scratch, no warmstart)
