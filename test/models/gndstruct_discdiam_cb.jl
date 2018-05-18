@@ -1,5 +1,3 @@
-using SCIP # need solver with callback support
-
 @testset "Solve semi decomposition with nogoods on y (callback)" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
