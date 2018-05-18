@@ -582,14 +582,6 @@ end
         @test result.dualbound ≈ 72.0
     end
 
-    @testset "high flow: time limit instance" begin
-        inst = Instance(nodes, 30*demand, bounds, diams)
-
-        result = optimize(inst, topo, GndStr.MINLP(SCIPSolver("display/verblevel", 0), timelimit=5.0))
-        @test result.status == :UserLimit
-        @test result.solution == nothing
-    end
-
     @testset "high flow on triangle: infeasible" begin
         inst3 = Instance([Node(0,0), Node(50,0)],
                          20*[-50, 50],
