@@ -1,5 +1,3 @@
-using Lazy: @lazy, @>>, dropwhile, takewhile
-
 "Check whether geosteiner executables are in PATH"
 function has_geosteiner()
     for cmd in [`efst -h`, `bb -h`]
@@ -31,14 +29,29 @@ function euclidean_steiner_tree(nodes::Vector{Node})
     close(input)
 
     # extract relevant lines from postscript output of GeoSteiner
-    lines = @lazy eachline(output)
-    line_tokens = @>> lines begin
-        dropwhile(l -> !contains(l, " % fs"))
-        takewhile(l -> !contains(l, "Euclidean SMT"))
-        filter(l -> !contains(l, " % fs"))
-        map(split)
-    end
+    line_tokens = Array{String}[]
+    _started = false
+    for line in eachline(output)
+        # are we in the good part yet?
+        if !_started && !contains(line, " % fs")
+            continue
+        else
+            _started = true
+        end
 
+        # are we still in the good part?
+        if contains(line, "Euclidean SMT")
+            break
+        end
+
+        # skip the noise
+        if contains(line, " % fs")
+            continue
+        end
+
+        # extract the values
+        push!(line_tokens, split(line))
+    end
 
     for tokens in line_tokens
         @assert length(tokens) == 5

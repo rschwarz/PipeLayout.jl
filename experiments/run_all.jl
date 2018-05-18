@@ -26,14 +26,13 @@ timelimit = round(Int, 2 * solver.timelimit / 60)
 "submit a job to SLURM"
 function submit(key)
     OUT = joinpath(OUTDIR, "$key.log")
-    ERR = joinpath(OUTDIR, "$key.err")
     options = ["--account=$ACCOUNT",
                "--partition=$PARTITION",
                "--cpus-per-task=1",
                "--time=$timelimit",
                "--signal=B:INT",
                "--output=$OUT",
-               "--error=$ERR"]
+               "--error=$OUT"]
     job = ["run.jl", abspath(CONFIG), joinpath(INDIR, key)]
     run(`sbatch $options $job`)
 end

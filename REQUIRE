@@ -4,8 +4,7 @@ Combinatorics 0.4.1
 DataStructures 0.5.3
 JSON 0.12.0
 JuMP 0.17.1
-Lazy 0.11.7
 LightGraphs 0.9.0
 RecipesBase 0.2.0
-SIUnits 0.1.0
 StaticArrays 0.5.1
+Unitful 0.7.0
