@@ -27,7 +27,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
 
     # reuse master problem from IterTopo algorithm
     model, y, q = make_semimaster(inst, topo, solver.mastersolver)
-    solver.writemodels && writeLP(model, "master.lp")
+    solver.writemodels && writeLP(model, "master.lp", genericnames=false)
 
     # callback counter and solution store
     counter = 0
@@ -62,7 +62,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
         cand = CandSol(zcand, qsol, qsol.^2)
 
         submodel, candarcs, z = make_semisub(inst, topo, cand, solver.subsolver)
-        solver.writemodels && writeLP(submodel, "sub_$(counter).lp")
+        solver.writemodels && writeLP(submodel, "sub_$(counter).lp", genericnames=false)
         settimelimit!(submodel, solver.subsolver, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         if substatus == :Optimal

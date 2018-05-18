@@ -388,7 +388,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) master problem, build candidate solution
-        writemodels && writeLP(master.model, "master_iter$(iter).lp")
+        writemodels && writeLP(master.model, "master_iter$(iter).lp", genericnames=false)
         settimelimit!(master.model, mastersolver, finaltime - time())
         status = solve(master.model, suppress_warnings=true)
         if status == :Infeasible
@@ -433,7 +433,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
 
         # solve subproblem (from scratch, no warmstart)
         submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand, subsolver)
-        writemodels && writeLP(submodel, "sub_relax_iter$(iter).lp")
+        writemodels && writeLP(submodel, "sub_relax_iter$(iter).lp", genericnames=false)
         settimelimit!(submodel, subsolver, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         @assert substatus == :Optimal "Slack model is always feasible"
@@ -442,7 +442,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
             submodel2, _ = make_sub(inst, topo, cand, subsolver, relaxed=false)
-            writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp")
+            writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp", genericnames=false)
             settimelimit!(submodel2, subsolver, finaltime - time())
             substatus2 = solve(submodel2, suppress_warnings=true)
             @assert substatus2 == :Optimal "Slack model is always feasible"

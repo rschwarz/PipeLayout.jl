@@ -31,7 +31,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
 
     # use master problem from IterGBD algorithm
     master = Master(make_master(inst, topo, solver.mastersolver)...)
-    solver.writemodels && writeLP(master.model, "master.lp")
+    solver.writemodels && writeLP(master.model, "master.lp", genericnames=false)
 
     # TODO: rm code duplication with itergbd
     # add callback for subproblem & cuts
@@ -67,7 +67,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
         # solve subproblem (from scratch, no warmstart)
         submodel, π, Δl, Δu, ploss, plb, pub =
             make_sub(inst, topo, cand, solver.subsolver)
-        solver.writemodels && writeLP(submodel, "sub_$(counter).lp")
+        solver.writemodels && writeLP(submodel, "sub_$(counter).lp", genericnames=false)
         settimelimit!(submodel, solver.subsolver, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         @assert substatus == :Optimal "Slack model is always feasible"
@@ -76,7 +76,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
             submodel2, _ = make_sub(inst, topo, cand, solver.subsolver, relaxed=false)
-            writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp")
+            writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp", genericnames=false)
             settimelimit!(submodel2, solver.subsolver, finaltime - time())
             substatus2 = solve(submodel2, suppress_warnings=true)
             @assert substatus2 == :Optimal "Slack model is always feasible"
