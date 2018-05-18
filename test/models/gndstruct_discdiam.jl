@@ -318,8 +318,10 @@ end
         topo = squaregrid(2, 3, 100.0, antiparallel=true)
 
         # trigger the cuts for disconnected candidate
-        result = optimize(inst, topo, GndStr.IterGBD(SCIPSolver("display/verblevel", 0), GLPKSolverLP(),
-                                                     addnogoods=true, addcritpath=false))
+        solver = GndStr.IterGBD(SCIPSolver("display/verblevel", 0),
+                                GLPKSolverLP(),
+                                addnogoods=true, addcritpath=false)
+        result = optimize(inst, topo, solver)
         @test result.status == :Optimal
 
         zsol = result.solution.zsol
