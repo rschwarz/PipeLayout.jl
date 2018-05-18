@@ -3,9 +3,10 @@ struct MINLP <: GroundStructureSolver
     debug::Bool
     contz::Bool
     timelimit::Float64 # seconds
+    writemodels::Bool
 
-    function MINLP(solver; debug=false, contz=false, timelimit=Inf)
-        new(solver, debug, contz, timelimit)
+    function MINLP(solver; debug=false, contz=false, timelimit=Inf, writemodels=false)
+        new(solver, debug, contz, timelimit, writemodels)
     end
 end
 
@@ -100,6 +101,10 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     end
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
     status = solve(model, suppress_warnings=true)
+
+    if solver.writemodels
+        MathProgBase.writeproblem(internalmodel(model), "minlp.orig.cip")
+    end
 
     if status == :Infeasible
         return Result(status, nothing, Inf, Inf, 0)
