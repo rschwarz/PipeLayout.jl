@@ -150,7 +150,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) semimaster problem, build candidate solution
-        writemodels && writeLP(mastermodel, "master_iter$(iter).lp")
+        writemodels && writeLP(mastermodel, "master_iter$(iter).lp", genericnames=false)
         settimelimit!(mastermodel, mastersolver, finaltime - time())
         status = solve(mastermodel, suppress_warnings=true)
         if status == :Infeasible
@@ -206,7 +206,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         cand = CandSol(zcand, qsol, qsol.^2)
 
         submodel, candarcs, z = make_semisub(inst, topo, cand, subsolver)
-        writemodels && writeLP(submodel, "sub_iter$(iter).lp")
+        writemodels && writeLP(submodel, "sub_iter$(iter).lp", genericnames=false)
         settimelimit!(submodel, subsolver, finaltime - time())
         substatus = solve(submodel, suppress_warnings=true)
         if substatus == :Optimal
