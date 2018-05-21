@@ -11,6 +11,9 @@ RESULTS   = ARGS[4]
 
 stem(path) = split(basename(path), ".")[1]
 
+# location of executable
+EXEPATH = abspath("run.jl")
+
 # location of instances
 INDIR = abspath(dirname(INSTLIST))
 
@@ -33,7 +36,7 @@ function submit(key)
                "--signal=B:INT",
                "--output=$OUT",
                "--error=$OUT"]
-    job = ["run.jl", abspath(CONFIG), joinpath(INDIR, key)]
+    job = [EXEPATH, abspath(CONFIG), joinpath(INDIR, key)]
     run(`sbatch $options $job`)
 end
 
