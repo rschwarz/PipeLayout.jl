@@ -4,10 +4,10 @@ using PipeLayout.GndStr
 
 const ACCOUNT = "gas"
 
-CONFIG    = ARGS[1]
+CONFIG    = abspath(ARGS[1])
 INSTLIST  = ARGS[2]
 PARTITION = ARGS[3]
-RESULTS   = ARGS[4]
+RESULTS   = abspath(ARGS[4])
 
 stem(path) = split(basename(path), ".")[1]
 
@@ -36,7 +36,7 @@ function submit(key)
                "--signal=B:INT",
                "--output=$OUT",
                "--error=$OUT"]
-    job = [EXEPATH, abspath(CONFIG), joinpath(INDIR, key)]
+    job = [EXEPATH, CONFIG, joinpath(INDIR, key)]
     run(`sbatch $options $job`)
 end
 
