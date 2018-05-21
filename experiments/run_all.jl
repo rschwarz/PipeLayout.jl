@@ -28,7 +28,7 @@ timelimit = round(Int, 2 * solver.timelimit / 60)
 
 "submit a job to SLURM"
 function submit(key)
-    OUT = "$key.log"
+    OUT = abspath("$key.log")
     options = ["--account=$ACCOUNT",
                "--partition=$PARTITION",
                "--cpus-per-task=1",
