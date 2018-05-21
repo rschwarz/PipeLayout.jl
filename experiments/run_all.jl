@@ -25,7 +25,7 @@ timelimit = round(Int, 2 * solver.timelimit / 60)
 
 "submit a job to SLURM"
 function submit(key)
-    OUT = joinpath(OUTDIR, "$key.log")
+    OUT = "$key.log"
     options = ["--account=$ACCOUNT",
                "--partition=$PARTITION",
                "--cpus-per-task=1",
@@ -37,10 +37,14 @@ function submit(key)
     run(`sbatch $options $job`)
 end
 
-# one job per instance
+# one job per instance, submit from result dir
 open(INSTLIST) do f
     for line in eachline(f)
         key = strip(line)
+        path = joinpath(OUTDIR, key)
+
+        mkpath(path)
+        cd(path)
         submit(key)
     end
 end
