@@ -4,6 +4,11 @@ using PipeLayout.GndStr
 
 const ACCOUNT = "gas"
 
+if length(ARGS) != 4
+    println("usage: run_all.jl <config> <instlist> <partition> <results>")
+    exit(1)
+end
+
 CONFIG    = abspath(ARGS[1])
 INSTLIST  = ARGS[2]
 PARTITION = ARGS[3]

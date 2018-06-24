@@ -13,6 +13,11 @@ function solve_with(instance::AbstractString, solver::GroundStructureSolver)
     optimize(inst, topo, solver)
 end
 
+if length(ARGS) != 2
+    println("usage: run.jl <config> <instname>")
+    exit(1)
+end
+
 config = ARGS[1]
 instname = ARGS[2]
 
