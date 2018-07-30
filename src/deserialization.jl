@@ -2,40 +2,40 @@ import JSON
 
 # from https://github.com/JuliaLang/JSON.jl/issues/39
 # but without `flatten` or `Nullable`
-function deserialize{T}(::Type{T}, json::AbstractString)
+function deserialize(::Type{T}, json::AbstractString) where T
     deserialize(T, JSON.parse(json))
 end
 
-function deserialize{T}(::Type{T}, json::Dict)
+function deserialize(::Type{T}, json::Dict) where T
     T([deserialize(T, f, json) for f in fieldnames(T)]...)
 end
 
-function deserialize{Tf}(::Type{Tf}, field::AbstractString, json::Dict)
+function deserialize(::Type{Tf}, field::AbstractString, json::Dict) where Tf
     deserialize(Tf, json[field])
 end
 
-function deserialize{T}(::Type{T}, field::Symbol, json::Dict)
+function deserialize(::Type{T}, field::Symbol, json::Dict) where T
     deserialize(fieldtype(T,field), string(field), json)
 end
 
-function deserialize{T<:Integer}(::Type{T}, i::Integer)
+function deserialize(::Type{T}, i::Integer) where T<:Integer
     T(i)
 end
 
-function deserialize{T<:Integer}(::Type{T}, i::AbstractString)
+function deserialize(::Type{T}, i::AbstractString) where T<:Integer
     parse(T, i)
 end
 
-function deserialize{T<:AbstractFloat}(::Type{T}, i::AbstractFloat)
+function deserialize(::Type{T}, i::AbstractFloat) where T<:AbstractFloat
     T(i)
 end
 
-function deserialize{T<:AbstractFloat}(::Type{T}, i::AbstractString)
+function deserialize(::Type{T}, i::AbstractString) where T<:AbstractFloat
     parse(T, i)
 end
 
 # my own extension to vectors
-function deserialize{T}(::Type{Vector{T}}, A::Vector{Any})
+function deserialize(::Type{Vector{T}}, A::Vector{Any}) where T
     T[deserialize(T, a) for a in A]
 end
 

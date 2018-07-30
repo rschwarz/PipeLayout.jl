@@ -46,7 +46,7 @@ function make_semimaster(inst::Instance, topo::Topology, solver)
     end
 
     # "big-M" bound for flow on arcs
-    const maxflow = 0.5 * sum(abs.(inst.demand))
+    maxflow = 0.5 * sum(abs.(inst.demand))
 
     model = Model(solver=solver)
 
