@@ -49,7 +49,7 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
     head = [arcs[a].head for a in 1:narcs]
 
     # "big-M" bound for flow on arcs
-    const qmax = 0.5 * sum(abs.(inst.demand))
+    qmax = 0.5 * sum(abs.(inst.demand))
 
     L = pipelengths(topo)
     c = [diam.cost for diam in inst.diameters]
