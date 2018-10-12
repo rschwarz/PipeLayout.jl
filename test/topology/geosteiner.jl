@@ -14,7 +14,10 @@ if has_geosteiner()
 
         @test length(topo.arcs) == 3
         for arc in topo.arcs
-            @test findfirst(arc, 4) in [1,2]
+            # head or tail is steiner node
+            @test arc.tail == 4 || arc.head == 4
+            # other node is terminal
+            @test arc.tail in [1,2,3] || arc.head in [1,2,3]
         end
     end
 end
