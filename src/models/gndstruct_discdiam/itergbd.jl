@@ -293,8 +293,8 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         cuv, cvw, c = linear_overest(supvalues, fix_i, fix_j, solver)
 
         # need to transform the coefficients to remove aux vars
-        coeffs[v-1,:] += cuv[2:end] - cuv[1]
-        coeffs[v,:]   += cvw[2:end] - cvw[1]
+        coeffs[v-1,:] += cuv[2:end] .- cuv[1]
+        coeffs[v,:]   += cvw[2:end] .- cvw[1]
         offset += c + cuv[1] + cvw[1]
     end
 
