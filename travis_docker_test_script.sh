@@ -16,7 +16,7 @@ dpkg -i SCIPOptSuite-6.0.0-Linux.deb
 export SCIPOPTDIR="/usr"
 
 # run tests
-$JULIABIN -e "Pkg.clone(\"/mnt/\", \"$PKGNAME\"); Pkg.build(\"$PKGNAME\"); Pkg.test(\"$PKGNAME\"; coverage=true)"
+$JULIABIN -e "using Pkg; Pkg.clone(\"/mnt/\", \"$PKGNAME\"); Pkg.build(\"$PKGNAME\"); Pkg.test(\"$PKGNAME\"; coverage=true)"
 TEST_EXIT=$?                    # return with this
 
 # save coverage results back to host
