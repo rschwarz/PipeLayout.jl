@@ -1,4 +1,4 @@
-julia 0.6 0.7
+julia 0.7
 Colors 0.7.3
 Combinatorics 0.4.1
 DataStructures 0.5.3
