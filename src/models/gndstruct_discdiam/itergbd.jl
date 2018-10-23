@@ -279,7 +279,7 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         β1st, β2nd = β[v-1, :], β[v, :]
         @assert size(β1st) == (ndiam,)
         @assert size(β2nd) == (ndiam,)
-        βdiff = - repmat(β1st, 1, ndiam) + repmat(β2nd', ndiam, 1)
+        βdiff = - repeat(β1st, 1, ndiam) + repeat(β2nd', ndiam, 1)
         @assert size(βdiff) == (ndiam, ndiam)
         supvalues[2:end, 2:end] = max.(βdiff * πub[node], βdiff * πlb[node])
 
