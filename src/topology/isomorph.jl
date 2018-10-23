@@ -49,8 +49,8 @@ function are_isomorphic(tree1::Topology, tree2::Topology)
     if length(leaves1) ≠ length(leaves2)
         return false
     end
-    label1[leaves1] = label
-    label2[leaves2] = label
+    label1[leaves1] .= label
+    label2[leaves2] .= label
     label += 1
 
     # add more labels until difference or isomorphism is found
@@ -73,8 +73,8 @@ function are_isomorphic(tree1::Topology, tree2::Topology)
 
         # actually assign the label to smallest of tentatives
         smallest = tent1[1][1]
-        label1[[t[2] for t in tent1 if t[1] == smallest]] = label
-        label2[[t[2] for t in tent2 if t[1] == smallest]] = label
+        label1[[t[2] for t in tent1 if t[1] == smallest]] .= label
+        label2[[t[2] for t in tent2 if t[1] == smallest]] .= label
         label += 1
     end
 end
@@ -157,7 +157,7 @@ function label_fst(fst::Topology)
     visited = fill(false, n)
     # BFS
     while length(current_level) > 0
-        visited[current_level] = true
+        visited[current_level] .= true
         empty!(next_level)
         for v in current_level
             for w in neighbors(g, v)
