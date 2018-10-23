@@ -81,13 +81,13 @@ function flow_path_decomp(topo::Topology, arcflow::Vector{Float64})
         path = []
 
         # start from largest remaining source
-        current = indmin(resdem)
+        current = argmin(resdem)
         pflow = -resdem[current]
         @assert pflow > 0.0
 
         while resdem[current] <= 0.0
             # pick largest outgoing arc
-            maxarc = indmax([resflow[a] for a in outarcs[current]])
+            maxarc = argmax([resflow[a] for a in outarcs[current]])
             curarc = outarcs[current][maxarc]
             pflow = min(pflow, resflow[curarc])
             @assert pflow > 0.0
