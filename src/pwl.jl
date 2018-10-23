@@ -38,7 +38,7 @@ function pwl_inverse(xs, ys, y)
     if decreasing # make it increasing
         y, ys = -y, -ys
     end
-    @assert isapproxin(y, ys[1], ys[end], atol=1e-5)
+    @assert isapproxin(y, ys[1], ys[end], atol=1e-4)
 
     right = findfirst(yi -> y ≤ yi, ys)
     if right == 1 # on the left boundary
