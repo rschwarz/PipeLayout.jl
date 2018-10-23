@@ -1,5 +1,6 @@
 using PipeLayout.GndStr
 
+using LinearAlgebra
 using JuMP
 using SCIP
 using GLPKMathProgInterface
