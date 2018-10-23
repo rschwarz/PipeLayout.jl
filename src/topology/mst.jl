@@ -9,7 +9,7 @@ function sorted_edges(nodes::Vector{Node})
             push!(edges, nodes[[i,j]])
         end
     end
-    sortcols(hcat(edges...), by=edge -> begin
+    sortslices(hcat(edges...), dims=2, by=edge -> begin
              u, v = edge
              (u.x - v.x)^2 + (u.y - v.y)^2
              end)
