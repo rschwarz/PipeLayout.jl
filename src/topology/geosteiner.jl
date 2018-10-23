@@ -2,7 +2,7 @@
 function has_geosteiner()
     for cmd in [`efst -h`, `bb -h`]
         try
-            run(pipeline(cmd, stdout=DevNull, stderr=DevNull))
+            run(pipeline(cmd, stdout=devnull, stderr=devnull))
         catch exc
             isa(exc, Base.UVError) && return false
         end
