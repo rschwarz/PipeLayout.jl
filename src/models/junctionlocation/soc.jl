@@ -14,7 +14,7 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(nodes, t) for t in terms]
+    termidx = [findfirst(isequal(t), nodes) for t in terms]
     all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
     ndiams = length(inst.diameters)
     xmin, xmax = extrema(node.x for node in terms)

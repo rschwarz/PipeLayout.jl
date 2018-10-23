@@ -50,7 +50,7 @@ function make_master(inst::Instance, topo::Topology, solver)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(nodes, t) for t in terms]
+    termidx = [findfirst(isequal(t), nodes) for t in terms]
     all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
     ndiams = length(inst.diameters)
 
@@ -122,7 +122,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(nodes, t) for t in terms]
+    termidx = [findfirst(isequal(t), nodes) for t in terms]
     ndiams = length(inst.diameters)
 
     candarcs = filter(a -> any(cand.zsol[a,:]), 1:narcs)
@@ -284,8 +284,8 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         supvalues[2:end, 2:end] = max.(βdiff * πub[node], βdiff * πlb[node])
 
         # the current values should be met exactly
-        cand_i = findfirst(zsol[v-1,:], true)
-        cand_j = findfirst(zsol[v,:], true)
+        cand_i = findfirst(zsol[v-1,:])
+        cand_j = findfirst(zsol[v,:])
         @assert cand_i ≠ 0 && cand_j ≠ 0
 
         # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
