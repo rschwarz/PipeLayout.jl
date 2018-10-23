@@ -33,19 +33,19 @@ function euclidean_steiner_tree(nodes::Vector{Node})
     _started = false
     for line in eachline(process.out)
         # are we in the good part yet?
-        if !_started && !contains(line, " % fs")
+        if !_started && !occursin(" % fs", line)
             continue
         else
             _started = true
         end
 
         # are we still in the good part?
-        if contains(line, "Euclidean SMT")
+        if occursin("Euclidean SMT", line)
             break
         end
 
         # skip the noise
-        if contains(line, " % fs")
+        if occursin(" % fs", line)
             continue
         end
 
