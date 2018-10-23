@@ -4,7 +4,7 @@ function has_geosteiner()
         try
             run(pipeline(cmd, stdout=devnull, stderr=devnull))
         catch exc
-            isa(exc, Base.UVError) && return false
+            isa(exc, Base.IOError) && return false
         end
     end
     true
