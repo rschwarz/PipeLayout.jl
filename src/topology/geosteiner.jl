@@ -63,8 +63,8 @@ function euclidean_steiner_tree(nodes::Vector{Node})
             tail = parse(Int, tokens[1]) + 1
         else
             stein = Node(parse(Float64, tokens[1]), parse(Float64, tokens[2]))
-            tail = findfirst(tnodes, stein)
-            if tail == 0
+            tail = findfirst(isequal(stein), tnodes)
+            if tail == nothing
                 push!(tnodes, stein)
                 tail = length(tnodes)
             end
@@ -73,8 +73,8 @@ function euclidean_steiner_tree(nodes::Vector{Node})
             head = parse(Int, tokens[3]) + 1
         else
             stein = Node(parse(Float64, tokens[3]), parse(Float64, tokens[4]))
-            head = findfirst(tnodes, stein)
-            if head == 0
+            head = findfirst(isequal(stein), tnodes)
+            if head == nothing
                 push!(tnodes, stein)
                 head = length(tnodes)
             end
