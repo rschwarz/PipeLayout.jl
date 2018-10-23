@@ -115,7 +115,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     bestsol = CandSol(zsol, qsol, qsol.^2)
 
     primal = getobjectivevalue(model)
-    dual = getobjbound(internalmodel(model))
+    dual = MathProgBase.getobjbound(internalmodel(model))
 
     Result(status, bestsol, primal, dual, 0)
 end
