@@ -66,7 +66,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
         end
 
         # check whether y and z are consistent
-        zsum = sum(zsol, 2)
+        zsum = sum(zsol, dims=2)
         yz_match = (zsum .> 0.5) .== (ysol .> 0.5)
         if !all(yz_match)
             if solver.debug

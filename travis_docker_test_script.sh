@@ -11,12 +11,12 @@ PKGNAME="PipeLayout"
 cd /mnt && if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
 
 # install SCIP
-wget http://scip.zib.de/download/release/SCIPOptSuite-5.0.1-Linux.deb
-dpkg -i SCIPOptSuite-5.0.1-Linux.deb
+wget http://scip.zib.de/download/release/SCIPOptSuite-6.0.0-Linux.deb
+dpkg -i SCIPOptSuite-6.0.0-Linux.deb
 export SCIPOPTDIR="/usr"
 
 # run tests
-$JULIABIN -e "Pkg.clone(\"/mnt/\", \"$PKGNAME\"); Pkg.build(\"$PKGNAME\"); Pkg.test(\"$PKGNAME\"; coverage=true)"
+$JULIABIN -e "using Pkg; Pkg.clone(\"/mnt/\", \"$PKGNAME\"); Pkg.build(\"$PKGNAME\"); Pkg.test(\"$PKGNAME\"; coverage=true)"
 TEST_EXIT=$?                    # return with this
 
 # save coverage results back to host

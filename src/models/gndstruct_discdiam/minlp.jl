@@ -20,7 +20,7 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(nodes, t) for t in terms]
+    termidx = [findfirst(isequal(t), nodes) for t in terms]
     all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
     ndiams = length(inst.diameters)
 
@@ -115,7 +115,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     bestsol = CandSol(zsol, qsol, qsol.^2)
 
     primal = getobjectivevalue(model)
-    dual = getobjbound(internalmodel(model))
+    dual = MathProgBase.getobjbound(internalmodel(model))
 
     Result(status, bestsol, primal, dual, 0)
 end

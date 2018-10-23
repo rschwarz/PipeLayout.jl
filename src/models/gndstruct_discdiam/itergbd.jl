@@ -50,7 +50,7 @@ function make_master(inst::Instance, topo::Topology, solver)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(nodes, t) for t in terms]
+    termidx = [findfirst(isequal(t), nodes) for t in terms]
     all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
     ndiams = length(inst.diameters)
 
@@ -122,7 +122,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(nodes, t) for t in terms]
+    termidx = [findfirst(isequal(t), nodes) for t in terms]
     ndiams = length(inst.diameters)
 
     candarcs = filter(a -> any(cand.zsol[a,:]), 1:narcs)
@@ -279,13 +279,13 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         β1st, β2nd = β[v-1, :], β[v, :]
         @assert size(β1st) == (ndiam,)
         @assert size(β2nd) == (ndiam,)
-        βdiff = - repmat(β1st, 1, ndiam) + repmat(β2nd', ndiam, 1)
+        βdiff = - repeat(β1st, 1, ndiam) + repeat(β2nd', ndiam, 1)
         @assert size(βdiff) == (ndiam, ndiam)
         supvalues[2:end, 2:end] = max.(βdiff * πub[node], βdiff * πlb[node])
 
         # the current values should be met exactly
-        cand_i = findfirst(zsol[v-1,:], true)
-        cand_j = findfirst(zsol[v,:], true)
+        cand_i = findfirst(zsol[v-1,:])
+        cand_j = findfirst(zsol[v,:])
         @assert cand_i ≠ 0 && cand_j ≠ 0
 
         # get coeffs of overestimation, assuming aux vars z_uv,0 and z_vw,0
@@ -293,8 +293,8 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
         cuv, cvw, c = linear_overest(supvalues, fix_i, fix_j, solver)
 
         # need to transform the coefficients to remove aux vars
-        coeffs[v-1,:] += cuv[2:end] - cuv[1]
-        coeffs[v,:]   += cvw[2:end] - cvw[1]
+        coeffs[v-1,:] += cuv[2:end] .- cuv[1]
+        coeffs[v,:]   += cvw[2:end] .- cvw[1]
         offset += c + cuv[1] + cvw[1]
     end
 
@@ -329,7 +329,7 @@ function critpathcuts(inst::Instance, topo::Topology, master::Master,
     # compute dense dual flow
     narcs = length(topo.arcs)
     dualflow = fill(0.0, narcs)
-    actarcs = vec(sum(cand.zsol, 2) .> 0)
+    actarcs = vec(sum(cand.zsol, dims=2) .> 0)
     dualflow[actarcs] = sub.μ
 
     paths, pathflow = flow_path_decomp(topo, dualflow)

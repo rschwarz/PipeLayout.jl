@@ -43,7 +43,7 @@ function nogood(model::Model, vars::AbstractArray{Variable},
     nvars = length(vars)
     active = (sol .> 0.5)
     nactive = sum(active)
-    coef = 2.0*active - 1.0
+    coef = 2.0*active .- 1.0
     if cb == nothing
         @constraint(model, sum(coef[i]*vars[i] for i=1:nvars) <= nactive - 1)
     else

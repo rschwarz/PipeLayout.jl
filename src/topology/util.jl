@@ -1,3 +1,4 @@
+using LinearAlgebra
 using LightGraphs: Graph, DiGraph, add_edge!, neighbors, is_weakly_connected
 
 export arcindex, antiparallelindex, is_tree, find_cycle, pipelengths, incidence

@@ -1,10 +1,11 @@
-julia 0.6 0.7
-Colors 0.7.3
-Combinatorics 0.4.1
-DataStructures 0.5.3
-JSON 0.12.0
+julia 0.7
+Colors
+Combinatorics
+DataStructures
+JSON
 JuMP 0.17.1 0.19
-LightGraphs 0.9.0
-RecipesBase 0.2.0
-StaticArrays 0.5.1
-Unitful 0.7.0
+LightGraphs
+MathProgBase
+RecipesBase
+StaticArrays
+Unitful

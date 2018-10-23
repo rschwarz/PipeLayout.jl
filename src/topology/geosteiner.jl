@@ -2,9 +2,9 @@
 function has_geosteiner()
     for cmd in [`efst -h`, `bb -h`]
         try
-            run(pipeline(cmd, stdout=DevNull, stderr=DevNull))
+            run(pipeline(cmd, stdout=devnull, stderr=devnull))
         catch exc
-            isa(exc, Base.UVError) && return false
+            isa(exc, Base.IOError) && return false
         end
     end
     true
@@ -22,36 +22,38 @@ function euclidean_steiner_tree(nodes::Vector{Node})
     tnodes = copy(nodes)
     tarcs = Arc[]
 
-    output, input, process = readandwrite(pipeline(`efst`, `bb`))
+    process = open(pipeline(`efst`, `bb`), "r+")
     for node in nodes
-        write(input, "$(node.x) $(node.y)\n")
+        write(process.in, "$(node.x) $(node.y)\n")
     end
-    close(input)
+    close(process.in)
 
     # extract relevant lines from postscript output of GeoSteiner
     line_tokens = Array{String}[]
     _started = false
-    for line in eachline(output)
+    for line in eachline(process.out)
         # are we in the good part yet?
-        if !_started && !contains(line, " % fs")
+        if !_started && !occursin(" % fs", line)
             continue
         else
             _started = true
         end
 
         # are we still in the good part?
-        if contains(line, "Euclidean SMT")
+        if occursin("Euclidean SMT", line)
             break
         end
 
         # skip the noise
-        if contains(line, " % fs")
+        if occursin(" % fs", line)
             continue
         end
 
         # extract the values
         push!(line_tokens, split(line))
     end
+
+    wait(process)
 
     for tokens in line_tokens
         @assert length(tokens) == 5
@@ -61,8 +63,8 @@ function euclidean_steiner_tree(nodes::Vector{Node})
             tail = parse(Int, tokens[1]) + 1
         else
             stein = Node(parse(Float64, tokens[1]), parse(Float64, tokens[2]))
-            tail = findfirst(tnodes, stein)
-            if tail == 0
+            tail = findfirst(isequal(stein), tnodes)
+            if tail == nothing
                 push!(tnodes, stein)
                 tail = length(tnodes)
             end
@@ -71,8 +73,8 @@ function euclidean_steiner_tree(nodes::Vector{Node})
             head = parse(Int, tokens[3]) + 1
         else
             stein = Node(parse(Float64, tokens[3]), parse(Float64, tokens[4]))
-            head = findfirst(tnodes, stein)
-            if head == 0
+            head = findfirst(isequal(stein), tnodes)
+            if head == nothing
                 push!(tnodes, stein)
                 head = length(tnodes)
             end

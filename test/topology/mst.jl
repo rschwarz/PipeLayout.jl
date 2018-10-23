@@ -5,7 +5,7 @@ using LightGraphs
 @testset "compute MST from nodes" begin
     coords = [0 1 0; 0 0 2]
     nodes = Node[Node(coords[:,j]...) for j in 1:size(coords, 2)]
-    const n = length(nodes)
+    n = length(nodes)
     @test n == 3
 
     @testset "test sorted edges" begin
@@ -20,8 +20,8 @@ using LightGraphs
     end
 
     @testset "look at resulting MST" begin
-        const n = length(nodes)
-        const m = n - 1 # tree
+        n = length(nodes)
+        m = n - 1 # tree
 
         tree = nodes |> topology_from_mst |> digraph_from_topology
         @test isa(tree, DiGraph)

@@ -58,7 +58,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
 
         # solve subproblem (from scratch, no warmstart)
         zcand = fill(false, narcs, ndiams)
-        zcand[ysol .> 0.5, 1] = true
+        zcand[ysol .> 0.5, 1] .= true
         cand = CandSol(zcand, qsol, qsol.^2)
 
         submodel, candarcs, z = make_semisub(inst, topo, cand, solver.subsolver)

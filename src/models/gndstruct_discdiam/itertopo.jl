@@ -28,7 +28,7 @@ function make_semimaster(inst::Instance, topo::Topology, solver)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(nodes, t) for t in terms]
+    termidx = [findfirst(isequal(t), nodes) for t in terms]
     all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
 
     # demand for all nodes, including junctions
@@ -91,7 +91,7 @@ Returns model, list of candidate arcs and (sparse) variables z
 function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
     nnodes = length(topo.nodes)
     arcs = topo.arcs
-    termidx = [findfirst(topo.nodes, t) for t in inst.nodes]
+    termidx = [findfirst(isequal(t), topo.nodes) for t in inst.nodes]
     ndiams = length(inst.diameters)
     candarcs = filter(a -> any(cand.zsol[a,:]), 1:length(arcs))
     ncandarcs = length(candarcs)
@@ -202,7 +202,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
 
         # solve subproblem (from scratch, no warmstart)
         zcand = fill(false, narcs, ndiams)
-        zcand[ysol .> 0.5, 1] = true
+        zcand[ysol .> 0.5, 1] .= true
         cand = CandSol(zcand, qsol, qsol.^2)
 
         submodel, candarcs, z = make_semisub(inst, topo, cand, subsolver)
