@@ -5,6 +5,7 @@ DataStructures
 JSON
 JuMP 0.17.1 0.19
 LightGraphs
+MathProgBase
 RecipesBase
 StaticArrays
 Unitful
