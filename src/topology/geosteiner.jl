@@ -22,16 +22,16 @@ function euclidean_steiner_tree(nodes::Vector{Node})
     tnodes = copy(nodes)
     tarcs = Arc[]
 
-    output, input, process = readandwrite(pipeline(`efst`, `bb`))
+    process = open(pipeline(`efst`, `bb`), "r+")
     for node in nodes
-        write(input, "$(node.x) $(node.y)\n")
+        write(process.in, "$(node.x) $(node.y)\n")
     end
-    close(input)
+    close(process.in)
 
     # extract relevant lines from postscript output of GeoSteiner
     line_tokens = Array{String}[]
     _started = false
-    for line in eachline(output)
+    for line in eachline(process.out)
         # are we in the good part yet?
         if !_started && !contains(line, " % fs")
             continue
@@ -52,6 +52,8 @@ function euclidean_steiner_tree(nodes::Vector{Node})
         # extract the values
         push!(line_tokens, split(line))
     end
+
+    wait(process)
 
     for tokens in line_tokens
         @assert length(tokens) == 5
