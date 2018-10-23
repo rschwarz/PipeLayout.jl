@@ -1,5 +1,6 @@
 using JuMP
 using MathProgBase
+using SparseArrays
 
 include("common.jl")
 
