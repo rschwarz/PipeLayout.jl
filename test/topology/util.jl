@@ -85,3 +85,13 @@ end
     @test antiidx[2] == 0
     @test antiidx[3] == 1
 end
+
+@testset "check termindex" begin
+    nodes = [Node(0,0), Node(0,1), Node(1,0)]
+
+    terms = [Node(1,0), Node(0,0)]
+    @test termindex(nodes, terms) == [3, 1]
+
+    terms2 = [Node(0,0), Node(2,0)]
+    @test_throws ArgumentError termindex(nodes, terms2)
+end

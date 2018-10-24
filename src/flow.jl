@@ -15,7 +15,7 @@ function dense_demand(inst::Instance, topo::Topology)
     end
 
     # allow for additional steiner nodes (demand = 0)
-    termidx = [findfirst(isequal(t), topo.nodes) for t in inst.nodes]
+    termidx = termindex(topo.nodes, inst.nodes)
     demand = fill(0.0, length(topo.nodes))
     demand[termidx] = inst.demand
     demand

@@ -28,8 +28,7 @@ function make_semimaster(inst::Instance, topo::Topology, solver)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(isequal(t), nodes) for t in terms]
-    all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
+    termidx = termindex(nodes, terms)
 
     # demand for all nodes, including junctions
     dem = fill(0.0, nnodes)
@@ -91,7 +90,7 @@ Returns model, list of candidate arcs and (sparse) variables z
 function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
     nnodes = length(topo.nodes)
     arcs = topo.arcs
-    termidx = [findfirst(isequal(t), topo.nodes) for t in inst.nodes]
+    termidx = termindex(topo.nodes, inst.nodes)
     ndiams = length(inst.diameters)
     candarcs = filter(a -> any(cand.zsol[a,:]), 1:length(arcs))
     ncandarcs = length(candarcs)

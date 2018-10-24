@@ -50,8 +50,7 @@ function make_master(inst::Instance, topo::Topology, solver)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(isequal(t), nodes) for t in terms]
-    all(termidx .> 0) || throw(ArgumentError("Terminals not part of topology"))
+    termidx = termindex(nodes, terms)
     ndiams = length(inst.diameters)
 
     # demand for all nodes, including junctions
@@ -122,7 +121,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
-    termidx = [findfirst(isequal(t), nodes) for t in terms]
+    termidx = termindex(nodes, terms)
     ndiams = length(inst.diameters)
 
     candarcs = filter(a -> any(cand.zsol[a,:]), 1:narcs)

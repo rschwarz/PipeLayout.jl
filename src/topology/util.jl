@@ -1,7 +1,8 @@
 using LinearAlgebra
 using LightGraphs: Graph, DiGraph, add_edge!, neighbors, is_weakly_connected
 
-export arcindex, antiparallelindex, is_tree, find_cycle, pipelengths, incidence
+export arcindex, antiparallelindex, is_tree, find_cycle, pipelengths,
+    incidence, termindex
 
 "Build a LightGraphs.DiGraph from a Topology"
 function digraph_from_topology(topology::Topology)
@@ -109,4 +110,19 @@ function incidence(topo::Topology)
         N[arc.head, j] =  1.0
     end
     N
+end
+
+"Locate terminals in array of nodes"
+function termindex(nodes, terms)
+    idx = Int[]
+    sizehint!(idx, length(terms))
+    for t in terms
+        i = findfirst(isequal(t), nodes)
+        if i == nothing
+            throw(ArgumentError("terminal not part of nodes"))
+        end
+        push!(idx, i)
+    end
+
+    return idx
 end
