@@ -1,5 +1,3 @@
-__precompile__(false) # can't because of Combinatorics :-(
-
 module PipeLayout
 
 include("instances.jl")
