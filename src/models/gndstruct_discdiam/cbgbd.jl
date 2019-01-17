@@ -42,8 +42,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
                        getvalue(master.q),
                        getvalue(master.ϕ))
         if solver.debug
-            j,i,_ = findnz(cand.zsol')
-            println("  cand. sol:$(collect(zip(i,j)))")
+            println("  cand. sol:$(Tuple.(findall(!iszero, cand.zsol)))")
         end
         counter += 1
 
@@ -67,10 +66,10 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
 
         # check whether y and z are consistent
         zsum = sum(zsol, dims=2)
-        yz_match = (zsum .> 0.5) .== (ysol .> 0.5)
-        if !all(yz_match)
+        yz_diff = (zsum .> 0.5) .!= (ysol .> 0.5)
+        if any(yz_diff)
             if solver.debug
-                i, _, _ = findnz(.!yz_match)
+                i = [ci[1] for ci in findall(!iszero, yz_diff)]
                 println("  cb: mismatch between y and z values for arcs $(i)")
                 println("    ysol = $(ysol[i])")
                 println("    zsol = $(zsol[i,:])")
