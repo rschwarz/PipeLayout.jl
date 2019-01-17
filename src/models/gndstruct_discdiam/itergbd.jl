@@ -407,8 +407,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         dual = getobjectivevalue(master.model)
         if debug
             println("  dual bound: $(dual)")
-            j,i,_ = findnz(cand.zsol')
-            println("  cand. sol:$(collect(zip(i,j)))")
+            println("  cand. sol:$(Tuple.(findall(!iszero, cand.zsol)))")
         end
 
         # check whether candidate has tree topology

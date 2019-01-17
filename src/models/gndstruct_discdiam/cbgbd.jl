@@ -27,11 +27,20 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     # initialization
     finaltime = time() + solver.timelimit
     counter = 0
+
+    # no solution yet
     bestsol = nothing
+    primal = Inf
 
     # use master problem from IterGBD algorithm
     master = Master(make_master(inst, topo, solver.mastersolver)...)
     solver.writemodels && writeLP(master.model, "master.lp", genericnames=false)
+
+    # compute objective value for candidate solutions (for use in callback)
+    L = pipelengths(topo)
+    c = [diam.cost for diam in inst.diameters]
+    obj = [c[i] * L[a] for a=1:length(topo.arcs), i=1:length(inst.diameters)]
+    objval(z) = sum(obj .* z)
 
     # TODO: rm code duplication with itergbd
     # add callback for subproblem & cuts
@@ -42,8 +51,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
                        getvalue(master.q),
                        getvalue(master.ϕ))
         if solver.debug
-            j,i,_ = findnz(cand.zsol')
-            println("  cand. sol:$(collect(zip(i,j)))")
+            println("  cand. sol:$(Tuple.(findall(!iszero, cand.zsol)))")
         end
         counter += 1
 
@@ -67,10 +75,10 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
 
         # check whether y and z are consistent
         zsum = sum(zsol, dims=2)
-        yz_match = (zsum .> 0.5) .== (ysol .> 0.5)
-        if !all(yz_match)
+        yz_diff = (zsum .> 0.5) .!= (ysol .> 0.5)
+        if any(yz_diff)
             if solver.debug
-                i, _, _ = findnz(.!yz_match)
+                i = [ci[1] for ci in findall(!iszero, yz_diff)]
                 println("  cb: mismatch between y and z values for arcs $(i)")
                 println("    ysol = $(ysol[i])")
                 println("    zsol = $(zsol[i,:])")
@@ -97,9 +105,15 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
             totalslack2 = getobjectivevalue(submodel2)
 
             if totalslack2 ≈ 0.0
-                solver.debug && println("  found feasible solution :-)")
-                bestsol = cand
-                # don't need to do anything, solved the problem
+                # check whether this candidate is actually an improvement
+                candprimal = objval(cand.zsol)
+                if candprimal < primal
+                    solver.debug && println("  found improving solution :-)")
+                    bestsol = cand
+                    primal = candprimal
+                elseif solver.debug
+                    println("  cand's obj val $(candprimal) no improvement over $(primal)!")
+                end
             else
                 # cut off candidate with no-good on z
                 solver.debug && println("  subproblem/relaxation gap!")
@@ -124,7 +138,6 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     status = solve(master.model, suppress_warnings=true)
 
     # TODO: extract bounds, nnodes?
-    primal = Inf  # could compute from bestsol?
     dual = getobjectivevalue(master.model)  # correct bound?
     nnodes = -1
     Result(status, bestsol, primal, dual, nnodes)
