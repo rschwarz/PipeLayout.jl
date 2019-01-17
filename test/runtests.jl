@@ -3,21 +3,34 @@ using PipeLayout
 
 include("helpers.jl")
 
-include("gasphysics.jl")
-include("util.jl")
-include("pwl.jl")
-include("diameter.jl")
+@testset "basics" begin
+    include("gasphysics.jl")
+    include("util.jl")
+    include("pwl.jl")
+    include("diameter.jl")
+end
 
-include("topology/geosteiner.jl")
-include("topology/grid.jl")
-include("topology/mst.jl")
-include("topology/util.jl")
-include("topology/isomorph.jl")
+@testset "topology" begin
+    include("topology/geosteiner.jl")
+    include("topology/grid.jl")
+    include("topology/mst.jl")
+    include("topology/util.jl")
+    include("topology/isomorph.jl")
+end
 
-include("flow.jl")
+@testset "flow" begin
+    include("flow.jl")
+end
 
-include("models/pipedimensioning.jl")
-include("models/gndstruct_discdiam.jl")
+@testset "pipe dimensioning" begin
+    include("models/pipedimensioning.jl")
+end
 
-include("models/junctionlocation.jl")
-include("models/junctionlocation_nlp.jl")
+@testset "ground structure & discrete diameter" begin
+    include("models/gndstruct_discdiam.jl")
+end
+
+@testset "junction location" begin
+    include("models/junctionlocation.jl")
+    include("models/junctionlocation_nlp.jl")
+end
