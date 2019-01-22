@@ -66,6 +66,6 @@ using SCS
         L = pipelengths(toposol)
         c = [d.cost for d in diams]
         obj = L' * sol.lsol * c
-        @test result.value ≈ obj[1] atol=1e-4
+        @test result.value ≈ obj[1] atol=0.001
     end
 end
