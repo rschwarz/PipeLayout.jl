@@ -96,13 +96,13 @@ end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     if solver.timelimit < Inf
-        MathProgBase.setparameters!(solver.solver, TimeLimit=solver.timelimit)
+        MOI.set(solver.solver, MOI.TimeLimitSec, solver.timelimit)
     end
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
     status = solve(model, suppress_warnings=true)
 
     if solver.writemodels
-        MathProgBase.writeproblem(internalmodel(model), "minlp.orig.cip")
+        MOI.writeproblem(internalmodel(model), "minlp.orig.cip")
     end
 
     if status == :Infeasible
@@ -114,7 +114,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     bestsol = CandSol(zsol, qsol, qsol.^2)
 
     primal = getobjectivevalue(model)
-    dual = MathProgBase.getobjbound(internalmodel(model))
+    dual = MOI.getobjbound(internalmodel(model))
 
     Result(status, bestsol, primal, dual, 0)
 end

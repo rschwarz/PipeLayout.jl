@@ -1,5 +1,4 @@
 using JuMP
-using MathProgBase
 
 struct Solution
     nodes::Vector{Node}

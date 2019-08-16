@@ -1,6 +1,8 @@
+using MathOptInterface
 using JuMP
-using MathProgBase
 using SparseArrays
+
+const MOI = MathOptInterface
 
 include("common.jl")
 

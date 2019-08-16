@@ -1,5 +1,7 @@
+using MathOptInterface
 using JuMP
-using MathProgBase
+
+const MOI = MathOptInterface
 
 export ɛ, settimelimit!, stilltime
 
@@ -41,14 +43,7 @@ const timebuffer = 10.0 # seconds
 function settimelimit!(model::JuMP.Model, solver, limit)
     limit = max(limit, timebuffer) # at least buffer
     if limit < Inf
-        internal = internalmodel(model)
-        if isa(internal, MathProgBase.AbstractMathProgModel)
-            # model is already built, want to modify current params
-            MathProgBase.setparameters!(internal, TimeLimit=limit)
-        else
-            # model not yet build, want to modify future params
-            MathProgBase.setparameters!(solver, TimeLimit=limit)
-        end
+        MOI.set(JuMP.backend(model), MOI.TimeLimitSec, limit)
     end
 end
 
