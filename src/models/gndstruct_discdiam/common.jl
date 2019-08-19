@@ -37,7 +37,7 @@ function topology_from_candsol(topo::Topology, ysol::Vector{Float64},
 end
 
 "Generic no-good cut"
-function nogood(model::Model, vars::AbstractArray{Variable},
+function nogood(model::Model, vars::AbstractArray{JuMP.VariableRef},
                 sol::AbstractArray{T}) where T<:Real
     @assert size(vars) == size(sol)
     nvars = length(vars)

@@ -39,10 +39,10 @@ Variable meanings:
 """
 struct Master
     model::Model
-    y::Vector{Variable}
-    z::Array{Variable,2}
-    q::Vector{Variable}
-    ϕ::Vector{Variable}
+    y::Vector{JuMP.VariableRef}
+    z::Array{JuMP.VariableRef, 2}
+    q::Vector{JuMP.VariableRef}
+    ϕ::Vector{JuMP.VariableRef}
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
