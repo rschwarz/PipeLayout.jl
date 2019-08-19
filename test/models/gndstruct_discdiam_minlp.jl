@@ -19,7 +19,8 @@
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1*demand, bounds, diams)
 
-        result = optimize(inst, topo, GndStr.MINLP(SCIPSolver("display/verblevel", 0)))
+        result = optimize(inst, topo,
+                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
         @test result.status == :Optimal
 
         zsol = result.solution.zsol
@@ -34,7 +35,8 @@
     @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 5*demand, bounds, diams)
 
-        result = optimize(inst, topo, GndStr.MINLP(SCIPSolver("display/verblevel", 0)))
+        result = optimize(inst, topo,
+                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
         @test result.status == :Optimal
 
         zsol = result.solution.zsol
@@ -54,7 +56,8 @@
         topo3 = Topology([Node(0,0), Node(50,0), Node(30, 40)],
                          [Arc(1,3), Arc(1,2), Arc(2,3)])
 
-        result = optimize(inst3, topo3, GndStr.MINLP(SCIPSolver("display/verblevel", 0)))
+        result = optimize(inst3, topo3,
+                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
         @test result.status == :Infeasible
         @test result.solution == nothing
         @test result.dualbound == Inf
@@ -72,7 +75,8 @@
         diams = [Diameter(1.0, 1.0), Diameter(2.0, 2.0)]
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-        result = optimize(inst, topo, GndStr.MINLP(SCIPSolver("display/verblevel", 0)))
+        result = optimize(inst, topo,
+                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
         @test result.status == :Optimal
         zsol = result.solution.zsol
         @test sum(zsol[:,2]) == 1
@@ -88,7 +92,8 @@
                         ploss_coeff_nice)
         topo = squaregrid(2, 3, 100.0, antiparallel=true)
 
-        result = optimize(inst, topo, GndStr.MINLP(SCIPSolver("display/verblevel", 0)))
+        result = optimize(inst, topo,
+                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
         @test result.status == :Optimal
 
         zsol = result.solution.zsol

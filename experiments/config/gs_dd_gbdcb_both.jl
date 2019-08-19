@@ -1,9 +1,9 @@
 using SCIP
-using GLPKMathProgInterface
+using GLPK
 
 solver = GndStr.CallbackGBD(
-    SCIPSolver("display/width", 139, "limits/memory", 5000.0),
-    GLPKSolverLP(),
+    SCIPSolver(display_width=139, limits_memory=5000.0),
+    GLPK.Optimizer(),
     addnogoods=true,
     addcritpath=true,
     timelimit=3600.0,

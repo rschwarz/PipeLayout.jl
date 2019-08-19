@@ -8,7 +8,7 @@ mutable struct Problem
 end
 
 function make_model(nonlin=false)::Problem
-    m = Model(solver=SCIPSolver("display/verblevel", 3))
+    m = Model(solver=SCIP.Optimizer(display_verblevel=3))
 
     @variable(m, x[1:9], Bin)
     @variable(m, -1 ≤ y[1:9] ≤ 1)

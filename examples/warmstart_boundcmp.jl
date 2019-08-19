@@ -23,8 +23,8 @@ nodes = vcat(terminals, junctions)
 fstw = Topology(nodes, [Arc(5,6), Arc(5,1), Arc(2,5), Arc(3,6), Arc(6,4)])
 
 # instead of calling `optimize` we do the steps manually
-solver = JuncLoc.NLP(SCIPSolver("limits/gap", 0.01,
-                                "heuristics/completesol/maxunkownrate", 1.0))
+solver = JuncLoc.NLP(SCIP.Optimizer(limits_gap=0.01,
+                                    heuristics_completesol_maxunkownrate=1.0))
 model, x, y, L, l, π = PipeLayout.JuncLoc.make_nlp(inst, fstw, solver)
 
 # add dummy binary to support incomplete warmstart

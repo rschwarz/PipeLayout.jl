@@ -15,8 +15,7 @@ using SCIP
                     [Arc(3,4), Arc(4,1), Arc(4,2)])
 
     # don't solve nonconvex NLP to optimality
-    solver = JuncLoc.NLP(SCIPSolver("display/verblevel", 0,
-                                    "limits/gap", 1e-3))
+    solver = JuncLoc.NLP(SCIP.Optimizer(display_verblevel=0, limits_gap=1e-3))
 
     @testset "little flow, smallest diameter, Steiner node in center" begin
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)

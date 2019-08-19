@@ -16,8 +16,8 @@
                                          (1,3), (3,1), (3,5), (5,3),
                                          (2,4), (4,2), (4,6), (6,4)]])
 
-    mastersolver = SCIPSolver("display/verblevel", 0)
-    subsolver = SCIPSolver("display/verblevel", 0)
+    mastersolver = SCIP.Optimizer(display_verblevel=0)
+    subsolver = SCIP.Optimizer(display_verblevel=0)
     cbtoposolver = GndStr.CallbackTopo(mastersolver, subsolver)
 
     @testset "low flow: very easy instance" begin
@@ -92,8 +92,8 @@ end
                                          (1,3), (3,1), (3,5), (5,3),
                                          (2,4), (4,2), (4,6), (6,4)]])
 
-    mastersolver = SCIPSolver("display/verblevel", 0)
-    subsolver = GLPKSolverLP()
+    mastersolver = SCIP.Optimizer(display_verblevel=0)
+    subsolver = GLPK.Optimizer()
     cbgbdsolver = GndStr.CallbackGBD(mastersolver, subsolver)
 
     @testset "low flow: very easy instance" begin
