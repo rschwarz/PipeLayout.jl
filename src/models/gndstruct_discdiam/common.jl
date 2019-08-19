@@ -38,32 +38,23 @@ end
 
 "Generic no-good cut"
 function nogood(model::Model, vars::AbstractArray{Variable},
-                sol::AbstractArray{T}; cb=nothing) where T<:Real
+                sol::AbstractArray{T}) where T<:Real
     @assert size(vars) == size(sol)
     nvars = length(vars)
     active = (sol .> 0.5)
     nactive = sum(active)
     coef = 2.0*active .- 1.0
-    if cb == nothing
-        @constraint(model, sum(coef[i]*vars[i] for i=1:nvars) <= nactive - 1)
-    else
-        @lazyconstraint(cb, sum(coef[i]*vars[i] for i=1:nvars) <= nactive - 1)
-    end
+    @constraint(model, sum(coef[i]*vars[i] for i=1:nvars) <= nactive - 1)
     return 1
 end
 
 "Cut off all y values for given, undirected topology"
-function avoid_topo_cut(model, y, topo::Topology, edges::Vector{Arc};
-                        cb=nothing)
+function avoid_topo_cut(model, y, topo::Topology, edges::Vector{Arc})
     arcidx = arcindex(topo)
     antidx = antiparallelindex(topo)
 
     fwd = [arcidx[e] for e in edges]
     bwd = [antidx[a] for a in fwd]
     arcs = vcat(fwd, bwd)
-    if cb == nothing
-        @constraint(model, sum(y[a] for a in arcs) ≤ length(edges) - 1)
-    else
-        @lazyconstraint(cb, sum(y[a] for a in arcs) ≤ length(edges) - 1)
-    end
+    @constraint(model, sum(y[a] for a in arcs) ≤ length(edges) - 1)
 end

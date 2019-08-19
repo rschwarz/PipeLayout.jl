@@ -168,7 +168,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
 end
 
 "Add tangent cut to quadratic inequality (ϕ ≥ q^2) if violated."
-function quadratic_tangent(model, q, ϕ, qsol, ϕsol, cb=nothing)
+function quadratic_tangent(model, q, ϕ, qsol, ϕsol)
     violated = ϕsol < qsol^2 - ɛ
     if !violated
         return 0
@@ -176,11 +176,7 @@ function quadratic_tangent(model, q, ϕ, qsol, ϕsol, cb=nothing)
 
     # add 1st order Taylor approx:
     # q^2 ≈ 2*qsol*(q - qsol) + qsol^2 = 2*qsol*q - qsol^2
-    if cb == nothing
-        @constraint(model, ϕ ≥ 2*qsol*q - qsol^2)
-    else
-        @lazyconstraint(cb, ϕ ≥ 2*qsol*q - qsol^2)
-    end
+    @constraint(model, ϕ ≥ 2*qsol*q - qsol^2)
 
     return 1
 end
@@ -227,7 +223,7 @@ end
 
 "Linearized & reformulated cut based on single path."
 function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
-                 path::Vector{Arc}, solver, cb=nothing)
+                 path::Vector{Arc}, solver)
     aidx = arcindex(topo)
     pathidx = [aidx[arc] for arc in path]
     npath = length(path)
@@ -309,20 +305,15 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     z = master.z[pathidx,:]
     ϕ = master.ϕ[pathidx]
 
-    if cb == nothing
-        @constraint(master.model, sum(coeffs[a,i]*z[a,i] for a=1:npath for i=1:ndiam)
-                    + offset ≥ sum(α[a]*ϕ[a] for a=1:npath))
-    else
-        @lazyconstraint(cb, sum(coeffs[a,i]*z[a,i] for a=1:npath for i=1:ndiam)
-                        + offset ≥ sum(α[a]*ϕ[a] for a=1:npath))
-    end
+    @constraint(master.model, sum(coeffs[a,i]*z[a,i] for a=1:npath for i=1:ndiam)
+                + offset ≥ sum(α[a]*ϕ[a] for a=1:npath))
 
     return 1
 end
 
 "Linearized & reformulated cuts based on critical paths."
 function critpathcuts(inst::Instance, topo::Topology, master::Master,
-                      cand::CandSol, sub::SubDualSol, solver; cb=nothing)
+                      cand::CandSol, sub::SubDualSol, solver)
     ncuts = 0
 
     # compute dense dual flow
@@ -335,12 +326,12 @@ function critpathcuts(inst::Instance, topo::Topology, master::Master,
 
     # TODO: test that cuts are valid and separating
     for path in paths
-        ncuts += pathcut(inst, topo, master, cand, path, solver, cb)
+        ncuts += pathcut(inst, topo, master, cand, path, solver)
     end
 
     for aidx in 1:narcs
         ncuts += quadratic_tangent(master.model, master.q[aidx], master.ϕ[aidx],
-                                   cand.qsol[aidx], cand.ϕsol[aidx], cb)
+                                   cand.qsol[aidx], cand.ϕsol[aidx])
     end
 
     return ncuts
@@ -348,15 +339,14 @@ end
 
 "Construct all Benders cuts from the solution of a subproblem."
 function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
-              sub::SubDualSol, solver; addnogoods=true, addcritpath=true,
-              cb=nothing)
+              sub::SubDualSol, solver; addnogoods=true, addcritpath=true)
     @assert any([addnogoods, addcritpath]) # must cut off!
     ncuts = 0
     if addnogoods
-        ncuts += nogood(master.model, master.z, cand.zsol, cb=cb)
+        ncuts += nogood(master.model, master.z, cand.zsol)
     end
     if addcritpath
-        ncuts += critpathcuts(inst, topo, master, cand, sub, solver, cb=cb)
+        ncuts += critpathcuts(inst, topo, master, cand, sub, solver)
     end
     ncuts
 end
