@@ -3,7 +3,7 @@ using PipeLayout.GndStr
 using LinearAlgebra
 using JuMP
 using SCIP
-using GLPKMathProgInterface
+using GLPK
 
 include("gndstruct_discdiam_iter.jl")
 include("gndstruct_discdiam_minlp.jl")
