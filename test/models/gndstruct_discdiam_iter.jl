@@ -44,7 +44,7 @@ end
     #   /1   /3   /5
     #  s1 - () - d1
     #    11   13
-    solver = GLPK.Optimizer
+    solver = GLPK.Optimizer()
 
     inst = Instance([Node(0,0), Node(40,0), Node(20, 20)],
                     [-50, 20, 30],
@@ -135,7 +135,7 @@ end
 @testset "compare relaxation and exact for subproblem" begin
     #     __s1__  __s2
     #   t3      t4
-    solver = GLPK.Optimizer
+    solver = GLPK.Optimizer()
 
     nodes = [Node(100,0), Node(300,0), Node(0,0), Node(200,0)]
     arcs = [Arc(1,3), Arc(1,4), Arc(2,4)]
@@ -313,7 +313,7 @@ end
     values = 2*tril(values) - triu(values)
 
     cand_i, cand_j = 3, 2
-    a, b, c = GndStr.linear_overest(values, cand_i, cand_j, GLPK.Optimizer)
+    a, b, c = GndStr.linear_overest(values, cand_i, cand_j, GLPK.Optimizer())
     @test size(a) == (4,)
     @test size(b) == (4,)
     @test size(c) == ()
