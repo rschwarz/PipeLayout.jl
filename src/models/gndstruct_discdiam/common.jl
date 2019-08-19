@@ -37,7 +37,7 @@ function topology_from_candsol(topo::Topology, ysol::Vector{Float64},
 end
 
 "Generic no-good cut"
-function nogood(model::Model, vars::AbstractArray{JuMP.VariableRef},
+function nogood(model::JuMP.Model, vars::AbstractArray{JuMP.VariableRef},
                 sol::AbstractArray{T}) where T<:Real
     @assert size(vars) == size(sol)
     nvars = length(vars)
@@ -49,7 +49,8 @@ function nogood(model::Model, vars::AbstractArray{JuMP.VariableRef},
 end
 
 "Cut off all y values for given, undirected topology"
-function avoid_topo_cut(model, y, topo::Topology, edges::Vector{Arc})
+function avoid_topo_cut(model::JuMP.Model, y::AbstractArray{JuMP.VariableRef},
+                        topo::Topology, edges::Vector{Arc})
     arcidx = arcindex(topo)
     antidx = antiparallelindex(topo)
 

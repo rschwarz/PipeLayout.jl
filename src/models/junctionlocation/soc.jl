@@ -1,7 +1,7 @@
 import PipeLayout: pwl_ineqs, reorient_fwdflow, pwl_inverse, pipesplit
 
 struct SOC <: JunctionLocationSolver
-    solver             # for underlying NLP model
+    optimizer          # for underlying NLP model
     timelimit::Float64 # seconds
 
     function SOC(solver; timelimit=Inf)
@@ -39,7 +39,7 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff .* q .* abs.(q)
 
-    model = Model(solver=solver.solver)
+    model = JuMP.direct_model(solver.optimizer)
 
     # node positions
     @variable(model, xmin ≤ x[1:nnodes] ≤ xmax)

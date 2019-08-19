@@ -1,4 +1,7 @@
 using JuMP
+using MathOptInterface
+
+const MOI = MathOptInterface
 
 struct Solution
     lsol::Array{Float64,2}
@@ -15,7 +18,7 @@ struct LP <: PipeDimensioningSolver
     lpsolver
 end
 
-function make_model(inst::Instance, topo::Topology, solver)
+function make_model(inst::Instance, topo::Topology, optimizer::O) where O <: MOI.AbstractOptimizer
     nnodes = length(inst.nodes)
     length(topo.nodes) == nnodes ||
         throw(ArgumentError("Steiner nodes not allowed"))
@@ -24,7 +27,7 @@ function make_model(inst::Instance, topo::Topology, solver)
 
     q = uniq_flow(inst, topo)
 
-    model = Model(solver=solver)
+    model = JuMP.direct_model(optimizer)
 
     # squared pressure variables at nodes
     lb = [b.lb^2 for b in inst.pressure]

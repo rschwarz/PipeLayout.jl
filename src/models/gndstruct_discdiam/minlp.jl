@@ -16,7 +16,7 @@ Build MINLP model for instance on given ground structure.
 To be solved with given MPB solver (capable of NLP).
 Use continuous variables 0 ≤ z ≤ 1 if `contz` is true.
 """
-function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
+function make_minlp(inst::Instance, topo::Topology, optimizer; contz=false)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -55,7 +55,7 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff * L
 
-    model = Model(solver=solver)
+    model = JuMP.direct_model(optimizer)
 
     # select arcs from topology
     @variable(model, y[1:narcs], Bin)

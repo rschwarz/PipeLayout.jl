@@ -38,7 +38,7 @@ Variable meanings:
   ϕ: squared flow through arc (ϕ = q²)
 """
 struct Master
-    model::Model
+    model::JuMP.Model
     y::Vector{JuMP.VariableRef}
     z::Array{JuMP.VariableRef, 2}
     q::Vector{JuMP.VariableRef}
@@ -46,7 +46,7 @@ struct Master
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
-function make_master(inst::Instance, topo::Topology, solver)
+function make_master(inst::Instance, topo::Topology, optimizer::O) where O <: MOI.AbstractOptimizer
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -70,7 +70,7 @@ function make_master(inst::Instance, topo::Topology, solver)
     # "big-M" bound for flow on arcs
     maxflow = 0.5 * sum(abs.(inst.demand))
 
-    model = Model(solver=solver)
+    model = JuMP.direct_model(optimizer)
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -116,7 +116,7 @@ Build model for subproblem (ground structure with discrete diameters).
 Corresponds to the domain relaxation with pressure loss overestimation, which
 can be turned off via the flag `relaxed`.
 """
-function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
+function make_sub(inst::Instance, topo::Topology, cand::CandSol, optimizer;
                   relaxed::Bool=true)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
@@ -129,7 +129,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
     tail = [arcs[a].tail for a in candarcs]
     head = [arcs[a].head for a in candarcs]
 
-    model = Model(solver=solver)
+    model = JuMP.direct_model(optimizer)
 
     # unconstrained variable for squared pressure, the bounds are added with
     # inequalities having slack vars.
@@ -189,13 +189,13 @@ where x_i and y_j take values 0 or 1, with exactly one term active per sum.
 
 The coefficients a, b, c are returned.
 """
-function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, solver)
+function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, optimizer)
     m, n = size(values)
 
     @assert 1 <= cand_i <= m
     @assert 1 <= cand_j <= n
 
-    model = Model(solver=solver)
+    model = JuMP.direct_model(optimizer)
 
     # coefficients to be found
     @variable(model, a[1:m])
