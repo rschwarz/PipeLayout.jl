@@ -73,7 +73,7 @@ function make_semimaster(inst::Instance, topo::Topology, optimizer)
     # use cost of smallest diameter as topology-based relaxation
     L = pipelengths(topo)
     cmin = inst.diameters[1].cost
-    @objective(model, :Min, sum(cmin * L[a] * y[a] for a=1:narcs))
+    @objective(model, Min, sum(cmin * L[a] * y[a] for a=1:narcs))
 
     model, y, q
 end
@@ -118,7 +118,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol, optimizer)
                 π[tail[a]] - π[head[a]] ≥ C[a] * sum(Dm5[i]*z[a,i] for i=1:ndiams))
     @constraint(model, choice[a=1:ncandarcs], sum(z[a,i] for i=1:ndiams) == 1)
 
-    @objective(model, :Min, sum(c[i] * L[candarcs[a]] * z[a,i] for a=1:ncandarcs for i=1:ndiams))
+    @objective(model, Min, sum(c[i] * L[candarcs[a]] * z[a,i] for a=1:ncandarcs for i=1:ndiams))
 
     model, candarcs, z
 end

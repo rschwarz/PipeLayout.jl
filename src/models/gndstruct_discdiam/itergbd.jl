@@ -105,7 +105,7 @@ function make_master(inst::Instance, topo::Topology, optimizer::O) where O <: MO
 
     L = pipelengths(topo)
     c = [diam.cost for diam in inst.diameters]
-    @objective(model, :Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
 
     model, y, z, q, ϕ
 end
@@ -162,7 +162,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, optimizer;
     @constraint(model, pres_lb[v=1:nnodes], π[v] + Δl[v] ≥ lb[v])
     @constraint(model, pres_ub[v=1:nnodes], π[v] - Δu[v] ≤ ub[v])
 
-    @objective(model, :Min, sum(Δl[v] + Δu[v] for v=1:nnodes))
+    @objective(model, Min, sum(Δl[v] + Δu[v] for v=1:nnodes))
 
     model, π, Δl, Δu, ploss, pres_lb, pres_ub
 end
@@ -212,7 +212,7 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, optim
     @constraint(model, t[cand_i, cand_j] == 0)
 
     # be as tight as possible everywhere else
-    @objective(model, :Min, sum(t[i,j] for i=1:m for j=1:n))
+    @objective(model, Min, sum(t[i,j] for i=1:m for j=1:n))
 
     # solve it
     status = solve(model, suppress_warnings=true)

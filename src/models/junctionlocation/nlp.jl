@@ -72,7 +72,7 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
                 C[a] * L[a] * sum(Dm5[i]*l[a,i] for i=1:ndiams))
 
     # minimize total construction cost
-    @objective(model, :Min, sum(c[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, sum(c[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
 
     model, x, y, L, l, π
 end

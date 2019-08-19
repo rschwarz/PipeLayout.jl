@@ -49,7 +49,7 @@ function make_model(inst::Instance, topo::Topology, optimizer::O) where O <: MOI
 
     # minimize total construction cost
     cost = [diam.cost for diam in inst.diameters]
-    @objective(model, :Min, sum(cost[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, sum(cost[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
 
     model, π, l
 end

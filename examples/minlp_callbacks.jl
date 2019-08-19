@@ -18,7 +18,7 @@ function make_model(nonlin=false)::Problem
         @NLconstraint(m, sum(y[i] for i=1:9)^2 == prod(y[i] for i=1:9))
     end
 
-    @objective(m, :Max, sum(y[i] - i*x[i] for i=1:9))
+    @objective(m, Max, sum(y[i] - i*x[i] for i=1:9))
 
     Problem(m, x, y)
 end

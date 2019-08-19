@@ -89,7 +89,7 @@ function make_minlp(inst::Instance, topo::Topology, optimizer; contz=false)
     @constraint(model, choice[a=1:narcs], sum(z[a,i] for i=1:ndiams) == y[a])
 
     # minimize total construction cost
-    @objective(model, :Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
 
     return model, y, z, q, π
 end
