@@ -22,7 +22,7 @@ using SCS
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
 
-        @test status in [:Optimal, :UserLimit]
+        @test status in (MOI.OPTIMAL, MOI.ITERATION_LIMIT)
 
         xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals

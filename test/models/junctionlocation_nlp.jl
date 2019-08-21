@@ -23,7 +23,7 @@ using SCIP
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
 
-        @test status in [:Optimal, :UserLimit]
+        @test status == MOI.OPTIMAL # includes gap limit
 
         xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals
@@ -51,7 +51,7 @@ using SCIP
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
 
-        @test status in [:Optimal, :UserLimit]
+        @test status == MOI.OPTIMAL
 
         xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals
@@ -79,7 +79,7 @@ using SCIP
     @testset "using the optimize function to solve" begin
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
         result = optimize(inst, topo, solver)
-        @test result.status in [:Optimal, :UserLimit]
+        @test result.status == MOI.OPTIMAL
 
         sol = result.sol
         toposol = Topology(sol.nodes, topo.arcs)

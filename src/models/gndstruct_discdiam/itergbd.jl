@@ -371,12 +371,13 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
 
     # initialize
     master = Master(make_master(inst, topo, mastersolver)...)
-    dual, status = 0.0, :NotSolved
+    dual, status = 0.0, MOI.OPTIMIZE_NOT_CALLED
 
     for iter=1:maxiter
         if !stilltime(finaltime)
+            status = MOI.TIME_LIMIT
             debug && println("Timelimit reached.")
-            break
+            return Result(status, nothing, Inf, dual, iter)
         end
 
         debug && println("Iter $(iter)")
@@ -464,5 +465,5 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         debug && println("  added $(ncuts) cuts.")
     end
 
-    Result(:UserLimit, nothing, Inf, dual, maxiter)
+    Result(MOI.ITERATION_LIMIT, nothing, Inf, dual, maxiter)
 end

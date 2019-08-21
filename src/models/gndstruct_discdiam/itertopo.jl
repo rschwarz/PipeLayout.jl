@@ -140,13 +140,14 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
     ndiams = length(inst.diameters)
 
     # initialize
-    primal, dual, status, bestsol = Inf, 0.0, :NotSolved, nothing
+    primal, dual, status, bestsol = Inf, 0.0, MOI.OPTIMIZE_NOT_CALLED, nothing
     mastermodel, y, q = make_semimaster(inst, topo, mastersolver)
 
     for iter=1:maxiter
         if !stilltime(finaltime)
+            status = MOI.TIME_LIMIT
             debug && println("Timelimit reached.")
-            break
+            return Result(status, bestsol, primal, dual, iter)
         end
         debug && println("Iter $(iter)")
 
@@ -183,7 +184,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         if dual > primal - ɛ
             @assert bestsol ≠ nothing
             debug && println("  proved optimality of best solution.")
-            return Result(:Optimal, bestsol, primal, dual, iter)
+            return Result(MOI.OPTIMAL, bestsol, primal, dual, iter)
         end
 
         # check whether candidate has tree topology
@@ -237,5 +238,5 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         nogood(mastermodel, y, ysol)
     end
 
-    Result(:UserLimit, bestsol, primal, dual, maxiter)
+    Result(MOI.ITERATION_LIMIT, bestsol, primal, dual, maxiter)
 end
