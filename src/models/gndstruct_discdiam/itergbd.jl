@@ -452,7 +452,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
             end
         end
 
-        dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
+        dualsol = SubDualSol(JuMP.dual.(ploss), JuMP.dual.(plb), JuMP.dual.(pub))
 
         # generate cuts and add to master
         ncuts = cuts(inst, topo, master, cand, dualsol, subsolver,

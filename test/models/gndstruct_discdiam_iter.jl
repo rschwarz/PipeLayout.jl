@@ -84,9 +84,9 @@ end
         @test Δusol ≈ zeros(nnodes)
 
         # dual solution
-        μsol = getdual(ploss)
-        λlsol = getdual(plb)
-        λusol = getdual(pub)
+        μsol = JuMP.dual.(ploss)
+        λlsol = JuMP.dual.(plb)
+        λusol = JuMP.dual.(pub)
 
         @test μsol ≈ zeros(length(ploss))
         @test λlsol ≈ zeros(nnodes)
@@ -119,9 +119,9 @@ end
         @test sum(slack[terms] .> 0) >= 2
 
         # dual solution, TODO: fix sign of dual multipliers
-        μsol = abs.(getdual(ploss))
-        λlsol = abs.(getdual(plb))
-        λusol = abs.(getdual(pub))
+        μsol = abs.(JuMP.dual.(ploss))
+        λlsol = abs.(JuMP.dual.(plb))
+        λusol = abs.(JuMP.dual.(pub))
 
         # at least two bounds active
         @test sum(λlsol[terms] .> 0) >= 1
