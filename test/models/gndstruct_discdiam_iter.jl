@@ -524,7 +524,7 @@ end
 
         result = optimize(inst, topo, GndStr.IterTopo(
             SCIP.Optimizer(display_verblevel=0),
-            SCIP.Optimizer(display_verblevel=0))
+            SCIP.Optimizer(display_verblevel=0)))
         @test result.status == MOI.INFEASIBLE
     end
 end
