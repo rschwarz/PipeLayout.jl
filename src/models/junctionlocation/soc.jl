@@ -39,7 +39,7 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff .* q .* abs.(q)
 
-    model = JuMP.direct_model(solver.optimizer)
+    model = JuMP.Model(solver.optimizer)
 
     # node positions
     @variable(model, xmin ≤ x[1:nnodes] ≤ xmax)
