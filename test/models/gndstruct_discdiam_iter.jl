@@ -45,8 +45,6 @@ end
     #   /1   /3   /5
     #  s1 - () - d1
     #    11   13
-    solver = GLPK.Optimizer()
-
     inst = Instance([Node(0,0), Node(40,0), Node(20, 20)],
                     [-50, 20, 30],
                     fill(Bounds(60,80), 3),
@@ -70,7 +68,8 @@ end
 
     @testset "feasible subproblem" begin
         cand = GndStr.CandSol(zsol, qsol, fill(0.0, narcs))
-        model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(inst, topo, cand, solver)
+        model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(
+            inst, topo, cand, GLPK.Optimizer())
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
         @test status == MOI.OPTIMAL
@@ -95,7 +94,8 @@ end
 
     @testset "infeasible subproblem" begin
         cand = GndStr.CandSol(zsol, 10 * qsol, fill(0.0, narcs)) # scaled
-        model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(inst, topo, cand, solver)
+        model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(
+            inst, topo, cand, GLPK.Optimizer())
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
         @test status == MOI.OPTIMAL
@@ -138,8 +138,6 @@ end
 @testset "compare relaxation and exact for subproblem" begin
     #     __s1__  __s2
     #   t3      t4
-    solver = GLPK.Optimizer()
-
     nodes = [Node(100,0), Node(300,0), Node(0,0), Node(200,0)]
     arcs = [Arc(1,3), Arc(1,4), Arc(2,4)]
     topo = Topology(nodes, arcs)
@@ -155,7 +153,7 @@ end
 
     @testset "solving the exact subproblem" begin
         model, π, Δl, Δu, ploss, plb, pub =
-            GndStr.make_sub(inst, topo, cand, solver, relaxed=false)
+            GndStr.make_sub(inst, topo, cand, GLPK.Optimizer(), relaxed=false)
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
         @test status == MOI.OPTIMAL
@@ -164,7 +162,7 @@ end
 
     @testset "solving the relaxation" begin
         model, π, Δl, Δu, ploss, plb, pub =
-            GndStr.make_sub(inst, topo, cand, solver, relaxed=true)
+            GndStr.make_sub(inst, topo, cand, GLPK.Optimizer(), relaxed=true)
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
         @test status == MOI.OPTIMAL
