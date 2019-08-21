@@ -68,7 +68,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
         substatus = JuMP.termination_status(submodel)
         if substatus == MOI.OPTIMAL
             # have found improving solution?
-            newobj = getobjectivevalue(submodel)
+            newobj = JuMP.objective_value(submodel)
             if newobj < primal
                 primal = newobj
                 znew = fill(false, narcs, ndiams)

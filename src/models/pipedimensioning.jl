@@ -58,7 +58,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::LP)
     model, π, l = make_model(inst, topo, solver.lpsolver)
     JuMP.optimize!(model)
     status = JuMP.termination_status(model)
-    objval = status == MOI.OPTIMAL ? getobjectivevalue(model) : Inf
+    objval = status == MOI.OPTIMAL ? JuMP.objective_value(model) : Inf
     sol = Solution(getvalue(l), getvalue(π))
     Result(status, sol, objval)
 end

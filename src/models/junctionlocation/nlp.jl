@@ -84,7 +84,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::NLP)
     if status in [MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED]
         return Result(status, Solution([], zeros(0,0), []), Inf)
     end
-    objval = getobjectivevalue(model)
+    objval = JuMP.objective_value(model)
     nodes = map(Node, zip(getvalue(x), getvalue(y)))
     sol = Solution(nodes, getvalue(l), getvalue(π))
     Result(status, sol, objval)

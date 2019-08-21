@@ -159,7 +159,7 @@ end
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
         @test status == :Optimal
-        @test getobjectivevalue(model) ≈ 3600
+        @test JuMP.objective_value(model) ≈ 3600
     end
 
     @testset "solving the relaxation" begin
@@ -168,7 +168,7 @@ end
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
         @test status == :Optimal
-        @test getobjectivevalue(model) ≈ 0
+        @test JuMP.objective_value(model) ≈ 0
     end
 end
 

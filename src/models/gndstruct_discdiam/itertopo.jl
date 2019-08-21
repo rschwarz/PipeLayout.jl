@@ -171,7 +171,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         end
 
         ysol, qsol = getvalue(y), getvalue(q)
-        dual = getobjectivevalue(mastermodel)
+        dual = JuMP.objective_value(mastermodel)
         if debug
             println("  dual bound: $(dual)")
             println("  cand. sol:$(find(qsol))")
@@ -212,7 +212,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         substatus = JuMP.termination_status(submodel)
         if substatus == MOI.OPTIMAL
             # have found improving solution?
-            newobj = getobjectivevalue(submodel)
+            newobj = JuMP.objective_value(submodel)
             if newobj < primal
                 primal = newobj
                 znew = fill(false, narcs, ndiams)

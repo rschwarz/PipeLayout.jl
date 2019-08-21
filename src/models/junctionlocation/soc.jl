@@ -95,7 +95,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
     model, x, y, t, π = make_soc(inst, topo, solver)
     MOI.optimize(model)
     status = JuMP.termination_status(model)
-    objval = getobjectivevalue(model)
+    objval = JuMP.objective_value(model)
     nodes = map(Node, zip(getvalue(x), getvalue(y)))
 
     # compute l from t

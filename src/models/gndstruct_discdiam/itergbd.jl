@@ -396,7 +396,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         zsol = getvalue(master.z)
         cand = CandSol(zsol .>= 0.5, getvalue(master.q), getvalue(master.ϕ))
 
-        dual = getobjectivevalue(master.model)
+        dual = JuMP.objective_value(master.model)
         if debug
             println("  dual bound: $(dual)")
             println("  cand. sol:$(Tuple.(findall(!iszero, cand.zsol)))")
@@ -428,7 +428,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         JuMP.optimize!(submodel)
         substatus = JuMP.termination_status(submodel)
         @assert substatus == MOI.OPTIMAL "Slack model is always feasible"
-        totalslack = getobjectivevalue(submodel)
+        totalslack = JuMP.objective_value(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
@@ -438,11 +438,11 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
             JuMP.optimize!(submodel2)
             substatus2 = JuMP.termination_status(submodel2)
             @assert substatus2 == MOI.OPTIMAL "Slack model is always feasible"
-            totalslack2 = getobjectivevalue(submodel2)
+            totalslack2 = JuMP.objective_value(submodel2)
 
             if totalslack2 ≈ 0.0
                 debug && println("  found feasible solution :-)")
-                primal = getobjectivevalue(master.model)
+                primal = JuMP.objective_value(master.model)
                 return Result(substatus2, cand, primal, dual, iter)
             else
                 # cut off candidate with no-good on z

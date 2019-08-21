@@ -94,7 +94,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
         JuMP.optimize!(submodel)
         substatus = JuMP.termination_status(submodel)
         @assert substatus == MOI.OPTIMAL "Slack model is always feasible"
-        totalslack = getobjectivevalue(submodel)
+        totalslack = JuMP.objective_value(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
@@ -104,7 +104,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
             JuMP.optimize!(submodel2)
             substatus2 = JuMP.termination_status(submodel2)
             @assert substatus2 == MOI.OPTIMAL "Slack model is always feasible"
-            totalslack2 = getobjectivevalue(submodel2)
+            totalslack2 = JuMP.objective_value(submodel2)
 
             if totalslack2 ≈ 0.0
                 # check whether this candidate is actually an improvement
@@ -141,7 +141,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     status = JuMP.termination_status(master.model)
 
     # TODO: extract bounds, nnodes?
-    dual = getobjectivevalue(master.model)  # correct bound?
+    dual = JuMP.objective_value(master.model)  # correct bound?
     nnodes = -1
     Result(status, bestsol, primal, dual, nnodes)
 end
