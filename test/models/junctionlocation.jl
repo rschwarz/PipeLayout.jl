@@ -14,11 +14,10 @@ using SCS
     topo = Topology(vcat(nodes, [Node(20, 20)]),
                     [Arc(3,4), Arc(4,1), Arc(4,2)])
 
-    solver = JuncLoc.SOC(SCSSolver(eps=1e-6, verbose=0))
-
     @testset "little flow, smallest diameter, Steiner node in center" begin
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
-        model, x, y, t, π = JuncLoc.make_soc(inst, topo, solver)
+        model, x, y, t, π = JuncLoc.make_soc(
+            inst, topo, JuncLoc.SOC(SCS.Optimizer(eps=1e-6, verbose=0)))
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
 
@@ -39,7 +38,8 @@ using SCS
 
     @testset "more flow, mixed diameter, Steiner node towards source" begin
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
-        model, x, y, t, π = JuncLoc.make_soc(inst, topo, solver)
+        model, x, y, t, π = JuncLoc.make_soc(
+            inst, topo, JuncLoc.SOC(SCS.Optimizer(eps=1e-6, verbose=0)))
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
 
