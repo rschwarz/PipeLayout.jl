@@ -12,7 +12,8 @@
     model, y, z, q = GndStr.make_master(inst, topo,
                                         SCIP.Optimizer(display_verblevel=0))
 
-    status = solve(model)
+    JuMP.optimize!(model)
+	status = JuMP.termination_status(model)
     @test status == :Optimal
 
     ysol = getvalue(y)
@@ -70,7 +71,8 @@ end
     @testset "feasible subproblem" begin
         cand = GndStr.CandSol(zsol, qsol, fill(0.0, narcs))
         model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(inst, topo, cand, solver)
-        status = solve(model)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
         @test status == :Optimal
 
         # primal solution
@@ -94,7 +96,8 @@ end
     @testset "infeasible subproblem" begin
         cand = GndStr.CandSol(zsol, 10 * qsol, fill(0.0, narcs)) # scaled
         model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(inst, topo, cand, solver)
-        status = solve(model)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
         @test status == :Optimal
 
         # primal solution
@@ -153,7 +156,8 @@ end
     @testset "solving the exact subproblem" begin
         model, π, Δl, Δu, ploss, plb, pub =
             GndStr.make_sub(inst, topo, cand, solver, relaxed=false)
-        status = solve(model)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
         @test status == :Optimal
         @test getobjectivevalue(model) ≈ 3600
     end
@@ -161,7 +165,8 @@ end
     @testset "solving the relaxation" begin
         model, π, Δl, Δu, ploss, plb, pub =
             GndStr.make_sub(inst, topo, cand, solver, relaxed=true)
-        status = solve(model)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
         @test status == :Optimal
         @test getobjectivevalue(model) ≈ 0
     end
@@ -335,7 +340,8 @@ end
     model, y, q = GndStr.make_semimaster(inst, topo,
                                          SCIP.Optimizer(display_verblevel=0))
 
-    status = solve(model)
+    JuMP.optimize!(model)
+	status = JuMP.termination_status(model)
     @test status == :Optimal
 
     ysol = getvalue(y)
@@ -389,7 +395,8 @@ end
         @test length(candarcs) == 3
         @test size(z) == (3, 2)
 
-        status = solve(model)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
         @test status == :Optimal
 
         znew = fill(false, length(topo.arcs), length(diams))
@@ -410,7 +417,8 @@ end
         @test length(candarcs) == 3
         @test size(z) == (3, 2)
 
-        status = solve(model)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
         @test status == :Optimal
 
         znew = fill(false, length(topo.arcs), length(diams))
@@ -439,7 +447,8 @@ end
         @test length(candarcs) == 1
         @test size(z) == (1, 2)
 
-        status = solve(model, suppress_warnings=true)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
         @test status == :Infeasible
     end
 

@@ -64,8 +64,9 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
         submodel, candarcs, z = make_semisub(inst, topo, cand, solver.subsolver)
         solver.writemodels && writeLP(submodel, "sub_$(counter).lp", genericnames=false)
         settimelimit!(submodel, solver.subsolver, finaltime - time())
-        substatus = solve(submodel, suppress_warnings=true)
-        if substatus == :Optimal
+        JuMP.optimize!(submodel)
+        substatus = JuMP.termination_status(submodel)
+        if substatus == MOI.OPTIMAL
             # have found improving solution?
             newobj = getobjectivevalue(submodel)
             if newobj < primal
@@ -75,7 +76,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
                 bestsol = CandSol(znew, qsol, qsol.^2)
                 solver.debug && println("  new sol: $(primal)")
             end
-        elseif substatus != :Infeasible
+        elseif substatus != MOI.INFEASIBLE
             error("Unexpected status: $(:substatus)")
         end
 
@@ -88,14 +89,15 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     addlazycallback(model, cbtopo)
 
     # solve the master (including callback)
-    status = solve(model, suppress_warnings=true)
-    if status ≠ :Optimal && status ≠ :Infeasible && status ≠ :UserLimit
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
+    if !(status in (MOI.OPTIMAL, MOI.INFEASIBLE, MOI.TIME_LIMIT, MOI.NODE_LIMIT))
         error("Unexpected status: $(status)")
     end
 
     # actually, we solved it, but the master does not know
-    if status == :Infeasible && bestsol ≠ nothing
-        status = :Optimal
+    if status == MOI.INFEASIBLE && bestsol ≠ nothing
+        status = MOI.OPTIMAL
     end
     solver.debug && println("  solved, status: $(status).")
 

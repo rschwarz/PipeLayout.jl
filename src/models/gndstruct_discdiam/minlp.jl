@@ -99,13 +99,14 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
         MOI.set(solver.solver, MOI.TimeLimitSec, solver.timelimit)
     end
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
-    status = solve(model, suppress_warnings=true)
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
 
     if solver.writemodels
         MOI.writeproblem(internalmodel(model), "minlp.orig.cip")
     end
 
-    if status == :Infeasible
+    if status == MOI.INFEASIBLE
         return Result(status, nothing, Inf, Inf, 0)
     end
 

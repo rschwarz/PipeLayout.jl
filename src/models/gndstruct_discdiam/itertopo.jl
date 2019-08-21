@@ -151,19 +151,20 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         # resolve (relaxed) semimaster problem, build candidate solution
         writemodels && writeLP(mastermodel, "master_iter$(iter).lp", genericnames=false)
         settimelimit!(mastermodel, mastersolver, finaltime - time())
-        status = solve(mastermodel, suppress_warnings=true)
-        if status == :Infeasible
+        JuMP.optimize!(mastermodel)
+        status = JuMP.termination_status(mastermodel)
+        if status == MOI.INFEASIBLE
             debug && println("  master problem is infeasible.")
             if primal == Inf
                 # no solution was found
-                return Result(:Infeasible, nothing, Inf, Inf, iter)
+                return Result(MOI.INFEASIBLE, nothing, Inf, Inf, iter)
             else
                 @assert bestsol ≠ nothing
-                return Result(:Optimal, bestsol, primal, dual, iter)
+                return Result(MOI.OPTIMAL, bestsol, primal, dual, iter)
             end
-        elseif status == :UserLimit
-            return Result(:UserLimit, bestsol, primal, dual, iter)
-        elseif status == :Optimal
+        elseif status in (MOI.NODE_LIMIT, MOI.TIME_LIMIT)
+            return Result(status, bestsol, primal, dual, iter)
+        elseif status == MOI.OPTIMAL
             # good, we continue below
         else
             error("Unexpected status: $(status)")
@@ -207,8 +208,9 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         submodel, candarcs, z = make_semisub(inst, topo, cand, subsolver)
         writemodels && writeLP(submodel, "sub_iter$(iter).lp", genericnames=false)
         settimelimit!(submodel, subsolver, finaltime - time())
-        substatus = solve(submodel, suppress_warnings=true)
-        if substatus == :Optimal
+        JuMP.optimize!(submodel)
+        substatus = JuMP.termination_status(submodel)
+        if substatus == MOI.OPTIMAL
             # have found improving solution?
             newobj = getobjectivevalue(submodel)
             if newobj < primal
@@ -218,7 +220,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
                 bestsol = CandSol(znew, qsol, qsol.^2)
                 debug && println("  found improving solution: $(primal)")
             end
-        elseif substatus != :Infeasible
+        elseif substatus != MOI.INFEASIBLE
             error("Unexpected status: $(:substatus)")
         end
 
@@ -226,7 +228,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         if dual > primal - ɛ
             @assert bestsol ≠ nothing
             debug && println("  proved optimality of best solution.")
-            return Result(:Optimal, bestsol, primal, dual, iter)
+            return Result(MOI.OPTIMAL, bestsol, primal, dual, iter)
         end
 
         # generate nogood cut and add to master

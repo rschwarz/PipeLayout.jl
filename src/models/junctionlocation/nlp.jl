@@ -79,8 +79,9 @@ end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::NLP)
     model, x, y, L, l, π = make_nlp(inst, topo, solver)
-    status = solve(model, suppress_warnings=true)
-    if status in [:Infeasible, :InfeasibleOrUnbounded]
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
+    if status in [MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED]
         return Result(status, Solution([], zeros(0,0), []), Inf)
     end
     objval = getobjectivevalue(model)

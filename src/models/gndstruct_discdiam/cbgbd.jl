@@ -91,8 +91,9 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
             make_sub(inst, topo, cand, solver.subsolver)
         solver.writemodels && writeLP(submodel, "sub_$(counter).lp", genericnames=false)
         settimelimit!(submodel, solver.subsolver, finaltime - time())
-        substatus = solve(submodel, suppress_warnings=true)
-        @assert substatus == :Optimal "Slack model is always feasible"
+        JuMP.optimize!(submodel)
+        substatus = JuMP.termination_status(submodel)
+        @assert substatus == MOI.OPTIMAL "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
@@ -100,8 +101,9 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
             submodel2, _ = make_sub(inst, topo, cand, solver.subsolver, relaxed=false)
             solver.writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp", genericnames=false)
             settimelimit!(submodel2, solver.subsolver, finaltime - time())
-            substatus2 = solve(submodel2, suppress_warnings=true)
-            @assert substatus2 == :Optimal "Slack model is always feasible"
+            JuMP.optimize!(submodel2)
+            substatus2 = JuMP.termination_status(submodel2)
+            @assert substatus2 == MOI.OPTIMAL "Slack model is always feasible"
             totalslack2 = getobjectivevalue(submodel2)
 
             if totalslack2 ≈ 0.0
@@ -135,7 +137,8 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     addlazycallback(master.model, cbgbd)
 
     # solve master problem (has callback)
-    status = solve(master.model, suppress_warnings=true)
+    JuMP.optimize!(master.model)
+    status = JuMP.termination_status(master.model)
 
     # TODO: extract bounds, nnodes?
     dual = getobjectivevalue(master.model)  # correct bound?

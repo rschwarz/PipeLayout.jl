@@ -20,7 +20,8 @@ using SCIP
     @testset "little flow, smallest diameter, Steiner node in center" begin
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
         model, x, y, L, l, π = JuncLoc.make_nlp(inst, topo, solver)
-        status = solve(model, suppress_warnings=true)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
 
         @test status in [:Optimal, :UserLimit]
 
@@ -47,7 +48,8 @@ using SCIP
     @testset "more flow, mixed diameter, Steiner node towards source" begin
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
         model, x, y, L, l, π = JuncLoc.make_nlp(inst, topo, solver)
-        status = solve(model, suppress_warnings=true)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
 
         @test status in [:Optimal, :UserLimit]
 

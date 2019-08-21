@@ -19,7 +19,8 @@ using SCS
     @testset "little flow, smallest diameter, Steiner node in center" begin
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
         model, x, y, t, π = JuncLoc.make_soc(inst, topo, solver)
-        status = solve(model, suppress_warnings=true)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
 
         @test status in [:Optimal, :UserLimit]
 
@@ -39,7 +40,8 @@ using SCS
     @testset "more flow, mixed diameter, Steiner node towards source" begin
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
         model, x, y, t, π = JuncLoc.make_soc(inst, topo, solver)
-        status = solve(model, suppress_warnings=true)
+        JuMP.optimize!(model)
+	    status = JuMP.termination_status(model)
 
         @test status == :Optimal
 

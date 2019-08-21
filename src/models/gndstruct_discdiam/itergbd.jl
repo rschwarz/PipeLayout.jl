@@ -215,8 +215,9 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, optim
     @objective(model, Min, sum(t[i,j] for i=1:m for j=1:n))
 
     # solve it
-    status = solve(model, suppress_warnings=true)
-    @assert status == :Optimal
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
+    @assert status == MOI.OPTIMAL
 
     getvalue(a), getvalue(b), getvalue(c)
 end
@@ -379,13 +380,14 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         # resolve (relaxed) master problem, build candidate solution
         writemodels && writeLP(master.model, "master_iter$(iter).lp", genericnames=false)
         settimelimit!(master.model, mastersolver, finaltime - time())
-        status = solve(master.model, suppress_warnings=true)
-        if status == :Infeasible
+        JuMP.optimize!(master.model)
+        status = JuMP.termination_status(master.model)
+        if status == MOI.INFEASIBLE
             debug && println("  relaxed master is infeasible :-(")
-            return Result(:Infeasible, nothing, Inf, Inf, iter)
-        elseif status == :UserLimit
-            return Result(:UserLimit, nothing, Inf, dual, iter)
-        elseif status == :Optimal
+            return Result(status, nothing, Inf, Inf, iter)
+        elseif status in [MOI.TIME_LIMIT, MOI.NODE_LIMIT]
+            return Result(status, nothing, Inf, dual, iter)
+        elseif status == MOI.OPTIMAL
             # good, we continue below
         else
             error("Unexpected status: $(status)")
@@ -423,8 +425,9 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand, subsolver)
         writemodels && writeLP(submodel, "sub_relax_iter$(iter).lp", genericnames=false)
         settimelimit!(submodel, subsolver, finaltime - time())
-        substatus = solve(submodel, suppress_warnings=true)
-        @assert substatus == :Optimal "Slack model is always feasible"
+        JuMP.optimize!(submodel)
+        substatus = JuMP.termination_status(submodel)
+        @assert substatus == MOI.OPTIMAL "Slack model is always feasible"
         totalslack = getobjectivevalue(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
@@ -432,14 +435,15 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
             submodel2, _ = make_sub(inst, topo, cand, subsolver, relaxed=false)
             writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp", genericnames=false)
             settimelimit!(submodel2, subsolver, finaltime - time())
-            substatus2 = solve(submodel2, suppress_warnings=true)
-            @assert substatus2 == :Optimal "Slack model is always feasible"
+            JuMP.optimize!(submodel2)
+            substatus2 = JuMP.termination_status(submodel2)
+            @assert substatus2 == MOI.OPTIMAL "Slack model is always feasible"
             totalslack2 = getobjectivevalue(submodel2)
 
             if totalslack2 ≈ 0.0
                 debug && println("  found feasible solution :-)")
                 primal = getobjectivevalue(master.model)
-                return Result(:Optimal, cand, primal, dual, iter)
+                return Result(substatus2, cand, primal, dual, iter)
             else
                 # cut off candidate with no-good on z
                 debug && println("  subproblem/relaxation gap!")

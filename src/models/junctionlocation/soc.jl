@@ -93,7 +93,8 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
     rotopo = reorient_fwdflow(inst, topo)
 
     model, x, y, t, π = make_soc(inst, topo, solver)
-    status = solve(model, suppress_warnings=true)
+    MOI.optimize(model)
+    status = JuMP.termination_status(model)
     objval = getobjectivevalue(model)
     nodes = map(Node, zip(getvalue(x), getvalue(y)))
 
