@@ -129,6 +129,8 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, optimizer;
     tail = [arcs[a].tail for a in candarcs]
     head = [arcs[a].head for a in candarcs]
 
+    # TODO: use JuMP.Model(with_optimizer) instead?
+    MOI.empty!(optimizer)
     model = JuMP.direct_model(optimizer)
 
     # unconstrained variable for squared pressure, the bounds are added with
@@ -195,6 +197,8 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, optim
     @assert 1 <= cand_i <= m
     @assert 1 <= cand_j <= n
 
+    # TODO: use JuMP.Model(with_optimizer) instead?
+    MOI.empty!(optimizer)
     model = JuMP.direct_model(optimizer)
 
     # coefficients to be found

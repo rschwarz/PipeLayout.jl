@@ -109,6 +109,8 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol, optimizer)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
 
+    # TODO: use JuMP.Model(with_optimizer) instead?
+    MOI.empty!(optimizer)
     model = JuMP.direct_model(optimizer)
 
     @variable(model, z[1:ncandarcs, 1:ndiams], Bin)
