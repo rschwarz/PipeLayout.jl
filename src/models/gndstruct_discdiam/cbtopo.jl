@@ -35,7 +35,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
 
     # add callback that solves subproblem
     function cbtopo(cb)
-        ysol, qsol = getvalue(y), getvalue(q)
+        ysol, qsol = JuMP.value.(y), JuMP.value.(q)
         solver.debug && println("  cand. sol:$(find(qsol))")
         counter += 1
 
@@ -72,7 +72,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
             if newobj < primal
                 primal = newobj
                 znew = fill(false, narcs, ndiams)
-                znew[candarcs, :] = (getvalue(z) .> 0.5)
+                znew[candarcs, :] = (JuMP.value.(z) .> 0.5)
                 bestsol = CandSol(znew, qsol, qsol.^2)
                 solver.debug && println("  new sol: $(primal)")
             end

@@ -219,7 +219,7 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, optim
     status = JuMP.termination_status(model)
     @assert status == MOI.OPTIMAL
 
-    getvalue(a), getvalue(b), getvalue(c)
+    JuMP.value.(a), JuMP.value.(b), JuMP.value(c)
 end
 
 "Linearized & reformulated cut based on single path."
@@ -393,8 +393,8 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
             error("Unexpected status: $(status)")
         end
 
-        zsol = getvalue(master.z)
-        cand = CandSol(zsol .>= 0.5, getvalue(master.q), getvalue(master.ϕ))
+        zsol = JuMP.value.(master.z)
+        cand = CandSol(zsol .>= 0.5, JuMP.value.(master.q), JuMP.value.(master.ϕ))
 
         dual = JuMP.objective_value(master.model)
         if debug
@@ -403,7 +403,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         end
 
         # check whether candidate has tree topology
-        ysol = getvalue(master.y)
+        ysol = JuMP.value.(master.y)
         candtopo = topology_from_candsol(topo, ysol)
         if !is_tree(candtopo)
             fullcandtopo = topology_from_candsol(topo, ysol, true)

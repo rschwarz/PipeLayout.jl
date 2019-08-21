@@ -170,7 +170,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
             error("Unexpected status: $(status)")
         end
 
-        ysol, qsol = getvalue(y), getvalue(q)
+        ysol, qsol = JuMP.value.(y), JuMP.value.(q)
         dual = JuMP.objective_value(mastermodel)
         if debug
             println("  dual bound: $(dual)")
@@ -216,7 +216,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
             if newobj < primal
                 primal = newobj
                 znew = fill(false, narcs, ndiams)
-                znew[candarcs,:] = (getvalue(z) .> 0.5)
+                znew[candarcs,:] = (JuMP.value.(z) .> 0.5)
                 bestsol = CandSol(znew, qsol, qsol.^2)
                 debug && println("  found improving solution: $(primal)")
             end

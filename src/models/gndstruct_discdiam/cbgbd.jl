@@ -45,11 +45,11 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     # TODO: rm code duplication with itergbd
     # add callback for subproblem & cuts
     function cbgbd(cb)
-        ysol = getvalue(master.y)
-        zsol = getvalue(master.z)
+        ysol = JuMP.value.(master.y)
+        zsol = JuMP.value.(master.z)
         cand = CandSol(zsol .>= 0.5,
-                       getvalue(master.q),
-                       getvalue(master.ϕ))
+                       JuMP.value.(master.q),
+                       JuMP.value.(master.ϕ))
         if solver.debug
             println("  cand. sol:$(Tuple.(findall(!iszero, cand.zsol)))")
         end

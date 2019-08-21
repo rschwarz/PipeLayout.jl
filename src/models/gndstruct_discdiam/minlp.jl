@@ -110,8 +110,8 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
         return Result(status, nothing, Inf, Inf, 0)
     end
 
-    zsol = round.(Bool, getvalue(z) .>= 0.5)
-    qsol = getvalue(q)
+    zsol = round.(Bool, JuMP.value.(z) .>= 0.5)
+    qsol = JuMP.value.(q)
     bestsol = CandSol(zsol, qsol, qsol.^2)
 
     primal = JuMP.objective_value(model)

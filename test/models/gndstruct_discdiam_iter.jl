@@ -16,9 +16,9 @@
 	status = JuMP.termination_status(model)
     @test status == :Optimal
 
-    ysol = getvalue(y)
-    zsol = getvalue(z)
-    qsol = getvalue(q)
+    ysol = JuMP.value.(y)
+    zsol = JuMP.value.(z)
+    qsol = JuMP.value.(q)
 
     # shortest tree is obvious:
     @test ysol[11] ≈ 1.0
@@ -76,9 +76,9 @@ end
         @test status == :Optimal
 
         # primal solution
-        πsol = getvalue(π)
-        Δlsol = getvalue(Δl)
-        Δusol = getvalue(Δu)
+        πsol = JuMP.value.(π)
+        Δlsol = JuMP.value.(Δl)
+        Δusol = JuMP.value.(Δu)
 
         @test Δlsol ≈ zeros(nnodes)
         @test Δusol ≈ zeros(nnodes)
@@ -101,9 +101,9 @@ end
         @test status == :Optimal
 
         # primal solution
-        πsol = getvalue(π)
-        Δlsol = getvalue(Δl)
-        Δusol = getvalue(Δu)
+        πsol = JuMP.value.(π)
+        Δlsol = JuMP.value.(Δl)
+        Δusol = JuMP.value.(Δu)
 
         # complementarity
         @test Δlsol .* Δusol ≈ zeros(nnodes)
@@ -344,8 +344,8 @@ end
 	status = JuMP.termination_status(model)
     @test status == :Optimal
 
-    ysol = getvalue(y)
-    qsol = getvalue(q)
+    ysol = JuMP.value.(y)
+    qsol = JuMP.value.(q)
 
     # shortest tree is obvious:
     @test ysol[11] ≈ 1.0
@@ -400,7 +400,7 @@ end
         @test status == :Optimal
 
         znew = fill(false, length(topo.arcs), length(diams))
-        znew[candarcs,:] = (getvalue(z) .> 0.5)
+        znew[candarcs,:] = (JuMP.value.(z) .> 0.5)
         @test znew[4,1] == true
         @test znew[11,1] == true
         @test znew[13,1] == true
@@ -422,7 +422,7 @@ end
         @test status == :Optimal
 
         znew = fill(false, length(topo.arcs), length(diams))
-        znew[candarcs,:] = (getvalue(z) .> 0.5)
+        znew[candarcs,:] = (JuMP.value.(z) .> 0.5)
         @test znew[4,1] == true
         @test znew[11,2] == true
         @test znew[13,1] == true

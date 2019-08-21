@@ -85,7 +85,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::NLP)
         return Result(status, Solution([], zeros(0,0), []), Inf)
     end
     objval = JuMP.objective_value(model)
-    nodes = map(Node, zip(getvalue(x), getvalue(y)))
-    sol = Solution(nodes, getvalue(l), getvalue(π))
+    nodes = map(Node, zip(JuMP.value.(x), JuMP.value.(y)))
+    sol = Solution(nodes, JuMP.value.(l), JuMP.value.(π))
     Result(status, sol, objval)
 end

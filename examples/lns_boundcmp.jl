@@ -31,8 +31,8 @@ function pipedim()
     status = solve(model, suppress_warnings=true)
 
     println(model)
-    @show getvalue(l)
-    @show getvalue(π)
+    @show JuMP.value.(l)
+    @show JuMP.value.(π)
 end
 
 function juncloc()
@@ -58,9 +58,9 @@ function juncloc()
     status = solve(model)
 
     println(model)
-    @show getvalue(L)
-    @show getvalue(l)
-    @show getvalue(π)
+    @show JuMP.value.(L)
+    @show JuMP.value.(l)
+    @show JuMP.value.(π)
 end
 
 pipedim()

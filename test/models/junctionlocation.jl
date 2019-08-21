@@ -24,7 +24,7 @@ using SCS
 
         @test status in [:Optimal, :UserLimit]
 
-        xsol, ysol = getvalue(x), getvalue(y)
+        xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals
             @test xsol[i] ≈ nodes[i].x atol=0.001
             @test ysol[i] ≈ nodes[i].y atol=0.001
@@ -32,7 +32,7 @@ using SCS
         @test xsol[4] ≈ 20 atol=0.01
         @test ysol[4] ≈ sqrt(3)/6*40 atol=0.01
 
-        tsol = getvalue(t)
+        tsol = JuMP.value.(t)
         @test sum(tsol[1]) ≈ sum(tsol[2]) atol=0.01
         @test sum(tsol[1]) ≈ sum(tsol[3]) atol=0.01
     end
@@ -45,7 +45,7 @@ using SCS
 
         @test status == :Optimal
 
-        xsol, ysol = getvalue(x), getvalue(y)
+        xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals
             @test xsol[i] ≈ nodes[i].x atol=0.001
             @test ysol[i] ≈ nodes[i].y atol=0.001
@@ -54,7 +54,7 @@ using SCS
         @test ysol[4] >= sqrt(3)/6*40 # move near source
 
 
-        tsol = getvalue(t)
+        tsol = JuMP.value.(t)
         @test tsol[2] ≈ tsol[3] atol=0.01
     end
 

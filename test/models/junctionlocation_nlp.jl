@@ -25,7 +25,7 @@ using SCIP
 
         @test status in [:Optimal, :UserLimit]
 
-        xsol, ysol = getvalue(x), getvalue(y)
+        xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals
             @test xsol[i] ≈ nodes[i].x atol=0.001
             @test ysol[i] ≈ nodes[i].y atol=0.001
@@ -33,12 +33,12 @@ using SCIP
         @test xsol[4] ≈ 20 atol=0.01
         @test ysol[4] ≈ sqrt(3)/6*40 atol=0.01
 
-        Lsol = getvalue(L)
+        Lsol = JuMP.value.(L)
         for i=1:3
             @test Lsol[i] ≈ sqrt(3)/3*40 atol=0.01
         end
 
-        lsol = getvalue(l)
+        lsol = JuMP.value.(l)
         # smallest diameter
         @test sum(lsol[:,1]) ≈ 3 atol=0.01
         # no other
@@ -53,7 +53,7 @@ using SCIP
 
         @test status in [:Optimal, :UserLimit]
 
-        xsol, ysol = getvalue(x), getvalue(y)
+        xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals
             @test xsol[i] ≈ nodes[i].x atol=0.001
             @test ysol[i] ≈ nodes[i].y atol=0.001
@@ -61,12 +61,12 @@ using SCIP
         @test xsol[4] ≈ 20 atol=0.2
         @test ysol[4] >= sqrt(3)/6*40 # move near source
 
-        Lsol = getvalue(L)
+        Lsol = JuMP.value.(L)
         @test Lsol[1] <= sqrt(3)/3*40
         @test Lsol[2] >= sqrt(3)/3*40
         @test Lsol[3] >= sqrt(3)/3*40
 
-        lsol = getvalue(l)
+        lsol = JuMP.value.(l)
         D = [d.value for d in diams]
         equiv = (lsol * D.^(-5)).^(-1/5)
 

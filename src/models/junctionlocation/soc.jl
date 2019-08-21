@@ -96,10 +96,10 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
     MOI.optimize(model)
     status = JuMP.termination_status(model)
     objval = JuMP.objective_value(model)
-    nodes = map(Node, zip(getvalue(x), getvalue(y)))
+    nodes = map(Node, zip(JuMP.value.(x), JuMP.value.(y)))
 
     # compute l from t
-    tsol = getvalue(t)
+    tsol = JuMP.value.(t)
     L = pipelengths(Topology(nodes, topo.arcs))
     D, c = [d.value for d in inst.diameters], [d.cost for d in inst.diameters]
     zsol = tsol ./ L
@@ -108,6 +108,6 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
     lsol = vcat([pipesplit(inst.diameters, y^(-1/5))' for y in ysol]...)
     @assert size(lsol) == (length(L), length(D))
 
-    sol = Solution(nodes, lsol, getvalue(π))
+    sol = Solution(nodes, lsol, JuMP.value.(π))
     Result(status, sol, objval)
 end
