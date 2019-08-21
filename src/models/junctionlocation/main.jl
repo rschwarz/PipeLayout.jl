@@ -1,4 +1,7 @@
 using JuMP
+using MathOptInterface
+
+const MOI = MathOptInterface
 
 struct Solution
     nodes::Vector{Node}
@@ -7,7 +10,7 @@ struct Solution
 end
 
 struct Result
-    status::Symbol
+    status::MOI.TerminationStatusCode
     sol::Solution
     value::Float64
 end

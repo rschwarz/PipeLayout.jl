@@ -23,7 +23,7 @@
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1 * demand, bounds, diams)
         result = optimize(inst, topo, cbtoposolver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -44,7 +44,7 @@
     @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 10 * demand, bounds, diams)
         result = optimize(inst, topo, cbtoposolver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -69,7 +69,7 @@
                          Arc(3,1), Arc(2,1), Arc(3,2)])
 
         result = optimize(inst, topo, cbtoposolver)
-        @test result.status == :Infeasible
+        @test result.status == MOI.INFEASIBLE
     end
 end
 
@@ -99,7 +99,7 @@ end
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1 * demand, bounds, diams)
         result = optimize(inst, topo, cbgbdsolver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -120,7 +120,7 @@ end
     @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 10 * demand, bounds, diams)
         result = optimize(inst, topo, cbgbdsolver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -145,6 +145,6 @@ end
                          Arc(3,1), Arc(2,1), Arc(3,2)])
 
         result = optimize(inst, topo, cbgbdsolver)
-        @test result.status == :Infeasible
+        @test result.status == MOI.INFEASIBLE
     end
 end

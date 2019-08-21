@@ -14,7 +14,7 @@
 
     JuMP.optimize!(model)
 	status = JuMP.termination_status(model)
-    @test status == :Optimal
+    @test status == MOI.OPTIMAL
 
     ysol = JuMP.value.(y)
     zsol = JuMP.value.(z)
@@ -73,7 +73,7 @@ end
         model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(inst, topo, cand, solver)
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
-        @test status == :Optimal
+        @test status == MOI.OPTIMAL
 
         # primal solution
         πsol = JuMP.value.(π)
@@ -98,7 +98,7 @@ end
         model, π, Δl, Δu, ploss, plb, pub = GndStr.make_sub(inst, topo, cand, solver)
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
-        @test status == :Optimal
+        @test status == MOI.OPTIMAL
 
         # primal solution
         πsol = JuMP.value.(π)
@@ -158,7 +158,7 @@ end
             GndStr.make_sub(inst, topo, cand, solver, relaxed=false)
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
-        @test status == :Optimal
+        @test status == MOI.OPTIMAL
         @test JuMP.objective_value(model) ≈ 3600
     end
 
@@ -167,7 +167,7 @@ end
             GndStr.make_sub(inst, topo, cand, solver, relaxed=true)
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
-        @test status == :Optimal
+        @test status == MOI.OPTIMAL
         @test JuMP.objective_value(model) ≈ 0
     end
 end
@@ -196,7 +196,7 @@ end
         result = optimize(inst, topo, GndStr.IterGBD(
             SCIP.Optimizer(display_verblevel=0),
             GLPK.Optimizer()))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         @test zsol[4,1] == true
@@ -214,7 +214,7 @@ end
         result = optimize(inst, topo, GndStr.IterGBD(
             SCIP.Optimizer(display_verblevel=0),
             GLPK.Optimizer()))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         @test zsol[4,1] == true
@@ -233,7 +233,7 @@ end
             SCIP.Optimizer(display_verblevel=0),
             GLPK.Optimizer(),
             maxiter=3))
-        @test result.status == :UserLimit
+        @test result.status == MOI.ITERATION_LIMIT
         @test result.solution == nothing
         @test result.dualbound ≈ 156.0
         @test result.niter == 3
@@ -246,7 +246,7 @@ end
             SCIP.Optimizer(display_verblevel=0),
             GLPK.Optimizer(),
             timelimit=5.0))
-        @test result.status == :UserLimit
+        @test result.status == MOI.TIME_LIMIT
         @test result.solution == nothing
     end
 
@@ -261,7 +261,7 @@ end
         result = optimize(inst3, topo3, GndStr.IterGBD(
             SCIP.Optimizer(display_verblevel=0),
             GLPK.Optimizer()))
-        @test result.status == :Infeasible
+        @test result.status == MOI.INFEASIBLE
         @test result.solution == nothing
         @test result.dualbound == Inf
         @test result.niter == 2
@@ -282,7 +282,7 @@ end
         result = optimize(inst, topo, GndStr.IterGBD(
             SCIP.Optimizer(display_verblevel=0),
             GLPK.Optimizer()))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
         zsol = result.solution.zsol
         @test sum(zsol[:,2]) == 1
         @test sum(zsol[:,1]) == 2 # solution not quite uniqe
@@ -303,7 +303,7 @@ end
                                 GLPK.Optimizer(),
                                 addnogoods=true, addcritpath=false)
         result = optimize(inst, topo, solver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         @test sum(zsol) == 3
@@ -342,7 +342,7 @@ end
 
     JuMP.optimize!(model)
 	status = JuMP.termination_status(model)
-    @test status == :Optimal
+    @test status == MOI.OPTIMAL
 
     ysol = JuMP.value.(y)
     qsol = JuMP.value.(q)
@@ -397,7 +397,7 @@ end
 
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
-        @test status == :Optimal
+        @test status == MOI.OPTIMAL
 
         znew = fill(false, length(topo.arcs), length(diams))
         znew[candarcs,:] = (JuMP.value.(z) .> 0.5)
@@ -419,7 +419,7 @@ end
 
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
-        @test status == :Optimal
+        @test status == MOI.OPTIMAL
 
         znew = fill(false, length(topo.arcs), length(diams))
         znew[candarcs,:] = (JuMP.value.(z) .> 0.5)
@@ -449,7 +449,7 @@ end
 
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
-        @test status == :Infeasible
+        @test status == MOI.INFEASIBLE
     end
 
 end
@@ -477,7 +477,7 @@ end
         result = optimize(inst, topo, GndStr.IterTopo(
             SCIP.Optimizer(display_verblevel=0),
             SCIP.Optimizer(display_verblevel=0)))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -500,7 +500,7 @@ end
         result = optimize(inst, topo, GndStr.IterTopo(
             SCIP.Optimizer(display_verblevel=0),
             SCIP.Optimizer(display_verblevel=0)))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -527,6 +527,6 @@ end
         result = optimize(inst, topo, GndStr.IterTopo(
             SCIP.Optimizer(display_verblevel=0),
             SCIP.Optimizer(display_verblevel=0))
-        @test result.status == :Infeasible
+        @test result.status == MOI.INFEASIBLE
     end
 end

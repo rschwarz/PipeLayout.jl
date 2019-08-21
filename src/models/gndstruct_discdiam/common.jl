@@ -7,7 +7,7 @@ end
 
 "Result data from GBD algorithm"
 struct Result
-    status::Symbol
+    status::MOI.TerminationStatusCode
     solution
     primalbound::Float64
     dualbound::Float64

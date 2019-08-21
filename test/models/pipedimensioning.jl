@@ -8,7 +8,7 @@ using GLPK
     solver = PipeDim.LP(GLPK.Optimizer())
 
     result = optimize(inst, topo, solver)
-    @test result.status == :Optimal
+    @test result.status == MOI.OPTIMAL
 
     πsol = result.sol.πsol
     psol = πsol.^0.5

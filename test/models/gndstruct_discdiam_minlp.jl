@@ -21,7 +21,7 @@
 
         result = optimize(inst, topo,
                           GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         @test zsol[4,1] == true
@@ -37,7 +37,7 @@
 
         result = optimize(inst, topo,
                           GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         @test zsol[4,1] == true
@@ -58,7 +58,7 @@
 
         result = optimize(inst3, topo3,
                           GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
-        @test result.status == :Infeasible
+        @test result.status == MOI.INFEASIBLE
         @test result.solution == nothing
         @test result.dualbound == Inf
     end
@@ -77,7 +77,7 @@
 
         result = optimize(inst, topo,
                           GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
         zsol = result.solution.zsol
         @test sum(zsol[:,2]) == 1
         @test sum(zsol[:,1]) == 2 # solution not quite uniqe
@@ -94,7 +94,7 @@
 
         result = optimize(inst, topo,
                           GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         @test sum(zsol) == 3
