@@ -1,5 +1,5 @@
 struct NLP <: JunctionLocationSolver
-    optimizer          # for underlying NLP model
+    optimizer::JuMP.OptimizerFactory # for underlying NLP model
     timelimit::Float64 # seconds
 
     function NLP(solver; timelimit=Inf)
@@ -36,7 +36,7 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff .* q .* abs.(q)
 
-    model = JuMP.direct_model(solver.optimizer)
+    model = JuMP.Model(solver.optimizer)
 
     # node positions
     @variable(model, xmin ≤ x[1:nnodes] ≤ xmax)

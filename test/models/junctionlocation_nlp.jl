@@ -3,6 +3,9 @@ using PipeLayout.JuncLoc
 using JuMP
 using SCIP
 
+# don't solve nonconvex NLP to optimality
+_scip = JuMP.with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_gap=1e-3)
+
 @testset "solve junction location for three terminals (NLP)" begin
     # equilateral triangle
     nodes = [Node(0,0), Node(40,0), Node(20, sqrt(3)/2*40)]
@@ -14,8 +17,7 @@ using SCIP
     topo = Topology(vcat(nodes, [Node(20, 20)]),
                     [Arc(3,4), Arc(4,1), Arc(4,2)])
 
-    # don't solve nonconvex NLP to optimality
-    solver = JuncLoc.NLP(SCIP.Optimizer(display_verblevel=0, limits_gap=1e-3))
+    solver = JuncLoc.NLP(_scip)
 
     @testset "little flow, smallest diameter, Steiner node in center" begin
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)

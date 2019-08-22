@@ -5,7 +5,8 @@ using GLPK
 
 @testset "check dimensioning on single pipe" begin
     inst, topo = single_pipe()
-    solver = PipeDim.LP(GLPK.Optimizer())
+    _glpk = JuMP.with_optimizer(GLPK.Optimizer)
+    solver = PipeDim.LP(_glpk)
 
     result = optimize(inst, topo, solver)
     @test result.status == MOI.OPTIMAL

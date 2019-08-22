@@ -7,8 +7,8 @@ struct IterTopo <: GroundStructureSolver
     maxiter::Int
     timelimit::Float64 # seconds
     debug::Bool
-    mastersolver
-    subsolver
+    mastersolver::JuMP.OptimizerFactory
+    subsolver::JuMP.OptimizerFactory
     writemodels::Bool
 
     function IterTopo(mastersolver, subsolver;
@@ -24,7 +24,8 @@ Build master model using only arc selection y and flows q.
 This is used to enumerate (embedded) topologies, each of which is evaluated with
 a "semi-subproblem". Returns model and variables y, q.
 """
-function make_semimaster(inst::Instance, topo::Topology, optimizer)
+function make_semimaster(inst::Instance, topo::Topology,
+                         optimizer::JuMP.OptimizerFactory)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -47,7 +48,8 @@ function make_semimaster(inst::Instance, topo::Topology, optimizer)
     # "big-M" bound for flow on arcs
     maxflow = 0.5 * sum(abs.(inst.demand))
 
-    model = JuMP.direct_model(optimizer)
+    # always use direct mode with SCIP
+    model = JuMP.direct_model(optimizer())
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -87,7 +89,8 @@ be used
 
 Returns model, list of candidate arcs and (sparse) variables z
 """
-function make_semisub(inst::Instance, topo::Topology, cand::CandSol, optimizer)
+function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
+                      optimizer::JuMP.OptimizerFactory)
     nnodes = length(topo.nodes)
     arcs = topo.arcs
     termidx = termindex(topo.nodes, inst.nodes)
@@ -109,9 +112,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol, optimizer)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
 
-    # TODO: use JuMP.Model(with_optimizer) instead?
-    MOI.empty!(optimizer)
-    model = JuMP.direct_model(optimizer)
+    model = JuMP.Model(optimizer)
 
     @variable(model, z[1:ncandarcs, 1:ndiams], Bin)
     @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])

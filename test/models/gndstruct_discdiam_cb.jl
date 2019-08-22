@@ -1,3 +1,6 @@
+_scip = JuMP.with_optimizer(SCIP.Optimizer, display_verblevel=0)
+_glpk = JuMP.with_optimizer(GLPK.Optimizer)
+
 @testset "Solve semi decomposition with nogoods on y (callback)" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
@@ -16,9 +19,7 @@
                                          (1,3), (3,1), (3,5), (5,3),
                                          (2,4), (4,2), (4,6), (6,4)]])
 
-    mastersolver = SCIP.Optimizer(display_verblevel=0)
-    subsolver = SCIP.Optimizer(display_verblevel=0)
-    cbtoposolver = GndStr.CallbackTopo(mastersolver, subsolver)
+    cbtoposolver = GndStr.CallbackTopo(_scip, _scip)
 
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1 * demand, bounds, diams)
@@ -92,9 +93,7 @@ end
                                          (1,3), (3,1), (3,5), (5,3),
                                          (2,4), (4,2), (4,6), (6,4)]])
 
-    mastersolver = SCIP.Optimizer(display_verblevel=0)
-    subsolver = GLPK.Optimizer()
-    cbgbdsolver = GndStr.CallbackGBD(mastersolver, subsolver)
+    cbgbdsolver = GndStr.CallbackGBD(_scip, _glpk)
 
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1 * demand, bounds, diams)

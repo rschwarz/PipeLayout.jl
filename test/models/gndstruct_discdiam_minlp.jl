@@ -1,3 +1,5 @@
+_scip = JuMP.with_optimizer(SCIP.Optimizer, display_verblevel=0)
+
 @testset "run MINLP model" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
@@ -19,8 +21,7 @@
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1*demand, bounds, diams)
 
-        result = optimize(inst, topo,
-                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
+        result = optimize(inst, topo, GndStr.MINLP(_scip))
         @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
@@ -35,8 +36,7 @@
     @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 5*demand, bounds, diams)
 
-        result = optimize(inst, topo,
-                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
+        result = optimize(inst, topo, GndStr.MINLP(_scip))
         @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
@@ -56,8 +56,7 @@
         topo3 = Topology([Node(0,0), Node(50,0), Node(30, 40)],
                          [Arc(1,3), Arc(1,2), Arc(2,3)])
 
-        result = optimize(inst3, topo3,
-                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
+        result = optimize(inst3, topo3, GndStr.MINLP(_scip))
         @test result.status == MOI.INFEASIBLE
         @test result.solution == nothing
         @test result.dualbound == Inf
@@ -75,8 +74,7 @@
         diams = [Diameter(1.0, 1.0), Diameter(2.0, 2.0)]
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-        result = optimize(inst, topo,
-                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
+        result = optimize(inst, topo, GndStr.MINLP(_scip))
         @test result.status == MOI.OPTIMAL
         zsol = result.solution.zsol
         @test sum(zsol[:,2]) == 1
@@ -92,8 +90,7 @@
                         ploss_coeff_nice)
         topo = squaregrid(2, 3, 100.0, antiparallel=true)
 
-        result = optimize(inst, topo,
-                          GndStr.MINLP(SCIP.Optimizer(display_verblevel=0)))
+        result = optimize(inst, topo, GndStr.MINLP(_scip))
         @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol

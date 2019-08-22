@@ -15,10 +15,10 @@ struct Result
 end
 
 struct LP <: PipeDimensioningSolver
-    lpsolver
+    lpsolver::JuMP.OptimizerFactory
 end
 
-function make_model(inst::Instance, topo::Topology, optimizer::O) where O <: MOI.AbstractOptimizer
+function make_model(inst::Instance, topo::Topology, optimizer::JuMP.OptimizerFactory)
     nnodes = length(inst.nodes)
     length(topo.nodes) == nnodes ||
         throw(ArgumentError("Steiner nodes not allowed"))
@@ -27,7 +27,7 @@ function make_model(inst::Instance, topo::Topology, optimizer::O) where O <: MOI
 
     q = uniq_flow(inst, topo)
 
-    model = JuMP.direct_model(optimizer)
+    model = JuMP.Model(optimizer)
 
     # squared pressure variables at nodes
     lb = [b.lb^2 for b in inst.pressure]

@@ -3,6 +3,8 @@ using PipeLayout.JuncLoc
 using JuMP
 using SCS
 
+_scs = JuMP.with_optimizer(SCS.Optimizer, eps=1e-6, verbose=0)
+
 @testset "solve junction location for three terminals (SOC)" begin
     # equilateral triangle
     nodes = [Node(0,0), Node(40,0), Node(20, sqrt(3)/2*40)]
@@ -17,7 +19,7 @@ using SCS
     @testset "little flow, smallest diameter, Steiner node in center" begin
         inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
         model, x, y, t, π = JuncLoc.make_soc(
-            inst, topo, JuncLoc.SOC(SCS.Optimizer(eps=1e-6, verbose=0)))
+            inst, topo, JuncLoc.SOC(_scs))
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
 
@@ -39,7 +41,7 @@ using SCS
     @testset "more flow, mixed diameter, Steiner node towards source" begin
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
         model, x, y, t, π = JuncLoc.make_soc(
-            inst, topo, JuncLoc.SOC(SCS.Optimizer(eps=1e-6, verbose=0)))
+            inst, topo, JuncLoc.SOC(_scs))
         JuMP.optimize!(model)
 	    status = JuMP.termination_status(model)
 
