@@ -66,8 +66,9 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     @constraint(model, diffx[a=1:narcs], dx[a] == x[T[a]] - x[H[a]])
     @constraint(model, diffy[a=1:narcs], dy[a] == y[T[a]] - y[H[a]])
 
-    # second order cone for length
-    @constraint(model, soc[a=1:narcs], dx[a]^2 + dy[a]^2 ≤ L[a]^2)
+    # second order cone for length (dx[a]^2 + dy[a]^2 ≤ L[a]^2)
+    @constraint(model, soc[a=1:narcs],
+                [L[a], dx[a], dy[a]] in JuMP.SecondOrderCone())
 
     # inequalities for PWL function
     ie = pwl_ineqs(Dm5, c)
