@@ -55,6 +55,9 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
     # squared pressure on nodes
     @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])
 
+    # objective proxy variable
+    @variable(model, z ≥ 0)
+
 
     # fix terminal positions
     @constraint(model, fix[t=1:nterms], x[termidx[t]] == terms[t].x)
@@ -72,7 +75,9 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
                 C[a] * L[a] * sum(Dm5[i]*l[a,i] for i=1:ndiams))
 
     # minimize total construction cost
-    @objective(model, Min, sum(c[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
+    @constraint(model, objfun,
+                z ≥ sum(c[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, z)
 
     model, x, y, L, l, π
 end
