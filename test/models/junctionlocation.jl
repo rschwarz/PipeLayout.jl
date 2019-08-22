@@ -62,7 +62,7 @@ _scs = JuMP.with_optimizer(SCS.Optimizer, eps=1e-6, verbose=0)
 
     @testset "using the optimize function to solve" begin
         inst = Instance(nodes, 20*demand, bounds, diams, ploss_coeff_nice)
-        result = optimize(inst, topo, solver)
+        result = optimize(inst, topo, JuncLoc.SOC(_scs))
         @test result.status == MOI.OPTIMAL
 
         sol = result.sol
