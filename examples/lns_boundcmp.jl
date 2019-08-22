@@ -1,7 +1,7 @@
 # we use warmstart to hint at a solution that has better objective value in pipe
 # dimensioning than the dual bound of junction location?!
 
-using MathProgBase
+using MathOptInterface
 using JuMP
 using SCIP
 
@@ -9,6 +9,8 @@ using PipeLayout
 using PipeLayout.JuncLoc
 using PipeLayout.PipeDim
 import PipeLayout: ploss_coeff_nice
+
+const MOI = MathOptInterface
 
 # instance data
 pipelength = 100.0
@@ -19,6 +21,8 @@ bounds = fill(Bounds(40, 80), 4)
 diams = map(Diameter, [1, 2], [1, 2])
 inst = Instance(terminals, demand, bounds, diams, ploss_coeff_nice)
 
+_scip = JuMP.with_optimizer(SCIP.Optimizer, limits_gap=0.001)
+
 function pipedim()
     println("### Pipe Dimensioning LP model, path topology ###")
 
@@ -26,9 +30,9 @@ function pipedim()
     path = Topology(terminals, [Arc(2,1), Arc(2,3), Arc(4,3)])
 
     # instead of calling `optimize` we do the steps manually
-    solver = PipeDim.LP(SCIP.Optimizer(limits_gap=0.001))
+    solver = PipeDim.LP(_scip)
     model, π, l = PipeDim.make_model(inst, path, solver.lpsolver)
-    status = solve(model, suppress_warnings=true)
+    JuMP.optimize!(model)
 
     println(model)
     @show JuMP.value.(l)
@@ -44,7 +48,7 @@ function juncloc()
     fstw = Topology(nodes, [Arc(5,6), Arc(5,1), Arc(2,5), Arc(3,6), Arc(6,4)])
 
     # instead of calling `optimize` we do the steps manually
-    solver = JuncLoc.NLP(SCIP.Optimizer(limits_gap=0.001))
+    solver = JuncLoc.NLP(_scip)
     model, x, y, L, l, π = JuncLoc.make_nlp(inst, fstw, solver)
 
     # fix values for the Steiner node positions
@@ -55,7 +59,7 @@ function juncloc()
     @constraint(model, x[6] == inst.nodes[3].x)
     @constraint(model, y[6] == inst.nodes[3].y)
 
-    status = solve(model)
+    JuMP.optimize!(model)
 
     println(model)
     @show JuMP.value.(L)

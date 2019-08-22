@@ -23,8 +23,10 @@ nodes = vcat(terminals, junctions)
 fstw = Topology(nodes, [Arc(5,6), Arc(5,1), Arc(2,5), Arc(3,6), Arc(6,4)])
 
 # instead of calling `optimize` we do the steps manually
-solver = JuncLoc.NLP(SCIP.Optimizer(limits_gap=0.01,
-                                    heuristics_completesol_maxunkownrate=1.0))
+
+scip = JuMP.with_optimizer(
+    SCIP.Optimizer, limits_gap=0.01, heuristics_completesol_maxunknownrate=1.0)
+solver = JuncLoc.NLP(scip)
 model, x, y, L, l, π = PipeLayout.JuncLoc.make_nlp(inst, fstw, solver)
 
 # add dummy binary to support incomplete warmstart
@@ -32,10 +34,10 @@ model, x, y, L, l, π = PipeLayout.JuncLoc.make_nlp(inst, fstw, solver)
 
 # set start values for the Steiner node positions
 # 1st steiner is at 2nd term
-setvalue(x[5], inst.nodes[2].x)
-setvalue(y[5], inst.nodes[2].y)
+JuMP.set_start_value(x[5], inst.nodes[2].x)
+JuMP.set_start_value(y[5], inst.nodes[2].y)
 # 2nd steiner is at 3rd term
-setvalue(x[6], inst.nodes[3].x)
-setvalue(y[6], inst.nodes[3].y)
+JuMP.set_start_value(x[6], inst.nodes[3].x)
+JuMP.set_start_value(y[6], inst.nodes[3].y)
 
-status = solve(model)
+JuMP.optimize!(model)
