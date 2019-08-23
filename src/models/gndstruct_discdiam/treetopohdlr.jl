@@ -61,7 +61,7 @@ function enforce_tree_topo(ch::TreeTopoHdlr, cons::TreeTopoCons)
         arcidx = arcindex(cons.topo)
         antidx = antiparallelindex(cons.topo)
         fwd = [arcidx[e] for e in cycle]
-        bwd = [antiparallelindex[e] for e in fwd]
+        bwd = [antidx[e] for e in fwd]
         arcs = vcat(fwd, bwd)
         ci = add_cons(ch.scip, @build_constraint(
             sum(cons.y[a] for a in arcs) ≤ length(cycle) - 1))
