@@ -4,7 +4,7 @@ using SCIP
 
 const MOI = MathOptInterface
 
-export ɛ, settimelimit!, stilltime, add_cons
+export ɛ, settimelimit!, stilltime, @cb_constraint
 
 # tolerance for numerical comparison
 const ɛ = 1e-6
@@ -61,16 +61,22 @@ function SCIP.sol_values(o::SCIP.Optimizer,
 end
 
 """
-Add JuMP constraint to MOI backend, converting the types.
+Add JuMP constraint expression to MOI optimizer, converting the types.
 
-This is useful to add the result of @build_constraint directly.
-Try not to commit type piracy by using an idiosyncratic function name.
-
-TODO: add new macro to combine this with @build_constraint!
+This is useful for solver-specific callbacks, e.g, with SCIP.
 """
-function add_cons(optimizer::MOI.AbstractOptimizer,
-                  constraint::JuMP.AbstractConstraint)
-    f = JuMP.moi_function(constraint.func)
-    s = constraint.set
-    return MOI.add_constraint(optimizer, f, s)
+macro cb_constraint(optimizer, expr)
+    code = quote
+        jump_cons = JuMP.@build_constraint $expr
+        MOI.add_constraint(
+            $optimizer,
+            JuMP.moi_function(jump_cons.func),
+            jump_cons.set
+        )
+    end
+    quote
+        let
+            $(esc(code))
+        end
+    end
 end
