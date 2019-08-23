@@ -54,7 +54,7 @@ function enforce_tree_topo(ch::TreeTopoHdlr, cons::TreeTopoCons)
         # TODO: Can we do better than no-good by forcing cut edges only?
         active = ysol .> 0.5
         coefs = 2.0 * active .- 1.0
-        cut = @build_constraint(coefs ⋅ y ≤ sum(active) - 1)
+        cut = @build_constraint(coefs ⋅ cons.y ≤ sum(active) - 1)
         ci = MOI.add_constraint(ch.scip, cut)
     else
         # 2) There is a cycle. Let's forbid it (with anti-parallel arcs).
@@ -63,7 +63,7 @@ function enforce_tree_topo(ch::TreeTopoHdlr, cons::TreeTopoCons)
         fwd = [arcidx[e] for e in cycle]
         bwd = [antiparallelindex[e] for e in fwd]
         arcs = vcat(fwd, bwd)
-        cut = @build_constraint(sum(y[a] for a in arcs) ≤ length(cycle) - 1)
+        cut = @build_constraint(sum(cons.y[a] for a in arcs) ≤ length(cycle) - 1)
         ci = MOI.add_constraint(ch.scip, cut)
     end
 

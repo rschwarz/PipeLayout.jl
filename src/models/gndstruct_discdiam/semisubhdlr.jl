@@ -99,7 +99,7 @@ function enforce_semi_sub(ch::SemiSubHdlr, cons::SemiSubCons)
     ysol = SCIP.sol_values(ch.scip, cons.y)
     active = ysol .> 0.5
     coefs = 2.0 * active .- 1.0
-    cut = @build_constraint(coefs ⋅ y ≤ sum(active) - 1)
+    cut = @build_constraint(coefs ⋅ cons.y ≤ sum(active) - 1)
     ci = MOI.add_constraint(ch.scip, cut)
 
     return SCIP.SCIP_CONSADDED
