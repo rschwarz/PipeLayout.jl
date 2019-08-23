@@ -1,3 +1,4 @@
+using LinearAlgebra # for ⋅
 using MathOptInterface
 using JuMP
 using SCIP  # for solver-specific callbacks
