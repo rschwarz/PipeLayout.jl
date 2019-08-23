@@ -16,6 +16,7 @@ include("minlp.jl")
 
 # constraint handlers
 include("treetopohdlr.jl")
+include("semisubhdlr.jl")
 
 # callback-based algorithms: keep one master problem
 include("cbtopo.jl")  # needs itertopo.jl
