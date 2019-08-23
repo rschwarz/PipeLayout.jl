@@ -1,5 +1,6 @@
 using MathOptInterface
 using JuMP
+using SCIP
 
 const MOI = MathOptInterface
 
@@ -50,4 +51,11 @@ end
 "is there still enough until final limit?"
 function stilltime(finaltime; buffer=timebuffer)
     time() + buffer < finaltime
+end
+
+"""Extract solution values for given JuMP variables, for use in callbacks."""
+function SCIP.sol_values(o::SCIP.Optimizer,
+                         vars::AbstractArray{JuMP.VariableRef},
+                         sol::Ptr{SCIP.SCIP_SOL}=C_NULL)
+    return SCIP.sol_values(o, [JuMP.index(v) for v in vars], sol)
 end
