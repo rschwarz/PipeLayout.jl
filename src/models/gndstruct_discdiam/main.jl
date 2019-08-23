@@ -14,6 +14,9 @@ include("itertopo.jl")
 # all-in-one integrated model
 include("minlp.jl")
 
+# constraint handlers
+include("treetopohdlr.jl")
+
 # callback-based algorithms: keep one master problem
-# include("cbtopo.jl")  # needs itertopo.jl
+include("cbtopo.jl")  # needs itertopo.jl
 # include("cbgbd.jl")   # needs itergbd.jl
