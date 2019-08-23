@@ -1,5 +1,6 @@
 using MathOptInterface
 using JuMP
+using SCIP  # for solver-specific callbacks
 using SparseArrays
 
 const MOI = MathOptInterface
