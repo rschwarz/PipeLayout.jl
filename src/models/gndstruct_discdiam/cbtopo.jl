@@ -37,7 +37,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
                           check_priority=-7_000_000)
     SCIP.add_constraint(scip, treetopohdlr, TreeTopoCons(topo, y))
 
-    # enforce tree topology with constraint handler (lower prio)
+    # enforce feasible subproblems with constraint handler (lower prio)
     semisubhdlr = SemiSubHdlr(scip, solver.subsolver, finaltime)
     SCIP.include_conshdlr(scip, semisubhdlr; needs_constraints=true,
                           enforce_priority=-16,
