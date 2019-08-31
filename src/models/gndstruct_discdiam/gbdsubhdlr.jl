@@ -59,10 +59,12 @@ function solve_gbd_sub(ch::GBDSubHdlr, cons::GBDSubCons,
 
         if totalslack2 ≈ 0.0
             # check whether this candidate is actually an improvement
-            L = pipelengths(topo)
-            c = [diam.cost for diam in inst.diameters]
-            obj = [c[i] * L[a] for a=1:length(topo.arcs), i=1:length(inst.diameters)]
-            candprimal = sum(obj .* z)
+            L = pipelengths(cons.topo)
+            A = cons.topo.arcs
+            D = cons.inst.diameters
+            c = [diam.cost for diam in D]
+            obj = [c[i] * L[a] for a=1:length(A), i=1:length(D)]
+            candprimal = sum(obj .* zsol)
             if candprimal < ch.primal_bound
                 # TODO: solver.debug && println("  found improving solution :-)")
                 ch.best_solution = cand
