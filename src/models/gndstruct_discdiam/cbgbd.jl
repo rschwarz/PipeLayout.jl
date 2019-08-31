@@ -36,22 +36,22 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     solver.writemodels && writeLP(master.model, "master.lp", genericnames=false)
 
     # get access to SCIP.Optimizer instance (not factory)
-    scip::SCIP.Optimizer = JuMP.backend(model)
+    scip::SCIP.Optimizer = JuMP.backend(master.model)
 
     # enforce tree topology with constraint handler (higher prio)
     treetopohdlr = TreeTopoHdlr(scip)
-    SCIP.include_conshdlr(scip, treetopohdlr; needs_constraints=true,
-                          enforce_priority=-15,
-                          check_priority=-7_000_000)
-    SCIP.add_constraint(scip, treetopohdlr, TreeTopoCons(topo, y))
+    SCIP.include_conshdlr(
+        scip, treetopohdlr;
+        needs_constraints=true, enforce_priority=-15, check_priority=-7_000_000)
+    SCIP.add_constraint(scip, treetopohdlr, TreeTopoCons(topo, master.y))
 
     # enforce subproblem with constraint handler (lower prio)
-    semisubhdlr = SemiSubHdlr(scip, solver.subsolver, finaltime)
+    gbdsubhdlr = GBDSubHdlr(scip, solver.subsolver, finaltime,
+                            solver.addnogoods, solver.addcritpath)
     SCIP.include_conshdlr(
-        scip, semisubhdlr;
+        scip, gbdsubhdlr;
         needs_constraints=true, enforce_priority=-16, check_priority=-7_100_000)
-    SCIP.add_constraint(scip, semisubhdlr, SemiSubCons(
-        inst, topo, master.y, master.z, master.q, master.ϕ))
+    SCIP.add_constraint(scip, gbdsubhdlr, GBDSubCons(inst, topo, master))
 
     # solve master problem (has callback)
     JuMP.optimize!(master.model)
@@ -60,5 +60,5 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     # TODO: extract bounds, nnodes?
     dual = JuMP.objective_value(master.model)  # correct bound?
     nnodes = -1
-    Result(status, bestsol, primal, dual, nnodes)
+    Result(status, ch.best_solution, ch.primal_bound, dual, nnodes)
 end
