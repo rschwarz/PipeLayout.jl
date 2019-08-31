@@ -102,7 +102,7 @@ function solve_gbd_sub(ch::GBDSubHdlr, cons::GBDSubCons,
             dualsol = SubDualSol(
                 JuMP.dual.(ploss), JuMP.dual.(plb), JuMP.dual.(pub))
             critpathcuts(cons.inst, cons.topo, cons.master, cand,
-                         subdualsol, ch.subsolver)
+                         subdualsol, ch.subsolver, cb=ch.scip)
         end
 
         # TODO: solver.debug && println("  added $(ncuts) cuts.")
