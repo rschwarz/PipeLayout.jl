@@ -5,4 +5,3 @@
 Optimization methods for layout and design of (gas) pipeline networks.
 
 Continuing the work of the Python code in [geonet](https://github.com/rschwarz/geonet), but using [Julia](http://julialang.org/) for [JuMP](http://www.juliaopt.org/).
-y
