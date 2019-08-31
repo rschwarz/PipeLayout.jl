@@ -33,7 +33,7 @@ function solve_gbd_sub(ch::GBDSubHdlr, cons::GBDSubCons,
     qsol = SCIP.sol_values(ch.scip, cons.master.q, sol)
     ϕsol = SCIP.sol_values(ch.scip, cons.master.ϕ, sol)
 
-    cand = CandSol(zcand .>= 0.5, qsol, ϕsol)
+    cand = CandSol(zsol .>= 0.5, qsol, ϕsol)
 
     # solve subproblem (from scratch, no warmstart)
     submodel, π, Δl, Δu, ploss, plb, pub =
