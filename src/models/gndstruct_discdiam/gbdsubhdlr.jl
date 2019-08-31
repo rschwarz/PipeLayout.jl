@@ -24,7 +24,7 @@ mutable struct GBDSubCons <: SCIP.AbstractConstraint{GBDSubHdlr}
 end
 
 function solve_gbd_sub(ch::GBDSubHdlr, cons::GBDSubCons,
-                       sol::Ptr{SCIP.SCIP_SOL}=C_NULL, enforce=true)
+                       sol::Ptr{SCIP.SCIP_SOL}=C_NULL; enforce=true)
     ch.counter += 1
 
     # fetch solution values
