@@ -8,9 +8,12 @@ mutable struct GBDSubHdlr <: SCIP.AbstractConstraintHandler
     addcritpath::Bool
     addnogoods::Bool
     counter::Int
+    primal_bound::Float64
+    best_solution::Union{CandSol, Nothing}
 
     function GBDSubHdlr(scip, subsolver, finaltime, addcritpaths, addnogoods)
-        return new(scip, subsolver, finaltime, addcritpaths, addnogoods, 0)
+        return new(scip, subsolver, finaltime, addcritpaths, addnogoods,
+                   0, Inf, nothing)
     end
 end
 
