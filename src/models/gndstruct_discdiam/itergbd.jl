@@ -85,6 +85,7 @@ function make_master(inst::Instance, topo::Topology,
     @variable(model, 0 <= ϕ[1:narcs] <= maxflow^2)
 
     # secant cut for ϕ = q²
+    # TODO: why have ϕ in the model at all?
     @constraint(model, secant[a=1:narcs], ϕ[a] ≤ maxflow*q[a])
 
     # mass flow balance at nodes
