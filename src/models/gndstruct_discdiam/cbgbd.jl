@@ -57,8 +57,9 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     JuMP.optimize!(master.model)
     status = JuMP.termination_status(master.model)
 
-    # TODO: extract bounds, nnodes?
-    dual_bound = JuMP.objective_value(master.model)  # correct bound?
+    # TODO: correct bound?
+    dual_bound = JuMP.objective_bound(master.model)
+    # TODO: extract nnodes?
     nnodes = -1
     Result(status, gbdsubhdlr.best_solution, gbdsubhdlr.primal_bound,
            dual_bound, nnodes)
