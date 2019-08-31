@@ -147,11 +147,12 @@ function SCIP.lock(ch::GBDSubHdlr,
                    nlockspos::Cint,
                    nlocksneg::Cint)
     cons::GBDSubCons = SCIP.user_constraint(constraint)
-    for y in cons.master.y
+    master::Master = cons.master
+    for v in [master.y; master.z[:]; master.q; master.ϕ]
         # TODO: understand why lock is called during SCIPfree, after the
         # constraint should have been deleted already. Does it mean we should
         # implement CONSTRANS?
-        var_::Ptr{SCIP.SCIP_VAR} = SCIP.var(ch.scip, JuMP.index(y))
+        var_::Ptr{SCIP.SCIP_VAR} = SCIP.var(ch.scip, JuMP.index(v))
         var_ != C_NULL || continue  # avoid segfault!
 
         SCIP.@SC SCIP.SCIPaddVarLocksType(
