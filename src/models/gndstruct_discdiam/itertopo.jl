@@ -7,8 +7,8 @@ struct IterTopo <: GroundStructureSolver
     maxiter::Int
     timelimit::Float64 # seconds
     debug::Bool
-    mastersolver
-    subsolver
+    mastersolver::JuMP.OptimizerFactory
+    subsolver::JuMP.OptimizerFactory
     writemodels::Bool
 
     function IterTopo(mastersolver, subsolver;
@@ -24,7 +24,8 @@ Build master model using only arc selection y and flows q.
 This is used to enumerate (embedded) topologies, each of which is evaluated with
 a "semi-subproblem". Returns model and variables y, q.
 """
-function make_semimaster(inst::Instance, topo::Topology, solver)
+function make_semimaster(inst::Instance, topo::Topology,
+                         optimizer::JuMP.OptimizerFactory)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -47,7 +48,8 @@ function make_semimaster(inst::Instance, topo::Topology, solver)
     # "big-M" bound for flow on arcs
     maxflow = 0.5 * sum(abs.(inst.demand))
 
-    model = Model(solver=solver)
+    # always use direct mode with SCIP
+    model = JuMP.direct_model(optimizer())
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -73,7 +75,7 @@ function make_semimaster(inst::Instance, topo::Topology, solver)
     # use cost of smallest diameter as topology-based relaxation
     L = pipelengths(topo)
     cmin = inst.diameters[1].cost
-    @objective(model, :Min, sum(cmin * L[a] * y[a] for a=1:narcs))
+    @objective(model, Min, sum(cmin * L[a] * y[a] for a=1:narcs))
 
     model, y, q
 end
@@ -87,7 +89,8 @@ be used
 
 Returns model, list of candidate arcs and (sparse) variables z
 """
-function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
+function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
+                      optimizer::JuMP.OptimizerFactory)
     nnodes = length(topo.nodes)
     arcs = topo.arcs
     termidx = termindex(topo.nodes, inst.nodes)
@@ -109,7 +112,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff * L[candarcs] .* cand.qsol[candarcs].^2
 
-    model = Model(solver=solver)
+    model = JuMP.Model(optimizer)
 
     @variable(model, z[1:ncandarcs, 1:ndiams], Bin)
     @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])
@@ -118,7 +121,7 @@ function make_semisub(inst::Instance, topo::Topology, cand::CandSol, solver)
                 π[tail[a]] - π[head[a]] ≥ C[a] * sum(Dm5[i]*z[a,i] for i=1:ndiams))
     @constraint(model, choice[a=1:ncandarcs], sum(z[a,i] for i=1:ndiams) == 1)
 
-    @objective(model, :Min, sum(c[i] * L[candarcs[a]] * z[a,i] for a=1:ncandarcs for i=1:ndiams))
+    @objective(model, Min, sum(c[i] * L[candarcs[a]] * z[a,i] for a=1:ncandarcs for i=1:ndiams))
 
     model, candarcs, z
 end
@@ -138,39 +141,41 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
     ndiams = length(inst.diameters)
 
     # initialize
-    primal, dual, status, bestsol = Inf, 0.0, :NotSolved, nothing
+    primal, dual, status, bestsol = Inf, 0.0, MOI.OPTIMIZE_NOT_CALLED, nothing
     mastermodel, y, q = make_semimaster(inst, topo, mastersolver)
 
     for iter=1:maxiter
         if !stilltime(finaltime)
+            status = MOI.TIME_LIMIT
             debug && println("Timelimit reached.")
-            break
+            return Result(status, bestsol, primal, dual, iter)
         end
         debug && println("Iter $(iter)")
 
         # resolve (relaxed) semimaster problem, build candidate solution
         writemodels && writeLP(mastermodel, "master_iter$(iter).lp", genericnames=false)
         settimelimit!(mastermodel, mastersolver, finaltime - time())
-        status = solve(mastermodel, suppress_warnings=true)
-        if status == :Infeasible
+        JuMP.optimize!(mastermodel)
+        status = JuMP.termination_status(mastermodel)
+        if status == MOI.INFEASIBLE
             debug && println("  master problem is infeasible.")
             if primal == Inf
                 # no solution was found
-                return Result(:Infeasible, nothing, Inf, Inf, iter)
+                return Result(MOI.INFEASIBLE, nothing, Inf, Inf, iter)
             else
                 @assert bestsol ≠ nothing
-                return Result(:Optimal, bestsol, primal, dual, iter)
+                return Result(MOI.OPTIMAL, bestsol, primal, dual, iter)
             end
-        elseif status == :UserLimit
-            return Result(:UserLimit, bestsol, primal, dual, iter)
-        elseif status == :Optimal
+        elseif status in (MOI.NODE_LIMIT, MOI.TIME_LIMIT)
+            return Result(status, bestsol, primal, dual, iter)
+        elseif status == MOI.OPTIMAL
             # good, we continue below
         else
             error("Unexpected status: $(status)")
         end
 
-        ysol, qsol = getvalue(y), getvalue(q)
-        dual = getobjectivevalue(mastermodel)
+        ysol, qsol = JuMP.value.(y), JuMP.value.(q)
+        dual = JuMP.objective_value(mastermodel)
         if debug
             println("  dual bound: $(dual)")
             println("  cand. sol:$(find(qsol))")
@@ -180,7 +185,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         if dual > primal - ɛ
             @assert bestsol ≠ nothing
             debug && println("  proved optimality of best solution.")
-            return Result(:Optimal, bestsol, primal, dual, iter)
+            return Result(MOI.OPTIMAL, bestsol, primal, dual, iter)
         end
 
         # check whether candidate has tree topology
@@ -207,18 +212,19 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         submodel, candarcs, z = make_semisub(inst, topo, cand, subsolver)
         writemodels && writeLP(submodel, "sub_iter$(iter).lp", genericnames=false)
         settimelimit!(submodel, subsolver, finaltime - time())
-        substatus = solve(submodel, suppress_warnings=true)
-        if substatus == :Optimal
+        JuMP.optimize!(submodel)
+        substatus = JuMP.termination_status(submodel)
+        if substatus == MOI.OPTIMAL
             # have found improving solution?
-            newobj = getobjectivevalue(submodel)
+            newobj = JuMP.objective_value(submodel)
             if newobj < primal
                 primal = newobj
                 znew = fill(false, narcs, ndiams)
-                znew[candarcs,:] = (getvalue(z) .> 0.5)
+                znew[candarcs,:] = (JuMP.value.(z) .> 0.5)
                 bestsol = CandSol(znew, qsol, qsol.^2)
                 debug && println("  found improving solution: $(primal)")
             end
-        elseif substatus != :Infeasible
+        elseif substatus != MOI.INFEASIBLE
             error("Unexpected status: $(:substatus)")
         end
 
@@ -226,12 +232,12 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         if dual > primal - ɛ
             @assert bestsol ≠ nothing
             debug && println("  proved optimality of best solution.")
-            return Result(:Optimal, bestsol, primal, dual, iter)
+            return Result(MOI.OPTIMAL, bestsol, primal, dual, iter)
         end
 
         # generate nogood cut and add to master
         nogood(mastermodel, y, ysol)
     end
 
-    Result(:UserLimit, bestsol, primal, dual, maxiter)
+    Result(MOI.ITERATION_LIMIT, bestsol, primal, dual, maxiter)
 end

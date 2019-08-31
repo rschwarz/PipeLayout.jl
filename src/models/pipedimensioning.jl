@@ -1,4 +1,7 @@
 using JuMP
+using MathOptInterface
+
+const MOI = MathOptInterface
 
 struct Solution
     lsol::Array{Float64,2}
@@ -6,16 +9,16 @@ struct Solution
 end
 
 struct Result
-    status::Symbol
+    status::MOI.TerminationStatusCode
     sol::Solution
     value::Float64
 end
 
 struct LP <: PipeDimensioningSolver
-    lpsolver
+    lpsolver::JuMP.OptimizerFactory
 end
 
-function make_model(inst::Instance, topo::Topology, solver)
+function make_model(inst::Instance, topo::Topology, optimizer::JuMP.OptimizerFactory)
     nnodes = length(inst.nodes)
     length(topo.nodes) == nnodes ||
         throw(ArgumentError("Steiner nodes not allowed"))
@@ -24,7 +27,7 @@ function make_model(inst::Instance, topo::Topology, solver)
 
     q = uniq_flow(inst, topo)
 
-    model = Model(solver=solver)
+    model = JuMP.Model(optimizer)
 
     # squared pressure variables at nodes
     lb = [b.lb^2 for b in inst.pressure]
@@ -46,15 +49,16 @@ function make_model(inst::Instance, topo::Topology, solver)
 
     # minimize total construction cost
     cost = [diam.cost for diam in inst.diameters]
-    @objective(model, :Min, sum(cost[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, sum(cost[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
 
     model, π, l
 end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::LP)
     model, π, l = make_model(inst, topo, solver.lpsolver)
-    status = solve(model, suppress_warnings=true)
-    objval = status == :Optimal ? getobjectivevalue(model) : Inf
-    sol = Solution(getvalue(l), getvalue(π))
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
+    objval = status == MOI.OPTIMAL ? JuMP.objective_value(model) : Inf
+    sol = Solution(JuMP.value.(l), JuMP.value.(π))
     Result(status, sol, objval)
 end

@@ -1,7 +1,7 @@
 import PipeLayout: pwl_ineqs, reorient_fwdflow, pwl_inverse, pipesplit
 
 struct SOC <: JunctionLocationSolver
-    solver             # for underlying NLP model
+    optimizer          # for underlying NLP model
     timelimit::Float64 # seconds
 
     function SOC(solver; timelimit=Inf)
@@ -39,7 +39,7 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff .* q .* abs.(q)
 
-    model = Model(solver=solver.solver)
+    model = JuMP.Model(solver.optimizer)
 
     # node positions
     @variable(model, xmin ≤ x[1:nnodes] ≤ xmax)
@@ -66,8 +66,9 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     @constraint(model, diffx[a=1:narcs], dx[a] == x[T[a]] - x[H[a]])
     @constraint(model, diffy[a=1:narcs], dy[a] == y[T[a]] - y[H[a]])
 
-    # second order cone for length
-    @constraint(model, soc[a=1:narcs], dx[a]^2 + dy[a]^2 ≤ L[a]^2)
+    # second order cone for length (dx[a]^2 + dy[a]^2 ≤ L[a]^2)
+    @constraint(model, soc[a=1:narcs],
+                [L[a], dx[a], dy[a]] in JuMP.SecondOrderCone())
 
     # inequalities for PWL function
     ie = pwl_ineqs(Dm5, c)
@@ -84,7 +85,7 @@ function make_soc(inst::Instance, topo::Topology, solver::SOC)
     @constraint(model, yub[a=1:narcs], t[a] ≥ cmin * L[a])
 
     # minimize total pipe cost
-    @objective(model, :Min, sum(t[a] for a=1:narcs))
+    @objective(model, Min, sum(t[a] for a=1:narcs))
 
     model, x, y, t, π
 end
@@ -93,12 +94,13 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
     rotopo = reorient_fwdflow(inst, topo)
 
     model, x, y, t, π = make_soc(inst, topo, solver)
-    status = solve(model, suppress_warnings=true)
-    objval = getobjectivevalue(model)
-    nodes = map(Node, zip(getvalue(x), getvalue(y)))
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
+    objval = JuMP.objective_value(model)
+    nodes = map(Node, zip(JuMP.value.(x), JuMP.value.(y)))
 
     # compute l from t
-    tsol = getvalue(t)
+    tsol = JuMP.value.(t)
     L = pipelengths(Topology(nodes, topo.arcs))
     D, c = [d.value for d in inst.diameters], [d.cost for d in inst.diameters]
     zsol = tsol ./ L
@@ -107,6 +109,6 @@ function PipeLayout.optimize(inst::Instance, topo::Topology, solver::SOC)
     lsol = vcat([pipesplit(inst.diameters, y^(-1/5))' for y in ysol]...)
     @assert size(lsol) == (length(L), length(D))
 
-    sol = Solution(nodes, lsol, getvalue(π))
+    sol = Solution(nodes, lsol, JuMP.value.(π))
     Result(status, sol, objval)
 end

@@ -1,3 +1,6 @@
+_scip = JuMP.with_optimizer(SCIP.Optimizer, display_verblevel=0)
+_glpk = JuMP.with_optimizer(GLPK.Optimizer)
+
 @testset "Solve semi decomposition with nogoods on y (callback)" begin
     #       7    9      even arc numbers for
     #   () - d2 - ()    reversed arcs
@@ -16,14 +19,12 @@
                                          (1,3), (3,1), (3,5), (5,3),
                                          (2,4), (4,2), (4,6), (6,4)]])
 
-    mastersolver = SCIPSolver("display/verblevel", 0)
-    subsolver = SCIPSolver("display/verblevel", 0)
-    cbtoposolver = GndStr.CallbackTopo(mastersolver, subsolver)
+    cbtoposolver = GndStr.CallbackTopo(_scip, _scip)
 
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1 * demand, bounds, diams)
         result = optimize(inst, topo, cbtoposolver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -44,7 +45,7 @@
     @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 10 * demand, bounds, diams)
         result = optimize(inst, topo, cbtoposolver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -69,7 +70,7 @@
                          Arc(3,1), Arc(2,1), Arc(3,2)])
 
         result = optimize(inst, topo, cbtoposolver)
-        @test result.status == :Infeasible
+        @test result.status == MOI.INFEASIBLE
     end
 end
 
@@ -92,14 +93,12 @@ end
                                          (1,3), (3,1), (3,5), (5,3),
                                          (2,4), (4,2), (4,6), (6,4)]])
 
-    mastersolver = SCIPSolver("display/verblevel", 0)
-    subsolver = GLPKSolverLP()
-    cbgbdsolver = GndStr.CallbackGBD(mastersolver, subsolver)
+    cbgbdsolver = GndStr.CallbackGBD(_scip, _glpk)
 
     @testset "low flow: very easy instance" begin
         inst = Instance(nodes, 1 * demand, bounds, diams)
         result = optimize(inst, topo, cbgbdsolver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -120,7 +119,7 @@ end
     @testset "medium flow: difficult instance" begin
         inst = Instance(nodes, 10 * demand, bounds, diams)
         result = optimize(inst, topo, cbgbdsolver)
-        @test result.status == :Optimal
+        @test result.status == MOI.OPTIMAL
 
         zsol = result.solution.zsol
         qsol = result.solution.qsol
@@ -145,6 +144,6 @@ end
                          Arc(3,1), Arc(2,1), Arc(3,2)])
 
         result = optimize(inst, topo, cbgbdsolver)
-        @test result.status == :Infeasible
+        @test result.status == MOI.INFEASIBLE
     end
 end

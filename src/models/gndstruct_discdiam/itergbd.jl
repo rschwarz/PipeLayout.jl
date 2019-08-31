@@ -10,8 +10,8 @@ struct IterGBD <: GroundStructureSolver
     timelimit::Float64 # seconds
     debug::Bool
     writemodels::Bool
-    mastersolver
-    subsolver
+    mastersolver::JuMP.OptimizerFactory
+    subsolver::JuMP.OptimizerFactory
 
     function IterGBD(mastersolver, subsolver;
                      addnogoods=false, addcritpath=true, maxiter::Int=100,
@@ -38,15 +38,16 @@ Variable meanings:
   ϕ: squared flow through arc (ϕ = q²)
 """
 struct Master
-    model::Model
-    y::Vector{Variable}
-    z::Array{Variable,2}
-    q::Vector{Variable}
-    ϕ::Vector{Variable}
+    model::JuMP.Model
+    y::Vector{JuMP.VariableRef}
+    z::Array{JuMP.VariableRef, 2}
+    q::Vector{JuMP.VariableRef}
+    ϕ::Vector{JuMP.VariableRef}
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
-function make_master(inst::Instance, topo::Topology, solver)
+function make_master(inst::Instance, topo::Topology,
+                     optimizer::JuMP.OptimizerFactory)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -70,7 +71,8 @@ function make_master(inst::Instance, topo::Topology, solver)
     # "big-M" bound for flow on arcs
     maxflow = 0.5 * sum(abs.(inst.demand))
 
-    model = Model(solver=solver)
+    # always use direct mode for SCIP
+    model = JuMP.direct_model(optimizer())
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -83,6 +85,7 @@ function make_master(inst::Instance, topo::Topology, solver)
     @variable(model, 0 <= ϕ[1:narcs] <= maxflow^2)
 
     # secant cut for ϕ = q²
+    # TODO: why have ϕ in the model at all?
     @constraint(model, secant[a=1:narcs], ϕ[a] ≤ maxflow*q[a])
 
     # mass flow balance at nodes
@@ -105,7 +108,7 @@ function make_master(inst::Instance, topo::Topology, solver)
 
     L = pipelengths(topo)
     c = [diam.cost for diam in inst.diameters]
-    @objective(model, :Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
 
     model, y, z, q, ϕ
 end
@@ -116,7 +119,8 @@ Build model for subproblem (ground structure with discrete diameters).
 Corresponds to the domain relaxation with pressure loss overestimation, which
 can be turned off via the flag `relaxed`.
 """
-function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
+function make_sub(inst::Instance, topo::Topology, cand::CandSol,
+                  optimizer::JuMP.OptimizerFactory;
                   relaxed::Bool=true)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
@@ -129,7 +133,7 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
     tail = [arcs[a].tail for a in candarcs]
     head = [arcs[a].head for a in candarcs]
 
-    model = Model(solver=solver)
+    model = JuMP.Model(optimizer)
 
     # unconstrained variable for squared pressure, the bounds are added with
     # inequalities having slack vars.
@@ -162,13 +166,13 @@ function make_sub(inst::Instance, topo::Topology, cand::CandSol, solver;
     @constraint(model, pres_lb[v=1:nnodes], π[v] + Δl[v] ≥ lb[v])
     @constraint(model, pres_ub[v=1:nnodes], π[v] - Δu[v] ≤ ub[v])
 
-    @objective(model, :Min, sum(Δl[v] + Δu[v] for v=1:nnodes))
+    @objective(model, Min, sum(Δl[v] + Δu[v] for v=1:nnodes))
 
     model, π, Δl, Δu, ploss, pres_lb, pres_ub
 end
 
 "Add tangent cut to quadratic inequality (ϕ ≥ q^2) if violated."
-function quadratic_tangent(model, q, ϕ, qsol, ϕsol, cb=nothing)
+function quadratic_tangent(model, q, ϕ, qsol, ϕsol; cb=cb)
     violated = ϕsol < qsol^2 - ɛ
     if !violated
         return 0
@@ -176,10 +180,10 @@ function quadratic_tangent(model, q, ϕ, qsol, ϕsol, cb=nothing)
 
     # add 1st order Taylor approx:
     # q^2 ≈ 2*qsol*(q - qsol) + qsol^2 = 2*qsol*q - qsol^2
-    if cb == nothing
+    if cb === nothing
         @constraint(model, ϕ ≥ 2*qsol*q - qsol^2)
     else
-        @lazyconstraint(cb, ϕ ≥ 2*qsol*q - qsol^2)
+        @cb_constraint(cb, ϕ ≥ 2*qsol*q - qsol^2)
     end
 
     return 1
@@ -193,13 +197,14 @@ where x_i and y_j take values 0 or 1, with exactly one term active per sum.
 
 The coefficients a, b, c are returned.
 """
-function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, solver)
+function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int,
+                        optimizer::JuMP.OptimizerFactory)
     m, n = size(values)
 
     @assert 1 <= cand_i <= m
     @assert 1 <= cand_j <= n
 
-    model = Model(solver=solver)
+    model = JuMP.Model(optimizer)
 
     # coefficients to be found
     @variable(model, a[1:m])
@@ -216,18 +221,19 @@ function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int, solve
     @constraint(model, t[cand_i, cand_j] == 0)
 
     # be as tight as possible everywhere else
-    @objective(model, :Min, sum(t[i,j] for i=1:m for j=1:n))
+    @objective(model, Min, sum(t[i,j] for i=1:m for j=1:n))
 
     # solve it
-    status = solve(model, suppress_warnings=true)
-    @assert status == :Optimal
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
+    @assert status == MOI.OPTIMAL
 
-    getvalue(a), getvalue(b), getvalue(c)
+    JuMP.value.(a), JuMP.value.(b), JuMP.value(c)
 end
 
 "Linearized & reformulated cut based on single path."
 function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
-                 path::Vector{Arc}, solver, cb=nothing)
+                 path::Vector{Arc}, solver; cb=nothing)
     aidx = arcindex(topo)
     pathidx = [aidx[arc] for arc in path]
     npath = length(path)
@@ -309,12 +315,16 @@ function pathcut(inst::Instance, topo::Topology, master::Master, cand::CandSol,
     z = master.z[pathidx,:]
     ϕ = master.ϕ[pathidx]
 
-    if cb == nothing
-        @constraint(master.model, sum(coeffs[a,i]*z[a,i] for a=1:npath for i=1:ndiam)
-                    + offset ≥ sum(α[a]*ϕ[a] for a=1:npath))
+    if cb === nothing
+        @constraint(
+            master.model,
+            sum(coeffs[a,i]*z[a,i] for a=1:npath for i=1:ndiam) + offset
+            ≥ sum(α[a]*ϕ[a] for a=1:npath))
     else
-        @lazyconstraint(cb, sum(coeffs[a,i]*z[a,i] for a=1:npath for i=1:ndiam)
-                        + offset ≥ sum(α[a]*ϕ[a] for a=1:npath))
+        @cb_constraint(
+            cb,
+            sum(coeffs[a,i]*z[a,i] for a=1:npath for i=1:ndiam) + offset
+            ≥ sum(α[a]*ϕ[a] for a=1:npath))
     end
 
     return 1
@@ -335,12 +345,12 @@ function critpathcuts(inst::Instance, topo::Topology, master::Master,
 
     # TODO: test that cuts are valid and separating
     for path in paths
-        ncuts += pathcut(inst, topo, master, cand, path, solver, cb)
+        ncuts += pathcut(inst, topo, master, cand, path, solver, cb=cb)
     end
 
     for aidx in 1:narcs
         ncuts += quadratic_tangent(master.model, master.q[aidx], master.ϕ[aidx],
-                                   cand.qsol[aidx], cand.ϕsol[aidx], cb)
+                                   cand.qsol[aidx], cand.ϕsol[aidx], cb=cb)
     end
 
     return ncuts
@@ -348,15 +358,14 @@ end
 
 "Construct all Benders cuts from the solution of a subproblem."
 function cuts(inst::Instance, topo::Topology, master::Master, cand::CandSol,
-              sub::SubDualSol, solver; addnogoods=true, addcritpath=true,
-              cb=nothing)
+              sub::SubDualSol, solver; addnogoods=true, addcritpath=true)
     @assert any([addnogoods, addcritpath]) # must cut off!
     ncuts = 0
     if addnogoods
-        ncuts += nogood(master.model, master.z, cand.zsol, cb=cb)
+        ncuts += nogood(master.model, master.z, cand.zsol)
     end
     if addcritpath
-        ncuts += critpathcuts(inst, topo, master, cand, sub, solver, cb=cb)
+        ncuts += critpathcuts(inst, topo, master, cand, sub, solver)
     end
     ncuts
 end
@@ -376,12 +385,13 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
 
     # initialize
     master = Master(make_master(inst, topo, mastersolver)...)
-    dual, status = 0.0, :NotSolved
+    dual, status = 0.0, MOI.OPTIMIZE_NOT_CALLED
 
     for iter=1:maxiter
         if !stilltime(finaltime)
+            status = MOI.TIME_LIMIT
             debug && println("Timelimit reached.")
-            break
+            return Result(status, nothing, Inf, dual, iter)
         end
 
         debug && println("Iter $(iter)")
@@ -389,29 +399,30 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         # resolve (relaxed) master problem, build candidate solution
         writemodels && writeLP(master.model, "master_iter$(iter).lp", genericnames=false)
         settimelimit!(master.model, mastersolver, finaltime - time())
-        status = solve(master.model, suppress_warnings=true)
-        if status == :Infeasible
+        JuMP.optimize!(master.model)
+        status = JuMP.termination_status(master.model)
+        if status == MOI.INFEASIBLE
             debug && println("  relaxed master is infeasible :-(")
-            return Result(:Infeasible, nothing, Inf, Inf, iter)
-        elseif status == :UserLimit
-            return Result(:UserLimit, nothing, Inf, dual, iter)
-        elseif status == :Optimal
+            return Result(status, nothing, Inf, Inf, iter)
+        elseif status in [MOI.TIME_LIMIT, MOI.NODE_LIMIT]
+            return Result(status, nothing, Inf, dual, iter)
+        elseif status == MOI.OPTIMAL
             # good, we continue below
         else
             error("Unexpected status: $(status)")
         end
 
-        zsol = getvalue(master.z)
-        cand = CandSol(zsol .>= 0.5, getvalue(master.q), getvalue(master.ϕ))
+        zsol = JuMP.value.(master.z)
+        cand = CandSol(zsol .>= 0.5, JuMP.value.(master.q), JuMP.value.(master.ϕ))
 
-        dual = getobjectivevalue(master.model)
+        dual = JuMP.objective_value(master.model)
         if debug
             println("  dual bound: $(dual)")
             println("  cand. sol:$(Tuple.(findall(!iszero, cand.zsol)))")
         end
 
         # check whether candidate has tree topology
-        ysol = getvalue(master.y)
+        ysol = JuMP.value.(master.y)
         candtopo = topology_from_candsol(topo, ysol)
         if !is_tree(candtopo)
             fullcandtopo = topology_from_candsol(topo, ysol, true)
@@ -433,23 +444,25 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         submodel, π, Δl, Δu, ploss, plb, pub = make_sub(inst, topo, cand, subsolver)
         writemodels && writeLP(submodel, "sub_relax_iter$(iter).lp", genericnames=false)
         settimelimit!(submodel, subsolver, finaltime - time())
-        substatus = solve(submodel, suppress_warnings=true)
-        @assert substatus == :Optimal "Slack model is always feasible"
-        totalslack = getobjectivevalue(submodel)
+        JuMP.optimize!(submodel)
+        substatus = JuMP.termination_status(submodel)
+        @assert substatus == MOI.OPTIMAL "Slack model is always feasible"
+        totalslack = JuMP.objective_value(submodel)
         if totalslack ≈ 0.0
             # maybe only the relaxation is feasible, we have to check also the
             # "exact" subproblem with equations constraints.
             submodel2, _ = make_sub(inst, topo, cand, subsolver, relaxed=false)
             writemodels && writeLP(submodel2, "sub_exact_iter$(iter).lp", genericnames=false)
             settimelimit!(submodel2, subsolver, finaltime - time())
-            substatus2 = solve(submodel2, suppress_warnings=true)
-            @assert substatus2 == :Optimal "Slack model is always feasible"
-            totalslack2 = getobjectivevalue(submodel2)
+            JuMP.optimize!(submodel2)
+            substatus2 = JuMP.termination_status(submodel2)
+            @assert substatus2 == MOI.OPTIMAL "Slack model is always feasible"
+            totalslack2 = JuMP.objective_value(submodel2)
 
             if totalslack2 ≈ 0.0
                 debug && println("  found feasible solution :-)")
-                primal = getobjectivevalue(master.model)
-                return Result(:Optimal, cand, primal, dual, iter)
+                primal = JuMP.objective_value(master.model)
+                return Result(substatus2, cand, primal, dual, iter)
             else
                 # cut off candidate with no-good on z
                 debug && println("  subproblem/relaxation gap!")
@@ -458,7 +471,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
             end
         end
 
-        dualsol = SubDualSol(getdual(ploss), getdual(plb), getdual(pub))
+        dualsol = SubDualSol(JuMP.dual.(ploss), JuMP.dual.(plb), JuMP.dual.(pub))
 
         # generate cuts and add to master
         ncuts = cuts(inst, topo, master, cand, dualsol, subsolver,
@@ -466,5 +479,5 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         debug && println("  added $(ncuts) cuts.")
     end
 
-    Result(:UserLimit, nothing, Inf, dual, maxiter)
+    Result(MOI.ITERATION_LIMIT, nothing, Inf, dual, maxiter)
 end

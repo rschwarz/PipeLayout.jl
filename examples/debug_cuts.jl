@@ -2,7 +2,7 @@ using PipeLayout
 using PipeLayout.GndStr
 
 using JuMP
-using Cbc
+using GLPK
 
 nodes = [Node(0,0), Node(45,0), Node(25, 22)]
 demand = 10*[-50, 20, 30]
@@ -16,7 +16,8 @@ topo = Topology([Node(t...) for t in [(0,22), (0,0), (25,22), (25,0), (45,22), (
 
 inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-solver = GndStr.IterGBD(CbcSolver(), CbcSolver(),
+_glpk = JuMP.with_optimizer(GLPK.Optimizer)
+solver = GndStr.IterGBD(_glpk, _glpk,
                         debug=true, addnogoods=false, maxiter=10)
 result = optimize(inst, topo, solver);
 

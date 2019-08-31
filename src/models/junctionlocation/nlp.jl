@@ -1,5 +1,5 @@
 struct NLP <: JunctionLocationSolver
-    solver             # for underlying NLP model
+    optimizer::JuMP.OptimizerFactory # for underlying NLP model
     timelimit::Float64 # seconds
 
     function NLP(solver; timelimit=Inf)
@@ -36,7 +36,7 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff .* q .* abs.(q)
 
-    model = Model(solver=solver.solver)
+    model = JuMP.Model(solver.optimizer)
 
     # node positions
     @variable(model, xmin ≤ x[1:nnodes] ≤ xmax)
@@ -55,6 +55,9 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
     # squared pressure on nodes
     @variable(model, πlb[v] ≤ π[v=1:nnodes] ≤ πub[v])
 
+    # objective proxy variable
+    @variable(model, z ≥ 0)
+
 
     # fix terminal positions
     @constraint(model, fix[t=1:nterms], x[termidx[t]] == terms[t].x)
@@ -72,19 +75,22 @@ function make_nlp(inst::Instance, topo::Topology, solver::NLP;
                 C[a] * L[a] * sum(Dm5[i]*l[a,i] for i=1:ndiams))
 
     # minimize total construction cost
-    @objective(model, :Min, sum(c[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
+    @constraint(model, objfun,
+                z ≥ sum(c[i] * L[a] * l[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, z)
 
     model, x, y, L, l, π
 end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::NLP)
     model, x, y, L, l, π = make_nlp(inst, topo, solver)
-    status = solve(model, suppress_warnings=true)
-    if status in [:Infeasible, :InfeasibleOrUnbounded]
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
+    if status in [MOI.INFEASIBLE, MOI.INFEASIBLE_OR_UNBOUNDED]
         return Result(status, Solution([], zeros(0,0), []), Inf)
     end
-    objval = getobjectivevalue(model)
-    nodes = map(Node, zip(getvalue(x), getvalue(y)))
-    sol = Solution(nodes, getvalue(l), getvalue(π))
+    objval = JuMP.objective_value(model)
+    nodes = map(Node, zip(JuMP.value.(x), JuMP.value.(y)))
+    sol = Solution(nodes, JuMP.value.(l), JuMP.value.(π))
     Result(status, sol, objval)
 end

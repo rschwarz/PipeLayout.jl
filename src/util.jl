@@ -1,7 +1,10 @@
+using MathOptInterface
 using JuMP
-using MathProgBase
+using SCIP
 
-export ɛ, settimelimit!, stilltime
+const MOI = MathOptInterface
+
+export ɛ, settimelimit!, stilltime, @cb_constraint
 
 # tolerance for numerical comparison
 const ɛ = 1e-6
@@ -41,18 +44,39 @@ const timebuffer = 10.0 # seconds
 function settimelimit!(model::JuMP.Model, solver, limit)
     limit = max(limit, timebuffer) # at least buffer
     if limit < Inf
-        internal = internalmodel(model)
-        if isa(internal, MathProgBase.AbstractMathProgModel)
-            # model is already built, want to modify current params
-            MathProgBase.setparameters!(internal, TimeLimit=limit)
-        else
-            # model not yet build, want to modify future params
-            MathProgBase.setparameters!(solver, TimeLimit=limit)
-        end
+        MOI.set(JuMP.backend(model), MOI.TimeLimitSec, limit)
     end
 end
 
 "is there still enough until final limit?"
 function stilltime(finaltime; buffer=timebuffer)
     time() + buffer < finaltime
+end
+
+"""Extract solution values for given JuMP variables, for use in callbacks."""
+function SCIP.sol_values(o::SCIP.Optimizer,
+                         vars::AbstractArray{JuMP.VariableRef},
+                         sol::Ptr{SCIP.SCIP_SOL}=C_NULL)
+    return SCIP.sol_values(o, [JuMP.index(v) for v in vars], sol)
+end
+
+"""
+Add JuMP constraint expression to MOI optimizer, converting the types.
+
+This is useful for solver-specific callbacks, e.g, with SCIP.
+"""
+macro cb_constraint(optimizer, expr)
+    code = quote
+        jump_cons = JuMP.@build_constraint $expr
+        MOI.add_constraint(
+            $optimizer,
+            JuMP.moi_function(jump_cons.func),
+            jump_cons.set
+        )
+    end
+    quote
+        let
+            $(esc(code))
+        end
+    end
 end

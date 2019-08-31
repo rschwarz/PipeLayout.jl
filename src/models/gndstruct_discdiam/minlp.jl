@@ -1,5 +1,5 @@
 struct MINLP <: GroundStructureSolver
-    solver # to solve MINLP model
+    solver::JuMP.OptimizerFactory # to solve MINLP model
     debug::Bool
     contz::Bool
     timelimit::Float64 # seconds
@@ -16,7 +16,8 @@ Build MINLP model for instance on given ground structure.
 To be solved with given MPB solver (capable of NLP).
 Use continuous variables 0 ≤ z ≤ 1 if `contz` is true.
 """
-function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
+function make_minlp(inst::Instance, topo::Topology,
+                    optimizer::JuMP.OptimizerFactory; contz=false)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -55,7 +56,8 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
     Dm5 = [diam.value^(-5) for diam in inst.diameters]
     C = inst.ploss_coeff * L
 
-    model = Model(solver=solver)
+    # always use SCIP directly
+    model = JuMP.direct_model(optimizer())
 
     # select arcs from topology
     @variable(model, y[1:narcs], Bin)
@@ -89,32 +91,33 @@ function make_minlp(inst::Instance, topo::Topology, solver; contz=false)
     @constraint(model, choice[a=1:narcs], sum(z[a,i] for i=1:ndiams) == y[a])
 
     # minimize total construction cost
-    @objective(model, :Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
+    @objective(model, Min, sum(c[i] * L[a] * z[a,i] for a=1:narcs for i=1:ndiams))
 
     return model, y, z, q, π
 end
 
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::MINLP)
     if solver.timelimit < Inf
-        MathProgBase.setparameters!(solver.solver, TimeLimit=solver.timelimit)
+        MOI.set(solver.solver, MOI.TimeLimitSec, solver.timelimit)
     end
     model, y, z, q, π = make_minlp(inst, topo, solver.solver, contz=solver.contz)
-    status = solve(model, suppress_warnings=true)
+    JuMP.optimize!(model)
+    status = JuMP.termination_status(model)
 
     if solver.writemodels
-        MathProgBase.writeproblem(internalmodel(model), "minlp.orig.cip")
+        MOI.writeproblem(internalmodel(model), "minlp.orig.cip")
     end
 
-    if status == :Infeasible
+    if status == MOI.INFEASIBLE
         return Result(status, nothing, Inf, Inf, 0)
     end
 
-    zsol = round.(Bool, getvalue(z) .>= 0.5)
-    qsol = getvalue(q)
+    zsol = round.(Bool, JuMP.value.(z) .>= 0.5)
+    qsol = JuMP.value.(q)
     bestsol = CandSol(zsol, qsol, qsol.^2)
 
-    primal = getobjectivevalue(model)
-    dual = MathProgBase.getobjbound(internalmodel(model))
+    primal = JuMP.objective_value(model)
+    dual = JuMP.objective_bound(model)
 
     Result(status, bestsol, primal, dual, 0)
 end
