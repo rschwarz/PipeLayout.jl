@@ -133,7 +133,7 @@ function SCIP.enforce_lp_sol(ch::GBDSubHdlr,
                              solinfeasible::Bool)
     @assert length(constraints) == 1
     cons::GBDSubCons = SCIP.user_constraint(constraints[1])
-    return solve_gbd_sub(ch, cons, sol, enforce=true)
+    return solve_gbd_sub(ch, cons, enforce=true)
 end
 
 function SCIP.enforce_pseudo_sol(ch::GBDSubHdlr,
@@ -143,7 +143,7 @@ function SCIP.enforce_pseudo_sol(ch::GBDSubHdlr,
                                  objinfeasible::Bool)
     @assert length(constraints) == 1
     cons::GBDSubCons = SCIP.user_constraint(constraints[1])
-    return solve_gbd_sub(ch, cons, sol, enforce=true)
+    return solve_gbd_sub(ch, cons, enforce=true)
 end
 
 function SCIP.lock(ch::GBDSubHdlr,
