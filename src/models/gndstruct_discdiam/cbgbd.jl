@@ -8,15 +8,14 @@ struct CallbackGBD <: GroundStructureSolver
     mastersolver
     subsolver
     timelimit::Float64 # seconds
-    debug::Bool
     writemodels::Bool
     addcritpath::Bool
     addnogoods::Bool
 
     function CallbackGBD(mastersolver, subsolver;
-                         timelimit=Inf, debug=false, writemodels=false,
+                         timelimit=Inf, writemodels=false,
                          addcritpath=true, addnogoods=false)
-        new(mastersolver, subsolver, timelimit, debug, writemodels,
+        new(mastersolver, subsolver, timelimit, writemodels,
             addcritpath, addnogoods)
     end
 end

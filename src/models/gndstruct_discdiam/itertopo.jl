@@ -6,15 +6,13 @@ Solver object to store parameter values.
 struct IterTopo <: GroundStructureSolver
     maxiter::Int
     timelimit::Float64 # seconds
-    debug::Bool
     mastersolver::JuMP.OptimizerFactory
     subsolver::JuMP.OptimizerFactory
     writemodels::Bool
 
     function IterTopo(mastersolver, subsolver;
-                      maxiter::Int=100, timelimit=Inf, debug=false,
-                      writemodels=false)
-        new(maxiter, timelimit, debug, mastersolver, subsolver, writemodels)
+                      maxiter::Int=100, timelimit=Inf, writemodels=false)
+        new(maxiter, timelimit, mastersolver, subsolver, writemodels)
     end
 end
 
@@ -130,12 +128,11 @@ end
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::IterTopo)
     run_semi(inst, topo, solver.mastersolver, solver.subsolver,
              maxiter=solver.maxiter, timelimit=solver.timelimit,
-             debug=solver.debug, writemodels=solver.writemodels)
+             writemodels=solver.writemodels)
 end
 
 function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
-                  maxiter::Int=100, timelimit=timelimit, debug=false,
-                  writemodels=false)
+                  maxiter::Int=100, timelimit=timelimit, writemodels=false)
     finaltime = time() + timelimit
     narcs = length(topo.arcs)
     ndiams = length(inst.diameters)
@@ -147,10 +144,10 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
     for iter=1:maxiter
         if !stilltime(finaltime)
             status = MOI.TIME_LIMIT
-            debug && println("Timelimit reached.")
+            @debug "Timelimit reached."
             return Result(status, bestsol, primal, dual, iter)
         end
-        debug && println("Iter $(iter)")
+        @debug "Iter $(iter)"
 
         # resolve (relaxed) semimaster problem, build candidate solution
         writemodels && writeLP(mastermodel, "master_iter$(iter).lp", genericnames=false)
@@ -158,7 +155,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         JuMP.optimize!(mastermodel)
         status = JuMP.termination_status(mastermodel)
         if status == MOI.INFEASIBLE
-            debug && println("  master problem is infeasible.")
+            @debug "  master problem is infeasible."
             if primal == Inf
                 # no solution was found
                 return Result(MOI.INFEASIBLE, nothing, Inf, Inf, iter)
@@ -176,15 +173,15 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
 
         ysol, qsol = JuMP.value.(y), JuMP.value.(q)
         dual = JuMP.objective_value(mastermodel)
-        if debug
-            println("  dual bound: $(dual)")
-            println("  cand. sol:$(find(qsol))")
+        @debug begin
+            "  dual bound: $(dual)"
+            "  cand. sol:$(findall(!iszero, qsol))"
         end
 
         # stopping criterion
         if dual > primal - ɛ
             @assert bestsol ≠ nothing
-            debug && println("  proved optimality of best solution.")
+            @debug "  proved optimality of best solution."
             return Result(MOI.OPTIMAL, bestsol, primal, dual, iter)
         end
 
@@ -196,10 +193,10 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
             if length(cycle) == 0
                 # TODO: see above (candidate disconnected?)
                 nogood(mastermodel, y, ysol)
-                debug && println("  skip disconnected topology with nogood.")
+                @debug "  skip disconnected topology with nogood."
             else
                 avoid_topo_cut(mastermodel, y, topo, cycle)
-                debug && println("  skip non-tree topology, cycle: $(cycle)")
+                @debug "  skip non-tree topology, cycle: $(cycle)"
             end
             continue
         end
@@ -222,7 +219,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
                 znew = fill(false, narcs, ndiams)
                 znew[candarcs,:] = (JuMP.value.(z) .> 0.5)
                 bestsol = CandSol(znew, qsol, qsol.^2)
-                debug && println("  found improving solution: $(primal)")
+                @debug "  found improving solution: $(primal)"
             end
         elseif substatus != MOI.INFEASIBLE
             error("Unexpected status: $(:substatus)")
@@ -231,7 +228,7 @@ function run_semi(inst::Instance, topo::Topology, mastersolver, subsolver;
         # stopping criterion
         if dual > primal - ɛ
             @assert bestsol ≠ nothing
-            debug && println("  proved optimality of best solution.")
+            @debug "  proved optimality of best solution."
             return Result(MOI.OPTIMAL, bestsol, primal, dual, iter)
         end
 

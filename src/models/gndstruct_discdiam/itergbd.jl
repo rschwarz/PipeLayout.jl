@@ -8,15 +8,14 @@ struct IterGBD <: GroundStructureSolver
     addcritpath::Bool
     maxiter::Int
     timelimit::Float64 # seconds
-    debug::Bool
     writemodels::Bool
     mastersolver::JuMP.OptimizerFactory
     subsolver::JuMP.OptimizerFactory
 
     function IterGBD(mastersolver, subsolver;
                      addnogoods=false, addcritpath=true, maxiter::Int=100,
-                     timelimit=Inf, debug=false, writemodels=false)
-        new(addnogoods, addcritpath, maxiter, timelimit, debug, writemodels,
+                     timelimit=Inf, writemodels=false)
+        new(addnogoods, addcritpath, maxiter, timelimit, writemodels,
             mastersolver, subsolver)
     end
 end
@@ -373,12 +372,12 @@ end
 function PipeLayout.optimize(inst::Instance, topo::Topology, solver::IterGBD)
     run_gbd(inst, topo, solver.mastersolver, solver.subsolver,
             maxiter=solver.maxiter, timelimit=solver.timelimit,
-            debug=solver.debug, addnogoods=solver.addnogoods,
-            addcritpath=solver.addcritpath, writemodels=solver.writemodels)
+            addnogoods=solver.addnogoods, addcritpath=solver.addcritpath,
+            writemodels=solver.writemodels)
 end
 
 function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
-                 maxiter::Int=100, timelimit=Inf, debug=false, addnogoods=false,
+                 maxiter::Int=100, timelimit=Inf, addnogoods=false,
                  addcritpath=true, writemodels=false)
     finaltime = time() + timelimit
 
@@ -389,11 +388,11 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
     for iter=1:maxiter
         if !stilltime(finaltime)
             status = MOI.TIME_LIMIT
-            debug && println("Timelimit reached.")
+            @debug "Timelimit reached."
             return Result(status, nothing, Inf, dual, iter)
         end
 
-        debug && println("Iter $(iter)")
+        @debug "Iter $(iter)"
 
         # resolve (relaxed) master problem, build candidate solution
         writemodels && writeLP(master.model, "master_iter$(iter).lp", genericnames=false)
@@ -401,7 +400,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         JuMP.optimize!(master.model)
         status = JuMP.termination_status(master.model)
         if status == MOI.INFEASIBLE
-            debug && println("  relaxed master is infeasible :-(")
+            @debug "  relaxed master is infeasible :-("
             return Result(status, nothing, Inf, Inf, iter)
         elseif status in [MOI.TIME_LIMIT, MOI.NODE_LIMIT]
             return Result(status, nothing, Inf, dual, iter)
@@ -415,9 +414,9 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         cand = CandSol(zsol .>= 0.5, JuMP.value.(master.q), JuMP.value.(master.ϕ))
 
         dual = JuMP.objective_value(master.model)
-        if debug
-            println("  dual bound: $(dual)")
-            println("  cand. sol:$(Tuple.(findall(!iszero, cand.zsol)))")
+        @debug begin
+            "  dual bound: $(dual)"
+            "  cand. sol:$(Tuple.(findall(!iszero, cand.zsol)))"
         end
 
         # check whether candidate has tree topology
@@ -431,10 +430,10 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
                 # when adding some irrelevant pipe is cheaper than increasing
                 # the diameter. How to distinguish these cases?
                 nogood(master.model, master.y, ysol)
-                debug && println("  skip disconnected topology with nogood.")
+                @debug "  skip disconnected topology with nogood."
             else
                 avoid_topo_cut(master.model, master.y, topo, cycle)
-                debug && println("  skip non-tree topology, cycle: $(cycle)")
+                @debug "  skip non-tree topology, cycle: $(cycle)"
             end
             continue
         end
@@ -459,12 +458,12 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
             totalslack2 = JuMP.objective_value(submodel2)
 
             if totalslack2 ≈ 0.0
-                debug && println("  found feasible solution :-)")
+                @debug "  found feasible solution :-)"
                 primal = JuMP.objective_value(master.model)
                 return Result(substatus2, cand, primal, dual, iter)
             else
                 # cut off candidate with no-good on z
-                debug && println("  subproblem/relaxation gap!")
+                @debug "  subproblem/relaxation gap!"
                 nogood(master.model, master.z, cand.zsol)
                 continue
             end
@@ -475,7 +474,7 @@ function run_gbd(inst::Instance, topo::Topology, mastersolver, subsolver;
         # generate cuts and add to master
         ncuts = cuts(inst, topo, master, cand, dualsol, subsolver,
                      addnogoods=addnogoods, addcritpath=addcritpath)
-        debug && println("  added $(ncuts) cuts.")
+        @debug "  added $(ncuts) cuts."
     end
 
     Result(MOI.ITERATION_LIMIT, nothing, Inf, dual, maxiter)

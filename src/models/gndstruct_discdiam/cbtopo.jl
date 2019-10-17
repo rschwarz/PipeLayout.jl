@@ -8,12 +8,11 @@ struct CallbackTopo <: GroundStructureSolver
     mastersolver::JuMP.OptimizerFactory
     subsolver::JuMP.OptimizerFactory
     timelimit::Float64 # seconds
-    debug::Bool
     writemodels::Bool
 
     function CallbackTopo(mastersolver, subsolver;
-                          timelimit=Inf, debug=false, writemodels=false)
-        new(mastersolver, subsolver, timelimit, debug, writemodels)
+                          timelimit=Inf, writemodels=false)
+        new(mastersolver, subsolver, timelimit, writemodels)
     end
 end
 
@@ -56,7 +55,7 @@ function PipeLayout.optimize(inst::Instance, topo::Topology,
     if status == MOI.INFEASIBLE && semisubhdlr.best_solution !== nothing
         status = MOI.OPTIMAL
     end
-    solver.debug && println("  solved, status: $(status).")
+    @debug "  solved, status: $(status)."
 
     # TODO: extract dual bound, nnodes?
     Result(status, semisubhdlr.best_solution, semisubhdlr.primal_bound, Inf, -1)
