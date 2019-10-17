@@ -37,7 +37,7 @@ function solve_semi_sub(ch::SemiSubHdlr, cons::SemiSubCons,
     # fetch solution values
     ysol = SCIP.sol_values(ch.scip, cons.y, sol)
     qsol = SCIP.sol_values(ch.scip, cons.q, sol)
-    # TODO: solver.debug && println("  cand. sol:$(find(qsol))")
+    @debug "  cand. sol:$(findall(!iszero, qsol))"
 
     # complete solution candidate
     zcand = fill(false, narcs, ndiams)
@@ -58,7 +58,7 @@ function solve_semi_sub(ch::SemiSubHdlr, cons::SemiSubCons,
             znew = fill(false, narcs, ndiams)
             znew[candarcs, :] = JuMP.value.(z) .> 0.5
             ch.best_solution = CandSol(znew, qsol, qsol.^2)
-            # TODO: solver.debug && println("  new sol: $(primal)")
+            @debug "  new sol: $(ch.primal_bound)"
             return true # found improvement
         end
     elseif substatus != MOI.INFEASIBLE
