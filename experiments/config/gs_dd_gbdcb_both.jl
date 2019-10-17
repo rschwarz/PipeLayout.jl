@@ -7,5 +7,4 @@ solver = GndStr.CallbackGBD(
     JuMP.with_optimizer(GLPK.Optimizer),
     addnogoods=true,
     addcritpath=true,
-    timelimit=3600.0,
-    debug=true)
+    timelimit=3600.0)

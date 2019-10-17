@@ -69,16 +69,16 @@ function solve_gbd_sub(ch::GBDSubHdlr, cons::GBDSubCons,
             obj = [c[i] * L[a] for a=1:length(A), i=1:length(D)]
             candprimal = sum(obj .* zsol)
             if candprimal < ch.primal_bound
-                # TODO: solver.debug && println("  found improving solution :-)")
+                @debug "  found improving solution :-)"
                 ch.best_solution = cand
                 ch.primal_bound = candprimal
             else
-                # TODO: solver.debug && println("  cand's obj val $(candprimal) no improvement over $(primal)!")
+                @debug "  cand's obj val $(candprimal) no improvement over $(ch.primal_bound)!"
             end
 
             return SCIP.SCIP_FEASIBLE
         else
-            # TODO: solver.debug && println("  subproblem/relaxation gap!")
+            @debug "  subproblem/relaxation gap!"
             if !enforce
                 return SCIP.SCIP_INFEASIBLE
             end
@@ -110,7 +110,7 @@ function solve_gbd_sub(ch::GBDSubHdlr, cons::GBDSubCons,
                          subdualsol, ch.subsolver, cb=ch.scip)
         end
 
-        # TODO: solver.debug && println("  added $(ncuts) cuts.")
+        @debug "  added some(?) cuts."
         return SCIP.SCIP_CONSADDED
     end
 end

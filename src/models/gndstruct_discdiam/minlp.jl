@@ -1,12 +1,11 @@
 struct MINLP <: GroundStructureSolver
     solver::JuMP.OptimizerFactory # to solve MINLP model
-    debug::Bool
     contz::Bool
     timelimit::Float64 # seconds
     writemodels::Bool
 
-    function MINLP(solver; debug=false, contz=false, timelimit=Inf, writemodels=false)
-        new(solver, debug, contz, timelimit, writemodels)
+    function MINLP(solver; contz=false, timelimit=Inf, writemodels=false)
+        new(solver, contz, timelimit, writemodels)
     end
 end
 
