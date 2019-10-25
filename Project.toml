@@ -20,11 +20,19 @@ TriangleMesh = "e5719326-7e34-5a7d-b19a-3e86f2e9acf7"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
+Combinatorics = "^0.7.0"
+DataStructures = "^0.17.3"
+Distances = "^0.8.2"
 GLPK = "^0.13.0"
+JSON = "^0.21.0"
 JuMP = "^0.21.2"
+LightGraphs = "^1.3.0"
 MathOptInterface = "^0.9.13"
 SCIP = "^0.9.8"
 SCS = "^0.6.6"
+StaticArrays = "^0.11.1"
+TriangleMesh = "^1.0.7"
+Unitful = "^0.17.0"
 julia = "^1.5.0"
 
 [extras]
