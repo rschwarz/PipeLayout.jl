@@ -16,7 +16,7 @@ Compute a Euclidean Steiner Minimal Tree for given nodes.
 
 Is implemented by "shelling out" to GeoSteiner.
 """
-function euclidean_steiner_tree(nodes::Vector{Node})
+function euclidean_steiner_tree(nodes::Vector{Node})::Topology
     @assert has_geosteiner() "Need GeoSteiner executables (efts, bb) in PATH!"
 
     tnodes = copy(nodes)
@@ -87,4 +87,19 @@ function euclidean_steiner_tree(nodes::Vector{Node})
     @assert(length(tarcs) == length(tnodes) - 1)
 
     Topology(tnodes, tarcs)
+end
+
+"""
+Compute a Euclidean Steiner Minimal Tree for points, given as 2xn matrix.
+"""
+function euclidean_steiner_tree(points::Matrix{Float64})
+    # call the other method with transformed input
+    nodes::Vector{Node} = map(Node, eachrow(points))
+    topo::Topology = euclidean_steiner_tree(nodes)
+
+    # transform result back
+    points::Matrix{Float64} = vcat([collect(p') for p in topo.nodes]...)
+    edges::Matrix{Int64}    = vcat([collect(e') for e in topo.arcs]...)
+
+    return points, edges
 end
