@@ -7,6 +7,7 @@ using TriangleMesh
     maximum_area = nothing            # numeric
     conforming_delaunay = false
     maximum_steiner_points = nothing  # numeric
+    convex_hull = false
     no_boundary_steiner_points = false
     check_consistency = true
     quiet = true
@@ -26,6 +27,9 @@ function Base.convert(String, x::TriangleSwitches)
     end
     if x.maximum_steiner_points !== nothing
         s *= "S$(x.maximum_steiner_points)"
+    end
+    if x.convex_hull
+        s *= "c"
     end
     if x.no_boundary_steiner_points
         s *= "Y"
