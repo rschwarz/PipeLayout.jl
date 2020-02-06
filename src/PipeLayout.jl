@@ -36,7 +36,4 @@ using ..PipeLayout
 include("models/gndstruct_discdiam/main.jl")
 end
 
-# visualization via Plots recipes
-include("plot_recipes.jl")
-
 end
