@@ -36,4 +36,6 @@ using ..PipeLayout
 include("models/gndstruct_discdiam/main.jl")
 end
 
+include("viz.jl")
+
 end

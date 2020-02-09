@@ -1,8 +1,5 @@
 using JSON
 using PipeLayout
-using Plots
-
-pyplot()
 
 open(ARGS[1]) do f
     for line in eachline(f)
@@ -11,8 +8,9 @@ open(ARGS[1]) do f
         inst = PipeLayout.read_instance(".", key)
         topo = PipeLayout.read_topology(".", key)
 
-        plot(inst)
-        plot!(topo)
-        savefig("$key.png")
+        scene = PipeLayout.empty_scene()
+        draw!(scene, topo)
+        # TODO: draw node demand
+        save("$key.png", scene)
     end
 end
