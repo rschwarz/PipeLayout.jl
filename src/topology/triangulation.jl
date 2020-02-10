@@ -1,6 +1,9 @@
+using LinearAlgebra
+using Statistics
+
 using LightGraphs
 using Parameters
-using TriangleMesh
+using Triangulate
 
 @with_kw struct TriangleSwitches
     minimum_angle = nothing           # numeric
@@ -43,31 +46,25 @@ function Base.convert(String, x::TriangleSwitches)
     return s
 end
 
-"Create polygon from points and edges (used as segments)."
-function make_pslg(points, edges)
-    poly = Polygon_pslg(size(points, 1), 0, 0, size(edges, 1), 0)
-    set_polygon_point!(poly, points)
-    set_polygon_segment!(poly, edges)
-    return poly
-end
 
-make_pslg(trimesh::TriMesh) = make_pslg(trimesh.point', trimesh.edge')
-
-function triangulate(points::Matrix{Float64}, switches::TriangleSwitches)::TriMesh
+function triangulate(points::Matrix{Float64}, switches::TriangleSwitches)
     s = "c" # create mesh from point Cloud
     s *= convert(String, switches)
-    return create_mesh(points, s)
+    tio = TriangulateIO(pointlist=points)
+    result, _ =  Triangulate.triangulate(s, tio)
+    return result
 end
 
-function triangulate(poly::Polygon_pslg, switches::TriangleSwitches)::TriMesh
+function triangulate(poly::TriangulateIO, switches::TriangleSwitches)
     s = "p" # create mesh from Polygon
     s *= convert(String, switches)
-    return create_mesh(poly, s)
+    result, _ = Triangulate.triangulate(s, poly)
+    return result
 end
 
-function delaunay_triangulation(points::Matrix{Float64})::TriMesh
-    switches = TriangleSwitches(conforming_delaunay=true, maximum_steiner_points=0)
-    return triangulate(points, switches)
+function delaunay_triangulation(points::Matrix{Float64})
+    s = TriangleSwitches(conforming_delaunay=true, maximum_steiner_points=0)
+    return triangulate(points, s)
 end
 
 pointset_mean(array) = dropdims(mean(array, dims=2), dims=2)
@@ -77,51 +74,51 @@ struct TriangleCentroid <: TriangleCenter end
 struct TriangleIncenter <: TriangleCenter end
 struct TriangleCircumcenter <: TriangleCenter end # yield Voronoi points!
 
-function triangle_centers(trimesh, ::TriangleCentroid)
-    @unpack point, cell = trimesh
-    return pointset_mean(point'[cell', :])
+function triangle_centers(trimesh::TriangulateIO, ::TriangleCentroid)
+    @unpack pointlist, trianglelist = trimesh
+    return pointset_mean(pointlist[:, trianglelist])
 end
 
-function triangle_centers(trimesh, ::TriangleIncenter)
-    @unpack point, cell = trimesh
+function triangle_centers(trimesh::TriangulateIO, ::TriangleIncenter)
+    @unpack pointlist, trianglelist = trimesh
     centers = []
-    for t in eachrow(cell')
-        corners = point'[t, :]
+    for t in eachcol(trianglelist)
+        corners = pointlist[:, t]
 
-        a = norm(corners[2, :] - corners[3, :])
-        b = norm(corners[1, :] - corners[3, :])
-        c = norm(corners[1, :] - corners[2, :])
+        a = norm(corners[:, 2] - corners[:, 3])
+        b = norm(corners[:, 1] - corners[:, 3])
+        c = norm(corners[:, 1] - corners[:, 2])
         # based on barycentric coordinates a:b:c
-        incenter = [a b c] * corners ./ (a + b + c)
+        @show [a; b; c] corners
+        incenter = corners * [a, b, c] ./ (a + b + c)
         push!(centers, incenter)
     end
 
-    return vcat(centers...)
+    return hcat(centers...)
 end
 
-function triangle_centers(trimesh, ::TriangleCircumcenter)
-    @unpack point, cell = trimesh
+function triangle_centers(trimesh::TriangulateIO, ::TriangleCircumcenter)
+    @unpack pointlist, trianglelist = trimesh
     centers = []
-    for t in eachrow(cell')
-        corners = point'[t, :]
-        Ax, Ay = corners[1, :]
-        Bx, By = corners[2, :]
-        Cx, Cy = corners[3, :]
+    for t in eachcol(trianglelist)
+        corners = pointlist[:, t]
+        Ax, Ay = corners[:, 1]
+        Bx, By = corners[:, 2]
+        Cx, Cy = corners[:, 3]
         D = 2 * ( Ax * (By - Cy) + Bx * (Cy - Ay) + Cx * (Ay - By) )
         Ux = ((Ax^2 + Ay^2)*(By - Cy)) + ((Bx^2 + By^2)*(Cy - Ay)) + ((Cx^2 + Cy^2)*(Ay - By))
         Uy = ((Ax^2 + Ay^2)*(Cx - Bx)) + ((Bx^2 + By^2)*(Ax - Cx)) + ((Cx^2 + Cy^2)*(Bx - Ax))
-        circumcenter = [Ux Uy] ./ D
+        circumcenter = [Ux, Uy] ./ D
         push!(centers, circumcenter)
     end
 
-    return vcat(centers...)
+    return hcat(centers...)
 end
 
-function antiparallel_digraph(trimesh)
-    points, edges = trimesh.point', trimesh.edge'
-    graph = SimpleDiGraph(size(points, 1))
-    for e in 1:size(edges, 1)
-        s, t = edges[e, :]
+function antiparallel_digraph(trimesh::TriangulateIO)
+    @unpack pointlist, edgelist = trimesh
+    graph = SimpleDiGraph(size(pointlist, 2))
+    for (s, t) in eachcol(edgelist)
         add_edge!(graph, s, t)
         add_edge!(graph, t, s)
     end
