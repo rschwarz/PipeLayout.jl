@@ -1,4 +1,4 @@
-using JSON
+using CairoMakie
 using PipeLayout
 
 open(ARGS[1]) do f

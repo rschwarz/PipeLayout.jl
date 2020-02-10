@@ -1,5 +1,4 @@
 using AbstractPlotting: Scene, scatter!, linesegments!
-using CairoMakie
 
 function empty_scene(; kwargs...)
     return Scene(; kwargs..., show_axis=false, scale_plot=false)
