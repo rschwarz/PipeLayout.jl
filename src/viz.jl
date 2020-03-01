@@ -11,5 +11,5 @@ function draw!(scene, topo::Topology)
 
     # nodes (on top)
     positions = topo.nodes
-    scatter!(scene, positions)
+    scatter!(scene, positions, markersize=4)
 end
