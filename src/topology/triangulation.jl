@@ -76,7 +76,7 @@ pointset_mean(array) = dropdims(mean(array, dims=2), dims=2)
 
 abstract type TriangleCenter end
 struct TriangleCentroid <: TriangleCenter end
-struct TriangleIncenter <: TriangleCenter end
+struct TriangleIncenter <: TriangleCenter end # angle bisectors intersection
 struct TriangleCircumcenter <: TriangleCenter end # yield Voronoi points!
 
 function triangle_centers(trimesh::TriangulateIO, ::TriangleCentroid)
