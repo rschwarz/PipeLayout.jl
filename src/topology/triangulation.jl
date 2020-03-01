@@ -52,7 +52,7 @@ function Base.convert(::Type{Topology}, x::TriangulateIO)
     return Topology(nodes, arcs)
 end
 
-function triangulate(points::Matrix{Float64}, switches::TriangleSwitches)
+function triangulate(points::Matrix{Float64}, switches=TriangleSwitches())
     s = "c" # create mesh from point Cloud
     s *= convert(String, switches)
     tio = TriangulateIO(pointlist=points)
@@ -60,7 +60,7 @@ function triangulate(points::Matrix{Float64}, switches::TriangleSwitches)
     return result
 end
 
-function triangulate(poly::TriangulateIO, switches::TriangleSwitches)
+function triangulate(poly::TriangulateIO, switches=TriangleSwitches())
     s = "p" # create mesh from Polygon
     s *= convert(String, switches)
     result, _ = Triangulate.triangulate(s, poly)
@@ -70,6 +70,14 @@ end
 function delaunay_triangulation(points::Matrix{Float64})
     s = TriangleSwitches(conforming_delaunay=true, maximum_steiner_points=0)
     return triangulate(points, s)
+end
+
+function refine(trimesh::TriangulateIO, switches=TriangleSwitches())
+    # use edges as segments
+    poly = TriangulateIO(pointlist=trimesh.pointlist,
+                         segmentlist=trimesh.edgelist,
+                         segmentmarkerlist=trimesh.edgemarkerlist)
+    return triangulate(poly, switches)
 end
 
 pointset_mean(array) = dropdims(mean(array, dims=2), dims=2)
@@ -117,6 +125,62 @@ function triangle_centers(trimesh::TriangulateIO, ::TriangleCircumcenter)
     end
 
     return hcat(centers...)
+end
+
+function edge_centers(trimesh::TriangulateIO)::Matrix{Float64}
+    @unpack pointlist, edgelist = trimesh
+    return pointset_mean(pointlist[:, edgelist])
+end
+
+"Subdivide every triangle in six parts, adding center and edge midpoints."
+function refine_sixths(trimesh::TriangulateIO, center=TriangleCentroid())::TriangulateIO
+    @unpack pointlist, edgelist, trianglelist = trimesh
+    @assert size(pointlist, 1) == 2
+    @assert size(trianglelist, 1) == 3
+    @assert size(edgelist, 1) == 2
+
+    # points are indexed in sequence
+    #  - old points:       1:NP               (num. points)
+    #  - triangle centers: NP+1:NP+NT         (num. triangles)
+    #  - edge midpoints:   NP+NT+1:NP+NT+NE   (num. edges)
+    NP = size(pointlist, 2)
+    NT = size(trianglelist, 2)
+    NE = size(edgelist, 2)
+
+    # triangle centers
+    centers::Matrix{Float64} = triangle_centers(trimesh, center)
+    center_edges = Vector{Int32}[]
+    for t in 1:NT
+        center_idx = NP + t
+        for corner in trianglelist[:, t]
+            push!(center_edges, [corner, center_idx])
+        end
+    end
+
+    # edge midpoints
+    midpoints::Matrix{Float64} = edge_centers(trimesh)
+    midpoint_edges = Vector{Int32}[]
+    for e in 1:NE
+        midpoint_idx = NP + NT + e
+        for point in edgelist[:, e]
+            push!(midpoint_edges, [point, midpoint_idx])
+        end
+    end
+
+    # We are still missing the edges from the midpoints to the centers. But the
+    # Triangulate library can take care of that...
+
+    points = hcat(pointlist, centers, midpoints)
+    @assert size(points) == (2, NP + NT + NE)
+    edges = hcat(center_edges..., midpoint_edges...)
+    @assert size(edges) == (2, 3NT + 2NE) # NOT yet: (2, 6NT + 2NE)
+    poly = TriangulateIO(pointlist=points, segmentlist=edges,
+                         segmentmarkerlist=fill(0, size(edges, 2)))
+
+    triangulated = triangulate(poly)
+    @assert size(triangulated.pointlist) == (2, NP + NT + NE)
+    @assert size(triangulated.edgelist) == (2, 6NT + 2NE)
+    return refine(triangulated)
 end
 
 function antiparallel_digraph(trimesh::TriangulateIO)
