@@ -132,8 +132,24 @@ function edge_centers(trimesh::TriangulateIO)::Matrix{Float64}
     return pointset_mean(pointlist[:, edgelist])
 end
 
-"Subdivide every triangle in six parts, adding center and edge midpoints."
-function refine_sixths(trimesh::TriangulateIO, center=TriangleCentroid())::TriangulateIO
+"Compute all angles (in degrees) in a triangle."
+function angles(pos::Matrix{Float64})::Vector{Float64}
+    @assert size(pos) == (2, 3)
+    a = norm(pos[:, 2] - pos[:, 3])
+    b = norm(pos[:, 1] - pos[:, 3])
+    c = norm(pos[:, 1] - pos[:, 2])
+    α = acos((b^2 + c^2 - a^2) / (2*b*c))
+    β = acos((a^2 + c^2 - b^2) / (2*a*c))
+    γ = π - α - β
+    return (360 / 2π) .* [α, β, γ]
+end
+
+"""Subdivide triangles in six parts, adding center and edge midpoints.
+
+Skip triangles with angles smaller than given threshold.
+"""
+function refine_sixths(trimesh::TriangulateIO; minimum_angle=0.0,
+                       center=TriangleCentroid())::TriangulateIO
     @unpack pointlist, edgelist, trianglelist = trimesh
     @assert size(pointlist, 1) == 2
     @assert size(trianglelist, 1) == 3
@@ -141,17 +157,26 @@ function refine_sixths(trimesh::TriangulateIO, center=TriangleCentroid())::Trian
 
     # points are indexed in sequence
     #  - old points:       1:NP               (num. points)
-    #  - triangle centers: NP+1:NP+NT         (num. triangles)
-    #  - edge midpoints:   NP+NT+1:NP+NT+NE   (num. edges)
+    #  - triangle centers: NP+1:NP+NS         (num. subdivided triangles)
+    #  - edge midpoints:   NP+NS+1:NP+NS+NE   (num. edges)
     NP = size(pointlist, 2)
     NT = size(trianglelist, 2)
     NE = size(edgelist, 2)
 
     # triangle centers
-    centers::Matrix{Float64} = triangle_centers(trimesh, center)
+    all_centers::Matrix{Float64} = triangle_centers(trimesh, center)
+    center_points = Vector{Float64}[]
     center_edges = Vector{Int32}[]
+    NS = 0
     for t in 1:NT
-        center_idx = NP + t
+        positions = pointlist[:, trianglelist[:, t]]
+        if minimum(angles(positions)) < minimum_angle
+            continue
+        end
+
+        NS += 1
+        center_idx = NP + NS
+        push!(center_points, all_centers[:, t])
         for corner in trianglelist[:, t]
             push!(center_edges, [corner, center_idx])
         end
@@ -161,7 +186,7 @@ function refine_sixths(trimesh::TriangulateIO, center=TriangleCentroid())::Trian
     midpoints::Matrix{Float64} = edge_centers(trimesh)
     midpoint_edges = Vector{Int32}[]
     for e in 1:NE
-        midpoint_idx = NP + NT + e
+        midpoint_idx = NP + NS + e
         for point in edgelist[:, e]
             push!(midpoint_edges, [point, midpoint_idx])
         end
@@ -170,17 +195,13 @@ function refine_sixths(trimesh::TriangulateIO, center=TriangleCentroid())::Trian
     # We are still missing the edges from the midpoints to the centers. But the
     # Triangulate library can take care of that...
 
-    points = hcat(pointlist, centers, midpoints)
-    @assert size(points) == (2, NP + NT + NE)
+    points = hcat(pointlist, center_points..., midpoints)
+    @assert size(points) == (2, NP + NS + NE)
     edges = hcat(center_edges..., midpoint_edges...)
-    @assert size(edges) == (2, 3NT + 2NE) # NOT yet: (2, 6NT + 2NE)
+    @assert size(edges) == (2, 3NS + 2NE) # NOT yet: (2, 6NS + 2NE)
     poly = TriangulateIO(pointlist=points, segmentlist=edges,
                          segmentmarkerlist=fill(0, size(edges, 2)))
-
-    triangulated = triangulate(poly)
-    @assert size(triangulated.pointlist) == (2, NP + NT + NE)
-    @assert size(triangulated.edgelist) == (2, 6NT + 2NE)
-    return refine(triangulated)
+    return refine(triangulate(poly))
 end
 
 function antiparallel_digraph(trimesh::TriangulateIO)
