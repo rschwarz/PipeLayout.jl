@@ -16,7 +16,7 @@ using Triangulate
     quiet = true
 end
 
-function Base.convert(String, x::TriangleSwitches)
+function Base.convert(::Type{String}, x::TriangleSwitches)
     s = ""
     s *= "e" # always output edges
     if x.minimum_angle !== nothing
