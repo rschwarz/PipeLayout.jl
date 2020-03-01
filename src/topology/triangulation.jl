@@ -46,6 +46,11 @@ function Base.convert(::Type{String}, x::TriangleSwitches)
     return s
 end
 
+function Base.convert(::Type{Topology}, x::TriangulateIO)
+    nodes = Node.(eachcol(x.pointlist))
+    arcs = Arc.(eachcol(x.edgelist))
+    return Topology(nodes, arcs)
+end
 
 function triangulate(points::Matrix{Float64}, switches::TriangleSwitches)
     s = "c" # create mesh from point Cloud
