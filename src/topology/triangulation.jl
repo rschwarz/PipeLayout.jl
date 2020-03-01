@@ -94,7 +94,6 @@ function triangle_centers(trimesh::TriangulateIO, ::TriangleIncenter)
         b = norm(corners[:, 1] - corners[:, 3])
         c = norm(corners[:, 1] - corners[:, 2])
         # based on barycentric coordinates a:b:c
-        @show [a; b; c] corners
         incenter = corners * [a, b, c] ./ (a + b + c)
         push!(centers, incenter)
     end
