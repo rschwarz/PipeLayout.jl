@@ -75,8 +75,7 @@ end
 function refine(trimesh::TriangulateIO, switches=TriangleSwitches())
     # use edges as segments
     poly = TriangulateIO(pointlist=trimesh.pointlist,
-                         segmentlist=trimesh.edgelist,
-                         segmentmarkerlist=trimesh.edgemarkerlist)
+                         segmentlist=trimesh.edgelist)
     return triangulate(poly, switches)
 end
 
@@ -199,8 +198,7 @@ function refine_sixths(trimesh::TriangulateIO; minimum_angle=0.0,
     @assert size(points) == (2, NP + NS + NE)
     edges = hcat(center_edges..., midpoint_edges...)
     @assert size(edges) == (2, 3NS + 2NE) # NOT yet: (2, 6NS + 2NE)
-    poly = TriangulateIO(pointlist=points, segmentlist=edges,
-                         segmentmarkerlist=fill(0, size(edges, 2)))
+    poly = TriangulateIO(pointlist=points, segmentlist=edges)
     return refine(triangulate(poly))
 end
 
