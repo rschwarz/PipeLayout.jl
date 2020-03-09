@@ -6,7 +6,7 @@ end
 
 function draw!(scene, topo::Topology)
     # arcs (bottom layer)
-    positions = Array(topo.nodes[vcat(topo.arcs...)])
+    positions = Array(topo.nodes[vcat(collect.(topo.arcs)...)])
     linesegments!(scene, positions)
 
     # nodes (on top)

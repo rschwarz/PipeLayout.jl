@@ -10,9 +10,6 @@ struct Node <: FieldVector{2, Float64}
     y::Float64 # [km]
 end
 
-"Add no-op transpose to suppress warning."
-Base.transpose(n::Node) = n
-
 "Variable bounds as interval, used for node pressure."
 struct Bounds <: FieldVector{2, Float64}
     lb::Float64 # [bar]
