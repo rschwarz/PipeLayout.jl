@@ -143,6 +143,20 @@ function angles(pos::Matrix{Float64})::Vector{Float64}
     return (360 / 2π) .* [α, β, γ]
 end
 
+"Compute triangle area, given points."
+function area(pos::Matrix{Float64})::Float64
+    @assert size(pos) == (2, 3)
+
+    # compute side lengths from point coordinates
+    a = norm(pos[:, 2] - pos[:, 3])
+    b = norm(pos[:, 1] - pos[:, 3])
+    c = norm(pos[:, 1] - pos[:, 2])
+
+    # apply Heron's formula
+    s = (a + b + c)/2
+    return sqrt(s*(s - a)*(s - b)*(s - c))
+end
+
 """Subdivide triangles in six parts, adding center and edge midpoints.
 
 Skip triangles with angles smaller than given threshold.
