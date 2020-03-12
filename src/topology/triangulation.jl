@@ -169,51 +169,74 @@ function refine_sixths(trimesh::TriangulateIO; minimum_angle=0.0, maximum_area=I
     @assert size(edgelist, 1) == 2
 
     # points are indexed in sequence
-    #  - old points:       1:NP               (num. points)
-    #  - triangle centers: NP+1:NP+NS         (num. subdivided triangles)
-    #  - edge midpoints:   NP+NS+1:NP+NS+NE   (num. edges)
+    #  - old points:       1:NP                  (num. points)
+    #  - triangle centers: NP+1:NP+NST           (num. subdivided triangles)
+    #  - edge midpoints:   NP+NST+1:NP+NST+NSE   (num. edges)
     NP = size(pointlist, 2)
     NT = size(trianglelist, 2)
     NE = size(edgelist, 2)
+
+    # count subdivided triangles adjacent to edge
+    counter = Dict{Tuple{Int, Int}, Int}()
 
     # triangle centers
     all_centers::Matrix{Float64} = triangle_centers(trimesh, center)
     center_points = Vector{Float64}[]
     center_edges = Vector{Int32}[]
-    NS = 0
+    NST = 0
     for t in 1:NT
-        positions = pointlist[:, trianglelist[:, t]]
+        triangle = trianglelist[:, t]
+        positions = pointlist[:, triangle]
         if minimum(angles(positions)) < minimum_angle
             continue
         elseif area(positions) > maximum_area
             continue
         end
 
-        NS += 1
-        center_idx = NP + NS
+        NST += 1
+        center_idx = NP + NST
         push!(center_points, all_centers[:, t])
-        for corner in trianglelist[:, t]
+        for corner in triangle
             push!(center_edges, [corner, center_idx])
+        end
+
+        # mark side edges for subdivision
+        for (i, j) in ((1, 2), (2, 3), (3, 1))
+            edge = minmax(triangle[i], triangle[j])
+            counter[edge] = get!(counter, edge, 0) + 1
         end
     end
 
     # edge midpoints
-    midpoints::Matrix{Float64} = edge_centers(trimesh)
+    all_midpoints::Matrix{Float64} = edge_centers(trimesh)
+    midpoints = Vector{Float64}[]
     midpoint_edges = Vector{Int32}[]
+
+    NSE = 0
     for e in 1:NE
-        midpoint_idx = NP + NS + e
-        for point in edgelist[:, e]
-            push!(midpoint_edges, [point, midpoint_idx])
+        # only subdivide edges that have subdivided triangles on both sides
+        edge = minmax(edgelist[:, e]...)
+        if get(counter, edge, 0) < 2
+            # keep existing edge
+            push!(midpoint_edges, edgelist[:, e])
+        else
+            # subdivide
+            NSE += 1
+            midpoint_idx = NP + NST + NSE
+            push!(midpoints, all_midpoints[:, e])
+            for point in edgelist[:, e]
+                push!(midpoint_edges, [point, midpoint_idx])
+            end
         end
     end
 
     # We are still missing the edges from the midpoints to the centers. But the
     # Triangulate library can take care of that...
 
-    points = hcat(pointlist, center_points..., midpoints)
-    @assert size(points) == (2, NP + NS + NE)
+    points = hcat(pointlist, center_points..., midpoints...)
+    @assert size(points) == (2, NP + NST + NSE)
     edges = hcat(center_edges..., midpoint_edges...)
-    @assert size(edges) == (2, 3NS + 2NE) # NOT yet: (2, 6NS + 2NE)
+    @assert size(edges) == (2, 3NST + NE + NSE)
     poly = TriangulateIO(pointlist=points, segmentlist=edges)
     return refine(triangulate(poly))
 end
