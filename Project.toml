@@ -21,10 +21,10 @@ Triangulate = "f7e6ffb2-c36d-4f8f-a77e-16e897189344"
 Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 
 [compat]
-AbstractPlotting="^0.9.26"
-CairoMakie="^0.1.2"
+AbstractPlotting = "^0.9.26"
+CairoMakie = "^0.1.2"
 Combinatorics = "^1.0.0"
-DataStructures = "^0.17.3"
+DataStructures = "^0.17.10"
 Distances = "^0.8.2"
 GLPK = "^0.13.0"
 JSON = "^0.21.0"
