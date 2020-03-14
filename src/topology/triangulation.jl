@@ -161,7 +161,7 @@ end
 
 Skip triangles with angles smaller than given threshold.
 """
-function refine_sixths(trimesh::TriangulateIO; minimum_angle=0.0, maximum_area=Inf,
+function refine_sixths(trimesh::TriangulateIO; minimum_angle=0.0, minimum_area=0.0,
                        center=TriangleCentroid())::TriangulateIO
     @unpack pointlist, edgelist, trianglelist = trimesh
     @assert size(pointlist, 1) == 2
@@ -189,7 +189,7 @@ function refine_sixths(trimesh::TriangulateIO; minimum_angle=0.0, maximum_area=I
         positions = pointlist[:, triangle]
         if minimum(angles(positions)) < minimum_angle
             continue
-        elseif area(positions) > maximum_area
+        elseif area(positions) < minimum_area
             continue
         end
 
