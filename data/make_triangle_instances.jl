@@ -8,7 +8,7 @@ using PipeLayout
 Random.seed!(23);
 
 # create positions for terminals randomly
-const WIDTH = 120
+const WIDTH = 160
 const HEIGHT = 90
 const AREA = WIDTH * HEIGHT
 randnode() = Node(rand(0:WIDTH), rand(0:HEIGHT))
@@ -16,7 +16,8 @@ terminals = Dict{String, Vector{Node}}()
 for nterminals in [5, 7, 9, 11]
     for variant in ("a", "b")
         key = @sprintf "t%02d%s" nterminals variant
-        terminals[key] = [randnode() for _ in 1:nterminals]
+        cands = [randnode() for _ in 1:(4 * nterminals^2)]
+        terminals[key] = PipeLayout.select_covering_subset(cands, nterminals)
     end
 end
 
