@@ -1,6 +1,8 @@
 using Printf
 using Random
 
+using AbstractPlotting
+using CairoMakie
 using JSON
 using PipeLayout
 
@@ -29,18 +31,20 @@ for (tkey, tnodes) in terminals
     points = hcat(collect.(tnodes)...)
 
     # start with delaunay triangulation
-    delaunaytri = PipeLayout.delaunay_triangulation(points)
+    trimesh = PipeLayout.delaunay_triangulation(points)
+    save("$tkey.01.png", PipeLayout.draw(convert(Topology, trimesh)))
 
     # manual refinement of triangles
-    refinedtri = PipeLayout.refine_sixths(delaunaytri, minimum_angle=15,
-                                          minimum_area=AREA/100)
+    trimesh = PipeLayout.refine_sixths(trimesh, minimum_angle=15,
+                                       minimum_area=AREA/100)
+    save("$tkey.02.png", PipeLayout.draw(convert(Topology, trimesh)))
 
-    # generic refinement
-    switch = PipeLayout.TriangleSwitches(minimum_angle=15, maximum_area=AREA/50)
-    rerefinedtri = PipeLayout.refine(refinedtri, switch)
+    # # generic refinement
+    # switch = PipeLayout.TriangleSwitches(minimum_angle=15, maximum_area=AREA/50)
+    # trimesh = PipeLayout.refine(trimesh, switch)
 
     # convert and round
-    topo = convert(Topology, rerefinedtri)
+    topo = convert(Topology, trimesh)
     topo.nodes[:] = round.(topo.nodes[:])
     ground_structures[tkey] = topo
 end
