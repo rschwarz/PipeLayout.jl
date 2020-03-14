@@ -8,24 +8,46 @@ using PipeLayout
 Random.seed!(23);
 
 # create positions for terminals randomly
-const WIDTH = 120 - 1
-const HEIGHT = 90 - 1
+const WIDTH = 120
+const HEIGHT = 90
+const AREA = WIDTH * HEIGHT
 randnode() = Node(rand(0:WIDTH), rand(0:HEIGHT))
 terminals = Dict{String, Vector{Node}}()
-for nterminals in [3, 5, 7, 9, 11]
+for nterminals in [5, 7, 9, 11]
     for variant in ("a", "b")
         key = @sprintf "t%02d%s" nterminals variant
         terminals[key] = [randnode() for _ in 1:nterminals]
     end
 end
 
-# create ground structures
-# TODO
+# create ground structure for each set of terminals
+Base.round(node::Node) = Node(round(4*node.x)/4, round(4*node.y)/4)
+ground_structures = Dict{String, Topology}()
+for (tkey, tnodes) in terminals
+    # represent nodes as matrix
+    points = hcat(collect.(tnodes)...)
+
+    # start with delaunay triangulation
+    delaunaytri = PipeLayout.delaunay_triangulation(points)
+
+    # manual refinement of triangles
+    refinedtri = PipeLayout.refine_sixths(delaunaytri, minimum_angle=15,
+                                          minimum_area=AREA/100)
+
+    # generic refinement
+    switch = PipeLayout.TriangleSwitches(minimum_angle=15, maximum_area=AREA/50)
+    rerefinedtri = PipeLayout.refine(refinedtri, switch)
+
+    # convert and round
+    topo = convert(Topology, rerefinedtri)
+    topo.nodes[:] = round.(topo.nodes[:])
+    ground_structures[tkey] = topo
+end
 
 # for each set of terminals, create demand situations
 #  [x] random distribution (source vs sink)
 #  [x] same, but single source
-#  [X] for each normalized demand: several flow scalings
+#  [x] for each normalized demand: several flow scalings
 demands = Dict{String, Vector{Float64}}()
 for (tkey, nodes) in terminals
     nnodes = length(nodes)
@@ -71,9 +93,9 @@ diameters["some"] = diameters["full"][1:2:end]
 #  [x] write instances to files (json)
 instances = String[]
 for (key, demand) in demands
-    gs, trm, dmd = split(key, ".")
-    topology = ground_structures[gs]
-    nodes = terminals["$gs.$trm"]
+    trm, dmd = split(key, ".")
+    nodes = terminals[trm]
+    topology = ground_structures[trm]
     pressure = [pressure_bounds for n in nodes]
 
     for (diamkey, diams) in diameters
