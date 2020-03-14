@@ -1,5 +1,4 @@
 # custom types
-import Base.transpose
 using StaticArrays
 
 export Node, Bounds, Diameter, Instance, Arc, Topology
