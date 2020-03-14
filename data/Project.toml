@@ -1,0 +1,6 @@
+[deps]
+AbstractPlotting = "537997a7-5e4e-5d89-9595-2241ea00577e"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+PipeLayout = "548bfcb0-c403-5beb-abdb-ee46404b5c28"
