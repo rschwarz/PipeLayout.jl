@@ -13,3 +13,7 @@ function draw!(scene, topo::Topology; markersize=2)
     positions = topo.nodes
     scatter!(scene, positions, markersize=markersize)
 end
+
+function draw(args...; kwargs...)
+    draw!(empty_scene(), args...; kwargs...)
+end
