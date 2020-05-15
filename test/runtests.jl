@@ -1,5 +1,6 @@
 using Test
 using PipeLayout
+using Aqua
 
 include("helpers.jl")
 
@@ -34,3 +35,5 @@ end
     include("models/junctionlocation.jl")
     include("models/junctionlocation_nlp.jl")
 end
+
+Aqua.test_all(PipeLayout)
