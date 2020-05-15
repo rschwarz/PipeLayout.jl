@@ -9,8 +9,8 @@ struct IterGBD <: GroundStructureSolver
     maxiter::Int
     timelimit::Float64 # seconds
     writemodels::Bool
-    mastersolver::JuMP.OptimizerFactory
-    subsolver::JuMP.OptimizerFactory
+    mastersolver
+    subsolver
 
     function IterGBD(mastersolver, subsolver;
                      addnogoods=false, addcritpath=true, maxiter::Int=100,
@@ -45,8 +45,7 @@ struct Master
 end
 
 "Build model for master problem (ground structure with discrete diameters)."
-function make_master(inst::Instance, topo::Topology,
-                     optimizer::JuMP.OptimizerFactory)
+function make_master(inst::Instance, topo::Topology, optimizer)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -71,7 +70,7 @@ function make_master(inst::Instance, topo::Topology,
     maxflow = 0.5 * sum(abs.(inst.demand))
 
     # always use direct mode for SCIP
-    model = JuMP.direct_model(optimizer())
+    model = JuMP.direct_model(MOI.instantiate(optimizer))
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -117,8 +116,7 @@ Build model for subproblem (ground structure with discrete diameters).
 Corresponds to the domain relaxation with pressure loss overestimation, which
 can be turned off via the flag `relaxed`.
 """
-function make_sub(inst::Instance, topo::Topology, cand::CandSol,
-                  optimizer::JuMP.OptimizerFactory;
+function make_sub(inst::Instance, topo::Topology, cand::CandSol, optimizer;
                   relaxed::Bool=true)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
@@ -196,7 +194,7 @@ where x_i and y_j take values 0 or 1, with exactly one term active per sum.
 The coefficients a, b, c are returned.
 """
 function linear_overest(values::Matrix{Float64}, cand_i::Int, cand_j::Int,
-                        optimizer::JuMP.OptimizerFactory)
+                        optimizer)
     m, n = size(values)
 
     @assert 1 <= cand_i <= m

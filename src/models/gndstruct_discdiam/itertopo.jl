@@ -6,8 +6,8 @@ Solver object to store parameter values.
 struct IterTopo <: GroundStructureSolver
     maxiter::Int
     timelimit::Float64 # seconds
-    mastersolver::JuMP.OptimizerFactory
-    subsolver::JuMP.OptimizerFactory
+    mastersolver
+    subsolver
     writemodels::Bool
 
     function IterTopo(mastersolver, subsolver;
@@ -22,8 +22,7 @@ Build master model using only arc selection y and flows q.
 This is used to enumerate (embedded) topologies, each of which is evaluated with
 a "semi-subproblem". Returns model and variables y, q.
 """
-function make_semimaster(inst::Instance, topo::Topology,
-                         optimizer::JuMP.OptimizerFactory)
+function make_semimaster(inst::Instance, topo::Topology, optimizer)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)
@@ -47,7 +46,7 @@ function make_semimaster(inst::Instance, topo::Topology,
     maxflow = 0.5 * sum(abs.(inst.demand))
 
     # always use direct mode with SCIP
-    model = JuMP.direct_model(optimizer())
+    model = JuMP.direct_model(MOI.instantiate(optimizer))
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
@@ -87,8 +86,7 @@ be used
 
 Returns model, list of candidate arcs and (sparse) variables z
 """
-function make_semisub(inst::Instance, topo::Topology, cand::CandSol,
-                      optimizer::JuMP.OptimizerFactory)
+function make_semisub(inst::Instance, topo::Topology, cand::CandSol, optimizer)
     nnodes = length(topo.nodes)
     arcs = topo.arcs
     termidx = termindex(topo.nodes, inst.nodes)

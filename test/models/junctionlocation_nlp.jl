@@ -4,7 +4,11 @@ using JuMP
 using SCIP
 
 # don't solve nonconvex NLP to optimality
-_scip = JuMP.with_optimizer(SCIP.Optimizer, display_verblevel=0, limits_gap=1e-3)
+_scip = JuMP.optimizer_with_attributes(
+    SCIP.Optimizer,
+    "display/verblevel" => 0,
+    "limits/gap" => 1e-3
+)
 
 @testset "solve junction location for three terminals (NLP)" begin
     # equilateral triangle

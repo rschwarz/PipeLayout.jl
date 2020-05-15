@@ -21,7 +21,7 @@ bounds = fill(Bounds(40, 80), 4)
 diams = map(Diameter, [1, 2], [1, 2])
 inst = Instance(terminals, demand, bounds, diams, ploss_coeff_nice)
 
-_scip = JuMP.with_optimizer(SCIP.Optimizer, limits_gap=0.001)
+_scip = JuMP.optimizer_with_attributes(SCIP.Optimizer, "limits/gap" => 0.001)
 
 function pipedim()
     println("### Pipe Dimensioning LP model, path topology ###")

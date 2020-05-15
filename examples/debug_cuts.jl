@@ -16,8 +16,7 @@ topo = Topology([Node(t...) for t in [(0,22), (0,0), (25,22), (25,0), (45,22), (
 
 inst = Instance(nodes, demand, bounds, diams, ploss_coeff_nice)
 
-_glpk = JuMP.with_optimizer(GLPK.Optimizer)
-solver = GndStr.IterGBD(_glpk, _glpk, addnogoods=false, maxiter=10)
+solver = GndStr.IterGBD(GLPK.Optimizer, GLPK.Optimizer, addnogoods=false, maxiter=10)
 result = optimize(inst, topo, solver);
 
 @show result.status

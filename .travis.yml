@@ -1,31 +1,32 @@
 # Documentation: http://docs.travis-ci.com/user/languages/julia/
 language: julia
 os: linux
-dist: xenial
+dist: bionic
 addons:
   apt:
     packages:
     - libblas3
     - libc6
     - libgcc1
-    - libgfortran3
+    - libgfortran4
     - libgmp10
-    - libgsl2
+    - libgsl23
     - liblapack3
+    - libquadmath0
     - libstdc++6
+    - libtbb2
     - zlib1g
 sudo: true
 julia:
-  - 1.0
-  - 1.1
+  - 1.4
 notifications:
   email: false
 git:
   depth: 99999999
 before_install:
-  - export VERSION=6.0.1
+  - export VERSION=7.0.0
   - wget http://scip.zib.de/download/release/SCIPOptSuite-$VERSION-Linux.deb
   - sudo dpkg -i SCIPOptSuite-$VERSION-Linux.deb
   - export SCIPOPTDIR=/usr
 after_success:
-  - julia -e 'VERSION != v"1.1" && exit(0); using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'
+  - julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder())'

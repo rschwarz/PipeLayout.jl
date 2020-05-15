@@ -1,4 +1,4 @@
-_scip = JuMP.with_optimizer(SCIP.Optimizer, display_verblevel=0)
+_scip = JuMP.optimizer_with_attributes(SCIP.Optimizer, "display/verblevel" => 0)
 
 @testset "run MINLP model" begin
     #       7    9      even arc numbers for

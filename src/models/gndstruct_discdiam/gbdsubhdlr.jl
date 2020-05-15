@@ -3,7 +3,7 @@ Constraint handler solving the GBD subproblem (fixed z).
 """
 mutable struct GBDSubHdlr <: SCIP.AbstractConstraintHandler
     scip::SCIP.Optimizer # of master problem
-    subsolver::JuMP.OptimizerFactory # for subproblems
+    subsolver            # for subproblems
     finaltime::Float64 # seconds
     addcritpath::Bool
     addnogoods::Bool

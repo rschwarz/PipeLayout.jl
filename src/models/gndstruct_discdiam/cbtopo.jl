@@ -5,8 +5,8 @@ Discrete Diameters.
 Solver object to store parameter values.
 """
 struct CallbackTopo <: GroundStructureSolver
-    mastersolver::JuMP.OptimizerFactory
-    subsolver::JuMP.OptimizerFactory
+    mastersolver
+    subsolver
     timelimit::Float64 # seconds
     writemodels::Bool
 
