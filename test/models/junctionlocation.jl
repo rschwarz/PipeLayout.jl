@@ -3,7 +3,11 @@ using PipeLayout.JuncLoc
 using JuMP
 using SCS
 
-_scs = JuMP.with_optimizer(SCS.Optimizer, eps=1e-6, verbose=0)
+_scs = JuMP.optimizer_with_attributes(
+    SCS.Optimizer,
+    "eps" => 1e-6,
+    "verbose" => 0
+)
 
 @testset "solve junction location for three terminals (SOC)" begin
     # equilateral triangle
