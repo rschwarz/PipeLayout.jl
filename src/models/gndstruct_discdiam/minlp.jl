@@ -55,7 +55,7 @@ function make_minlp(inst::Instance, topo::Topology, optimizer; contz=false)
     C = inst.ploss_coeff * L
 
     # always use SCIP directly
-    model = JuMP.direct_model(optimizer())
+    model = JuMP.direct_model(MOI.instantiate(optimizer))
 
     # select arcs from topology
     @variable(model, y[1:narcs], Bin)

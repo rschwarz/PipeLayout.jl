@@ -46,7 +46,7 @@ function make_semimaster(inst::Instance, topo::Topology, optimizer)
     maxflow = 0.5 * sum(abs.(inst.demand))
 
     # always use direct mode with SCIP
-    model = JuMP.direct_model(optimizer())
+    model = JuMP.direct_model(MOI.instantiate(optimizer))
 
     # select arcs from topology with y
     @variable(model, y[1:narcs], Bin)
