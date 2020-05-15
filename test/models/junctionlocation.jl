@@ -31,8 +31,8 @@ _scs = JuMP.optimizer_with_attributes(
 
         xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals
-            @test xsol[i] ≈ nodes[i].x atol=0.001
-            @test ysol[i] ≈ nodes[i].y atol=0.001
+            @test xsol[i] ≈ nodes[i].x atol=0.005
+            @test ysol[i] ≈ nodes[i].y atol=0.005
         end
         @test xsol[4] ≈ 20 atol=0.01
         @test ysol[4] ≈ sqrt(3)/6*40 atol=0.01
@@ -53,8 +53,8 @@ _scs = JuMP.optimizer_with_attributes(
 
         xsol, ysol = JuMP.value.(x), JuMP.value.(y)
         for i=1:3 # fixed terminals
-            @test xsol[i] ≈ nodes[i].x atol=0.001
-            @test ysol[i] ≈ nodes[i].y atol=0.001
+            @test xsol[i] ≈ nodes[i].x atol=0.005
+            @test ysol[i] ≈ nodes[i].y atol=0.005
         end
         @test xsol[4] ≈ 20 atol=0.1
         @test ysol[4] >= sqrt(3)/6*40 # move near source
@@ -74,6 +74,6 @@ _scs = JuMP.optimizer_with_attributes(
         L = pipelengths(toposol)
         c = [d.cost for d in diams]
         obj = L' * sol.lsol * c
-        @test result.value ≈ obj[1] atol=0.001
+        @test result.value ≈ obj[1] atol=0.005
     end
 end
