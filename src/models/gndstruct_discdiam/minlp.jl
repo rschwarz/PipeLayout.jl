@@ -1,5 +1,5 @@
 struct MINLP <: GroundStructureSolver
-    solver::JuMP.OptimizerFactory # to solve MINLP model
+    solver             # to solve MINLP model
     contz::Bool
     timelimit::Float64 # seconds
     writemodels::Bool
@@ -15,8 +15,7 @@ Build MINLP model for instance on given ground structure.
 To be solved with given MPB solver (capable of NLP).
 Use continuous variables 0 ≤ z ≤ 1 if `contz` is true.
 """
-function make_minlp(inst::Instance, topo::Topology,
-                    optimizer::JuMP.OptimizerFactory; contz=false)
+function make_minlp(inst::Instance, topo::Topology, optimizer; contz=false)
     nodes, nnodes = topo.nodes, length(topo.nodes)
     arcs, narcs = topo.arcs, length(topo.arcs)
     terms, nterms = inst.nodes, length(inst.nodes)

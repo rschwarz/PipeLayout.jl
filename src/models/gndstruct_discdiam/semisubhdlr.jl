@@ -3,7 +3,7 @@ Constraint handler solving the semi-subproblem (fixed y, binary z).
 """
 mutable struct SemiSubHdlr <: SCIP.AbstractConstraintHandler
     scip::SCIP.Optimizer
-    solver::JuMP.OptimizerFactory
+    solver
     finaltime::Float64 # seconds
     counter::Int
     primal_bound::Float64

@@ -1,5 +1,5 @@
 struct NLP <: JunctionLocationSolver
-    optimizer::JuMP.OptimizerFactory # for underlying NLP model
+    optimizer          # for underlying NLP model
     timelimit::Float64 # seconds
 
     function NLP(solver; timelimit=Inf)

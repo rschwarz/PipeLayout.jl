@@ -15,10 +15,10 @@ struct Result
 end
 
 struct LP <: PipeDimensioningSolver
-    lpsolver::JuMP.OptimizerFactory
+    lpsolver
 end
 
-function make_model(inst::Instance, topo::Topology, optimizer::JuMP.OptimizerFactory)
+function make_model(inst::Instance, topo::Topology, optimizer)
     nnodes = length(inst.nodes)
     length(topo.nodes) == nnodes ||
         throw(ArgumentError("Steiner nodes not allowed"))
