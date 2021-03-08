@@ -22,7 +22,7 @@ JuMP = "^0.21.2"
 MathOptInterface = "^0.9.13"
 SCIP = "^0.9.8"
 SCS = "^0.6.6"
-julia = "^1.4.0"
+julia = "^1.5.0"
 
 [extras]
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
