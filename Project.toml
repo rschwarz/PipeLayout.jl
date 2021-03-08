@@ -20,7 +20,7 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 GLPK = "^0.13.0"
 JuMP = "^0.21.2"
 MathOptInterface = "^0.9.13"
-SCIP = "^0.9.5"
+SCIP = "^0.9.8"
 SCS = "^0.6.6"
 julia = "^1.4.0"
 
