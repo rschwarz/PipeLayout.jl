@@ -3,4 +3,6 @@
 *.jl.mem
 deps/deps.jl
 *~
+data/instances.txt
+data/*.json
 data/*.png

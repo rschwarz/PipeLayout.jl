@@ -16,6 +16,7 @@ include("topology/geosteiner.jl")
 include("topology/grid.jl")
 include("topology/mst.jl")
 include("topology/isomorph.jl")
+include("topology/triangulation.jl")
 
 include("flow.jl") # needs topology
 
@@ -35,7 +36,6 @@ using ..PipeLayout
 include("models/gndstruct_discdiam/main.jl")
 end
 
-# visualization via Plots recipes
-include("plot_recipes.jl")
+include("viz.jl")
 
 end

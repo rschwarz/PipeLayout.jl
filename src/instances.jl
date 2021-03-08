@@ -1,5 +1,4 @@
 # custom types
-import Base.transpose
 using StaticArrays
 
 export Node, Bounds, Diameter, Instance, Arc, Topology
@@ -9,9 +8,6 @@ struct Node <: FieldVector{2, Float64}
     x::Float64 # [km]
     y::Float64 # [km]
 end
-
-"Add no-op transpose to suppress warning."
-Base.transpose(n::Node) = n
 
 "Variable bounds as interval, used for node pressure."
 struct Bounds <: FieldVector{2, Float64}

@@ -39,16 +39,20 @@ function deserialize(::Type{Vector{T}}, A::Vector{Any}) where T
     T[deserialize(T, a) for a in A]
 end
 
-function read_instance(prefix, key::String)
-    open(joinpath(prefix, "$(key).instance.json")) do f
-        PipeLayout.deserialize(Instance, readstring(f))
-    end
+function deserialize(::Type{T}, A::Vector{Any}) where T
+    T(A)
 end
-read_instance(key::String) = read_instance(".", key)
 
-function read_topology(prefix, key::String)
-    open(joinpath(prefix, "$(key).topology.json")) do f
-        PipeLayout.deserialize(Topology, readstring(f))
+function read_instance(prefix, key)
+    open(joinpath(prefix, "$(key).instance.json")) do f
+        PipeLayout.deserialize(Instance, read(f, String))
     end
 end
-read_topology(key::String) = read_topology(".", key)
+read_instance(key) = read_instance(".", key)
+
+function read_topology(prefix, key)
+    open(joinpath(prefix, "$(key).topology.json")) do f
+        PipeLayout.deserialize(Topology, read(f, String))
+    end
+end
+read_topology(key) = read_topology(".", key)
